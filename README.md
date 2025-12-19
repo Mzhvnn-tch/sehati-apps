@@ -1,7 +1,7 @@
 # SEHATI - Decentralized Health Identity System
 
 <p align="center">
-  <img src="client/public/logo.png" alt="SEHATI Logo" width="200"/>
+  <img src="client/public/logo.png" alt="SEHATI Logo" width="200" />
 </p>
 
 <p align="center">
