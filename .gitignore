@@ -3,5 +3,8 @@ dist/
 build/
 .cache/
 *.log
+.config/
+.config/**
 .local/
 .local/**
+
