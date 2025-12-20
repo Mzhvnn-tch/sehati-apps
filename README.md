@@ -88,7 +88,7 @@ PostgreSQL        - Database
 ```
 Solidity          - Smart Contracts
 Hardhat           - Development Environment
-Polygon Amoy      - Testnet Deployment
+Lisk sepolia      - Testnet Deployment
 ethers.js         - Web3 Library
 AES-256-GCM       - Encryption
 PBKDF2            - Key Derivation
@@ -101,7 +101,7 @@ PBKDF2            - Key Derivation
 ### Prerequisites
 - Node.js 20+
 - PostgreSQL database
-- (Optional) Polygon Amoy testnet wallet with MATIC for real blockchain transactions
+- (Optional) Lisk sepolia testnet wallet with ETHEREUM for real blockchain transactions
 
 ### 1. Clone & Install
 
@@ -122,8 +122,8 @@ Buat file `.env` di root project:
 DATABASE_URL=postgresql://user:password@host:port/database
 
 # Blockchain (Optional - for real transactions)
-DEPLOYER_PRIVATE_KEY=your_polygon_wallet_private_key
-CONTRACT_ADDRESS=0x6AF769646090EC43fa25Ee8C933B39fBfb3f67F9
+DEPLOYER_PRIVATE_KEY=your_lisk_wallet_private_key
+CONTRACT_ADDRESS=0x6AF7........
 
 # Session (Auto-generated if not set)
 SESSION_SECRET=your_random_session_secret
@@ -654,7 +654,7 @@ docker run -p 5000:5000 sehati
 - [x] Medical record encryption (AES-256-GCM)
 - [x] QR code access sharing
 - [x] Audit logging
-- [x] Polygon Amoy testnet integration
+- [x] Lisk sepolia testnet integration
 - [ ] IPFS actual storage (currently simulated)
 - [ ] MetaMask direct integration
 - [ ] Mobile app (React Native)
