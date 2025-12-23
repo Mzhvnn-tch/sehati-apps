@@ -52,7 +52,7 @@ class BlockchainService {
   }
 
   private initialize(): void {
-    const rpcUrl = process.env.LISK_SEPOLIA_RPC || 'https://sepolia.lisk.com';
+    const rpcUrl = process.env.LISK_SEPOLIA_RPC || 'https://rpc.sepolia-api.lisk.com';
     const deployerPrivateKey = process.env.DEPLOYER_PRIVATE_KEY;
     const contractAddress = process.env.CONTRACT_ADDRESS;
 
