@@ -1,16 +1,18 @@
 import { Shield, Stethoscope, ArrowRight, Lock, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { WalletConnect } from "@/components/wallet-connect";
+import { AppKitButton } from "@reown/appkit/react";
 import logo from "../../public/logo.png";
 import { seedDatabase } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useAppKit } from "@reown/appkit/react";
 
 export default function Landing() {
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"patient" | "doctor" | null>(null);
+  const { open } = useAppKit();
 
   const handleSeedData = async () => {
     setIsSeeding(true);
@@ -29,6 +31,11 @@ export default function Landing() {
     } finally {
       setIsSeeding(false);
     }
+  };
+
+  const handleGetStarted = (role: "patient" | "doctor") => {
+    setSelectedRole(role);
+    setTimeout(() => open(), 100);
   };
 
   if (selectedRole) {
@@ -58,11 +65,7 @@ export default function Landing() {
           </div>
 
           <div className="bg-white rounded-2xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100">
-            <WalletConnect 
-              initialRole={selectedRole} 
-              autoOpen={true}
-              className="w-full"
-            />
+            <AppKitButton />
           </div>
 
           <Button 
@@ -123,7 +126,7 @@ export default function Landing() {
         <div className="grid md:grid-cols-2 gap-6 mt-16 max-w-4xl w-full">
           <motion.button
             whileHover={{ y: -5 }}
-            onClick={() => setSelectedRole("patient")}
+            onClick={() => handleGetStarted("patient")}
             className="group cursor-pointer bg-white rounded-2xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-left relative overflow-hidden hover:shadow-2xl transition-shadow"
           >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -143,7 +146,7 @@ export default function Landing() {
 
           <motion.button
             whileHover={{ y: -5 }}
-            onClick={() => setSelectedRole("doctor")}
+            onClick={() => handleGetStarted("doctor")}
             className="group cursor-pointer bg-white rounded-2xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100 text-left relative overflow-hidden hover:shadow-2xl transition-shadow"
           >
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
