@@ -3,16 +3,54 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AppKitButton } from "@reown/appkit/react";
 import { useAppKit } from "@reown/appkit/react";
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import logo from "/logo.png?url";
 import { seedDatabase } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { PatientRegistration } from "@/components/patient-registration";
+import { DoctorRegistration } from "@/components/doctor-registration";
 
 export default function Landing() {
   const { toast } = useToast();
+  const { loginWithExistingWallet } = useAuth();
+  const [, navigate] = useLocation();
   const [isSeeding, setIsSeeding] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"patient" | "doctor" | null>(null);
-  const { open } = useAppKit();
+  const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
+  const [walletChecked, setWalletChecked] = useState(false);
+  const [showRegistration, setShowRegistration] = useState(false);
+  const { open, address } = useAppKit();
+
+  // Monitor AppKit address changes
+  useEffect(() => {
+    if (address && !walletChecked && selectedRole) {
+      setConnectedWallet(address);
+      checkWalletExists(address);
+    }
+  }, [address, walletChecked, selectedRole]);
+
+  const checkWalletExists = async (walletAddress: string) => {
+    try {
+      const result = await loginWithExistingWallet(walletAddress, "0x");
+      if (result.exists && result.userRole) {
+        // Wallet already registered - redirect immediately
+        setTimeout(() => {
+          navigate(result.userRole === "patient" ? "/patient" : "/doctor");
+        }, 500);
+      } else {
+        // New wallet - show registration form
+        setShowRegistration(true);
+      }
+    } catch (error) {
+      console.error("Wallet check error:", error);
+      // Assume new wallet on error
+      setShowRegistration(true);
+    } finally {
+      setWalletChecked(true);
+    }
+  };
 
   const handleSeedData = async () => {
     setIsSeeding(true);
@@ -35,10 +73,73 @@ export default function Landing() {
 
   const handleGetStarted = (role: "patient" | "doctor") => {
     setSelectedRole(role);
-    setTimeout(() => open(), 100);
+    setWalletChecked(false);
+    setConnectedWallet(null);
+    setShowRegistration(false);
+    setTimeout(() => open({ view: "Connect" }), 100);
   };
 
-  if (selectedRole) {
+  const handleRegistrationSuccess = () => {
+    if (selectedRole === "patient") {
+      navigate("/patient");
+    } else {
+      navigate("/doctor");
+    }
+  };
+
+  // Show registration form when wallet connected but new
+  if (showRegistration && connectedWallet && selectedRole) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center px-4">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-cyan-400/10 rounded-full blur-3xl" />
+        </div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10 max-w-xl mx-auto space-y-8"
+        >
+          <div className="bg-white rounded-2xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100">
+            <div className="mb-6 p-4 bg-slate-50 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground">Connected Wallet</p>
+              <p className="font-mono font-bold text-primary break-all">{connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}</p>
+            </div>
+
+            {selectedRole === "patient" ? (
+              <PatientRegistration 
+                walletAddress={connectedWallet} 
+                onSuccess={handleRegistrationSuccess}
+              />
+            ) : (
+              <DoctorRegistration 
+                walletAddress={connectedWallet} 
+                onSuccess={handleRegistrationSuccess}
+              />
+            )}
+          </div>
+
+          <Button 
+            variant="ghost" 
+            onClick={() => {
+              setShowRegistration(false);
+              setConnectedWallet(null);
+              setSelectedRole(null);
+              setWalletChecked(false);
+            }}
+            className="w-full text-muted-foreground hover:text-foreground"
+          >
+            ← Cancel
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Show AppKit connection screen
+  if (selectedRole && !connectedWallet) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center px-4">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
@@ -80,6 +181,7 @@ export default function Landing() {
     );
   }
 
+  // Show main landing page
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col relative overflow-hidden">
       {/* Background Decor */}
