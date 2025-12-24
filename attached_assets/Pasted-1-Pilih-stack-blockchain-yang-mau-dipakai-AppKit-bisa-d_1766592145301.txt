@@ -1,0 +1,322 @@
+1. Pilih stack blockchain yang mau dipakai
+AppKit bisa dipakai di beberapa ekosistem:
+​
+
+Ethereum / EVM:
+
+Via Wagmi (React hooks untuk akun, wallet, kontrak, transaksi, ENS, dll.).
+​
+
+Atau via Ethers v6 langsung (tanpa wagmi).
+​
+
+Solana: via @solana/web3.js.
+
+Bitcoin, TON, dan lainnya: via AppKit Core + Universal Provider.
+
+Di docs React yang kamu kutip, mereka fokus ke Wagmi sebagai contoh utama (React + EVM).
+​
+
+2. Installation (setup proyek React + dependencies)
+2.1. Buat project React pakai Vite
+Jangan pakai npx create-react-app (deprecated, sering bikin conflict dependency).
+​
+
+Disarankan pakai Vite:
+
+bash
+npm create vite@latest
+# pilih React + TypeScript (misalnya)
+Ini bikin proyek React modern yang ramah ESM & bundler, cocok untuk wagmi+AppKit.
+​
+
+2.2. Install paket AppKit + wagmi + viem + React Query
+Di root React project:
+
+bash
+npm install @reown/appkit @reown/appkit-adapter-wagmi wagmi viem @tanstack/react-query
+Fungsinya:
+​
+
+@reown/appkit → UI & core modal connect wallet.
+
+@reown/appkit-adapter-wagmi → jembatan ke wagmi (config, connectors, transport).
+
+wagmi → React hooks blockchain untuk EVM.
+
+viem → RPC client & utilities (wagmi pakai di bawah kap).
+
+@tanstack/react-query → caching & data fetching (dipakai AppKit/wagmi).
+
+3. Cloud Configuration (ambil projectId dari Reown)
+Buka Reown Dashboard: https://dashboard.reown.com.
+
+Buat project baru, ambil projectId.
+​
+
+projectId ini:
+
+dipakai AppKit untuk menghubungkan dApp kamu ke infrastruktur WalletConnect, Blockchain API, analytics, dsb.
+
+harus sama dengan yang kamu taruh di kode.
+​
+
+Di kode nanti:
+
+ts
+const projectId = 'YOUR_PROJECT_ID'
+Kamu sudah ganti ke ID SEHATI tadi, itu exactly langkah ini.
+
+4. Implementation – dua pola utama
+Ada dua cara: AppKitProvider “all‑in‑one” atau setup manual pakai wagmi example.
+
+4.1. Cara 1 – Pakai <AppKitProvider /> langsung
+Ini cara paling singkat:
+​
+
+tsx
+import { AppKitProvider } from '@reown/appkit/react'
+
+function App() {
+  return (
+    <AppKitProvider
+      projectId="YOUR_PROJECT_ID"
+      networks={[
+        /* Your Networks (chains EVM) */
+      ]}
+    >
+      {/* Your App */}
+    </AppKitProvider>
+  )
+}
+AppKitProvider:
+
+Inisialisasi AppKit, wagmi, React Query di dalamnya.
+
+Bungkus seluruh app, sehingga semua komponen di bawahnya bisa pakai hooks AppKit & wagmi.
+
+networks berisi list chain EVM (misalnya mainnet, arbitrum, dll.).
+​
+
+Ini cocok kalau kamu ingin integrasi cepat tanpa banyak custom di level wagmi.
+
+4.2. Cara 2 – Framework Specific (Wagmi example, lebih fleksibel)
+Ini yang kamu pakai (AppKit + Wagmi + React Query dikonfigurasi manual).
+​
+
+4.2.1. Setup config di luar komponen
+ts
+import { createAppKit } from '@reown/appkit/react'
+import { WagmiProvider } from 'wagmi'
+import { arbitrum, mainnet } from '@reown/appkit/networks'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+
+// 0. Setup queryClient (React Query)
+const queryClient = new QueryClient()
+
+// 1. projectId dari dashboard.reown.com
+const projectId = 'YOUR_PROJECT_ID'
+
+// 2. Metadata dApp (untuk modal & wallet)
+const metadata = {
+  name: 'AppKit',
+  description: 'AppKit Example',
+  url: 'https://example.com',          // HARUS match origin kamu
+  icons: ['https://avatars.githubusercontent.com/u/179229932'],
+}
+
+// 3. Pilih networks (EVM chains)
+const networks = [mainnet, arbitrum]
+
+// 4. Buat Wagmi Adapter
+const wagmiAdapter = new WagmiAdapter({
+  networks,
+  projectId,
+  ssr: true,
+})
+
+// 5. Create AppKit instance (modal + logic)
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks,
+  projectId,
+  metadata,
+  features: {
+    analytics: true, // optional, pakai default dari Cloud config kalau nggak diisi
+  },
+})
+Makna langkah ini:
+​
+
+QueryClient → engine React Query (dipakai AppKit dan wagmi untuk cache/fetch).
+
+projectId + metadata + networks → identitas dan scope dApp.
+
+WagmiAdapter → membuat:
+
+wagmiConfig (chains, transport, connectors).
+
+koneksi ke WalletConnect / Blockchain API.
+
+createAppKit → benar‑benar instantiate AppKit (modal, state koneksi, integrasi features).
+
+Semuanya di luar React component untuk menghindari re‑create tiap render.
+​
+
+4.2.2. Bungkus app dengan provider
+Masih di file yang sama:
+​
+
+tsx
+export function AppKitProvider({ children }) {
+  return (
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    </WagmiProvider>
+  )
+}
+WagmiProvider diberi config={wagmiAdapter.wagmiConfig} → wagmi pakai chains & connectors dari adapter.
+​
+
+QueryClientProvider membungkus app dengan queryClient tadi.
+​
+
+Lalu kamu pakai di root React:
+
+tsx
+// main.tsx atau App.tsx
+import { AppKitProvider } from './appkit-provider'
+
+function AppRoot() {
+  return (
+    <AppKitProvider>
+      {/* router, layout, pages SEHATI */}
+    </AppKitProvider>
+  )
+}
+Ini menyelesaikan bagian: “Initialize AppKit di App wrapper”.
+
+5. Importing networks (pilih chain EVM)
+Reown expose semua Viem chain lewat @reown/appkit/networks:
+​
+
+ts
+import { createAppKit } from '@reown/appkit'
+import { mainnet, arbitrum, base, scroll, polygon } from '@reown/appkit/networks'
+Kamu bisa pilih chain apa saja yang mau didukung di dApp.
+
+Array ini dipakai di:
+
+new WagmiAdapter({ networks, ... })
+
+createAppKit({ networks, ... })
+
+Kalau chain tidak ada di list bawaan, docs punya section Custom Networks yang jelaskan cara define config chain manual dan tetap dipakai AppKit/wagmi.
+​
+
+6. Trigger the modal (connect wallet UI)
+Setelah AppKit instance & provider siap, kamu perlu UI untuk memunculkan modal connect. Ada 2 cara:
+​
+
+6.1. Gunakan komponen bawaan
+tsx
+import { AppKitButton } from '@reown/appkit/react'
+
+export default function ConnectButton() {
+  return <AppKitButton />
+}
+<AppKitButton />:
+
+Kalau belum connect → tampilkan tombol “Connect Wallet”.
+
+Kalau sudah connect → tampilkan info account (alamat, network, dsb.).
+
+Klik akan membuka/menutup AppKit modal, yang berisi daftar wallet & pengaturan jaringan.
+​
+
+Ada juga varian lain di docs (AppKitConnectButton, AppKitAccountButton, AppKitNetworkButton) kalau butuh kontrol lebih granular.
+​
+
+6.2. Atau pakai hooks (tombol custom)
+Kamu bisa pakai hook useAppKit / useAppKitWallet untuk membuat tombol custom:
+​
+
+Tombol kamu panggil open() untuk buka modal.
+
+Bisa juga akses state isConnected, address, dll.
+
+7. Smart Contract Interaction (read / write dengan wagmi)
+Setelah wallet connect melalui AppKit + WagmiProvider, kamu pakai wagmi hooks untuk interaksi kontrak.
+​
+
+Docs memberi contoh useReadContract:
+
+ts
+import { useReadContract } from 'wagmi'
+import { USDTAbi } from '../abi/USDTAbi'
+
+const USDTAddress = '0x...'
+
+function App() {
+  const result = useReadContract({
+    abi: USDTAbi,
+    address: USDTAddress,
+    functionName: 'totalSupply',
+  })
+}
+useReadContract:
+
+Panggil fungsi view/pure di smart contract (tidak perlu signed tx).
+
+Otomatis pakai:
+
+provider / RPC dari wagmiConfig (yang dibuat WagmiAdapter).
+
+chain/account aktif dari WagmiProvider (yang diisi AppKit saat connect).
+​
+
+Untuk signing transaksi (tulis state, kirim tx), kamu gunakan hooks lain di wagmi seperti useWriteContract / useSendTransaction dengan pola mirip (konfigurasi lewat abi, address, functionName, args).
+​
+
+8. Singkatnya: urutan langkah praktis
+Buat kamu yang mau jadikan ini checklist di SEHATI:
+
+Bikin project React pakai Vite (npm create vite@latest).
+​
+
+Install dependency:
+
+bash
+npm install @reown/appkit @reown/appkit-adapter-wagmi wagmi viem @tanstack/react-query
+Ambil projectId dari Reown Dashboard.
+​
+
+Buat file config (misal src/lib/appkit-config.ts) yang:
+
+definisikan queryClient, projectId, metadata, networks, wagmiAdapter.
+
+panggil createAppKit(...).
+​
+
+Buat AppKitProvider yang membungkus app dengan:
+
+tsx
+<WagmiProvider config={wagmiAdapter.wagmiConfig}>
+  <QueryClientProvider client={queryClient}>
+    {children}
+  </QueryClientProvider>
+</WagmiProvider>
+Di root app, bungkus router/layout dengan AppKitProvider.
+​
+
+Tambahkan tombol connect:
+
+paling simpel: <AppKitButton />.
+
+atau tombol custom dengan hooks useAppKit.
+​
+
+Gunakan wagmi hooks (useReadContract, useWriteContract, dll.) di halaman/logika SEHATI untuk baca & tulis ke smart contract.

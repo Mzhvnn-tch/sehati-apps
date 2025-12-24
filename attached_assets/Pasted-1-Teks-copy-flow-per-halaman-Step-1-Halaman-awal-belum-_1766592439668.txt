@@ -1,0 +1,141 @@
+1. Teks / copy flow per halaman
+Step 1 – Halaman awal (belum connect)
+Patient Portal
+
+Heading:
+“Welcome to SEHATI Patient Portal”
+
+Subcopy:
+“Access your medical records securely on-chain and manage your health identity.”
+
+Tombol:
+Get started
+
+Doctor Portal
+
+Heading:
+“Welcome to SEHATI Doctor Portal”
+
+Subcopy:
+“Verify patient identities and access authorized records securely on-chain.”
+
+Tombol:
+Get started
+
+Logika: click Get started → route ke page berikutnya (misal /patient/dashboard atau /doctor/dashboard).
+
+2. Step berikutnya – halaman yang pakai Connect Wallet
+Begitu sudah masuk “page selanjutnya”, kamu ganti hero copy & tombolnya jadi fokus ke koneksi wallet.
+
+Patient dashboard (belum connect):
+
+Heading:
+“Connect your wallet to continue”
+
+Subcopy:
+“SEHATI uses your wallet as a secure on-chain identity to access your medical profile.”
+
+Tombol (pakai AppKit):
+
+Kalau mau langsung pakai komponen resmi:
+Label tombol secara visual tetap “Connect wallet”, text di sekitar:
+
+Above button: “To access your patient dashboard, please connect your wallet first.”
+
+Atau tombol custom:
+Connect patient wallet
+
+Doctor dashboard (belum connect):
+
+Heading:
+“Connect your wallet to access the doctor portal”
+
+Subcopy:
+“Use your wallet to verify your on-chain identity and manage patient records.”
+
+Tombol:
+Connect doctor wallet
+
+3. Contoh komponen React per portal (struktur kata + code)
+Misal kamu punya dua halaman:
+
+Patient landing (pakai “Get started”)
+tsx
+// src/pages/patient-landing.tsx
+import { useLocation } from "wouter";
+
+export default function PatientLanding() {
+  const [, navigate] = useLocation();
+
+  return (
+    <section>
+      <h1>Welcome to SEHATI Patient Portal</h1>
+      <p>Access your medical records securely on-chain and manage your health identity.</p>
+
+      <button onClick={() => navigate("/patient")}>
+        Get started
+      </button>
+    </section>
+  );
+}
+Patient page berikutnya – Connect Wallet (AppKit + wagmi)
+tsx
+// src/pages/patient-dashboard.tsx
+import { AppKitButton } from "@reown/appkit/react";
+
+export default function PatientDashboard() {
+  return (
+    <section>
+      <h1>Connect your wallet to continue</h1>
+      <p>
+        SEHATI uses your wallet as a secure on-chain identity to access your medical profile.
+      </p>
+
+      {/* Tombol connect wallet dari AppKit */}
+      <AppKitButton />
+    </section>
+  );
+}
+Kalau kamu mau teks tombolnya tetap “Get started” tapi fungsinya connect wallet, kamu bisa pakai hook useAppKit dan atur copy sendiri:
+
+tsx
+import { useAppKit } from "@reown/appkit/react";
+
+export default function PatientDashboard() {
+  const { open } = useAppKit();
+
+  return (
+    <section>
+      <h1>Welcome back, patient</h1>
+      <p>
+        To continue to your dashboard, please connect your wallet as your SEHATI identity.
+      </p>
+
+      <button onClick={() => open()}>
+        Get started by connecting your wallet
+      </button>
+    </section>
+  );
+}
+Kata‑katanya jelas:
+
+“Get started by connecting your wallet” → user paham bahwa “start” di step ini = connect wallet.
+
+4. Ringkasan wording yang bisa langsung kamu pakai
+Untuk patient step connect:
+
+Heading:
+“Connect your wallet to access your patient dashboard”
+Body:
+“Your wallet acts as your SEHATI identity. Connect it to view and manage your medical records securely.”
+Button text (custom):
+“Connect patient wallet”
+
+Untuk doctor step connect:
+
+Heading:
+“Connect your wallet to access the doctor portal”
+Body:
+“Use your wallet to verify your on-chain identity before accessing patient records.”
+Button text:
+“Connect doctor wallet”
