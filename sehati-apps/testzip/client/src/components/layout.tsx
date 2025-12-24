@@ -3,7 +3,7 @@ import { Shield, Activity, Lock, FileText, Menu, X, User, Stethoscope } from "lu
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
-import logo from "@assets/generated_images/modern_abstract_logo_for_medical_blockchain_app.png";
+import logoSrc from "../../public/logo.png";
 
 export default function Layout({ children, type = "patient" }: { children: React.ReactNode; type?: "patient" | "doctor" }) {
   const [location] = useLocation();
@@ -39,7 +39,7 @@ export default function Layout({ children, type = "patient" }: { children: React
         isMobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 flex items-center gap-3 border-b border-gray-100/50">
-          <img src={logo} alt="SEHATI Logo" className="w-8 h-8 rounded-lg shadow-sm" />
+          <img src={logoSrc} alt="SEHATI Logo" className="w-8 h-8 rounded-lg shadow-sm" />
           <div>
             <h1 className="font-bold text-xl tracking-tight text-primary">SEHATI</h1>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
@@ -71,7 +71,7 @@ export default function Layout({ children, type = "patient" }: { children: React
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100/50">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-white/50">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-cyan-400 flex items-center justify-center text-white font-bold text-xs">
-              {user?.name ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : (type === "patient" ? "PT" : "DR")}
+              {user?.name ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : (type === "patient" ? "PT" : "DR")}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-semibold truncate">
@@ -89,7 +89,7 @@ export default function Layout({ children, type = "patient" }: { children: React
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b border-white/50 bg-white/40 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 lg:hidden">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Logo" className="w-6 h-6" />
+            <img src={logoSrc} alt="Logo" className="w-6 h-6" />
             <span className="font-bold text-primary">SEHATI</span>
           </div>
           <button onClick={() => setIsMobileOpen(true)} className="p-2 rounded-lg hover:bg-white/50">

@@ -2,7 +2,7 @@ import { Shield, Stethoscope, ArrowRight, Lock, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { WalletConnect } from "@/components/wallet-connect";
-import logo from "@assets/generated_images/modern_abstract_logo_for_medical_blockchain_app.png";
+import logo from "../../public/logo.png";
 import { seedDatabase } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
