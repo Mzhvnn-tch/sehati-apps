@@ -1,8 +1,8 @@
-import { Shield, Stethoscope, ArrowRight, Lock, Activity } from "lucide-react";
+import { Shield, Stethoscope, ArrowRight, Lock, Activity, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { AppKitButton } from "@reown/appkit/react";
-import { useAppKit } from "@reown/appkit/react";
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import logo from "/logo.png?url";
@@ -19,36 +19,45 @@ export default function Landing() {
   const [isSeeding, setIsSeeding] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"patient" | "doctor" | null>(null);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
-  const [walletChecked, setWalletChecked] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
-  const { open, address } = useAppKit();
+  const { open } = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
 
-  // Monitor AppKit address changes
+  // Monitor AppKit account changes
   useEffect(() => {
-    if (address && !walletChecked && selectedRole) {
+    if (isConnected && address && selectedRole && !showRegistration && !isChecking) {
       setConnectedWallet(address);
       checkWalletExists(address);
     }
-  }, [address, walletChecked, selectedRole]);
+  }, [isConnected, address, selectedRole, showRegistration, isChecking]);
 
   const checkWalletExists = async (walletAddress: string) => {
+    setIsChecking(true);
     try {
+      console.log("Checking wallet:", walletAddress);
       const result = await loginWithExistingWallet(walletAddress, "0x");
+      console.log("Wallet check result:", result);
+      
       if (result.exists && result.userRole) {
         // Wallet already registered - redirect immediately
+        toast({
+          title: "Welcome back!",
+          description: "Redirecting to your portal...",
+        });
         setTimeout(() => {
           navigate(result.userRole === "patient" ? "/patient" : "/doctor");
-        }, 500);
+        }, 1000);
       } else {
         // New wallet - show registration form
         setShowRegistration(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Wallet check error:", error);
-      // Assume new wallet on error
+      // New wallet on error
       setShowRegistration(true);
     } finally {
-      setWalletChecked(true);
+      setIsChecking(false);
     }
   };
 
@@ -73,9 +82,9 @@ export default function Landing() {
 
   const handleGetStarted = (role: "patient" | "doctor") => {
     setSelectedRole(role);
-    setWalletChecked(false);
     setConnectedWallet(null);
     setShowRegistration(false);
+    setIsChecking(false);
     setTimeout(() => open({ view: "Connect" }), 100);
   };
 
@@ -86,6 +95,37 @@ export default function Landing() {
       navigate("/doctor");
     }
   };
+
+  // Show loading while checking wallet
+  if (selectedRole && isChecking && connectedWallet) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center px-4">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-cyan-400/10 rounded-full blur-3xl" />
+        </div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10 max-w-xl mx-auto space-y-8 text-center"
+        >
+          <div className="bg-white rounded-2xl p-8 shadow-xl shadow-gray-200/50 border border-gray-100">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Connected Wallet</p>
+              <p className="font-mono font-bold text-primary break-all">{connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}</p>
+              
+              <div className="flex flex-col items-center gap-2 pt-4">
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground">Checking wallet status...</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   // Show registration form when wallet connected but new
   if (showRegistration && connectedWallet && selectedRole) {
@@ -127,7 +167,7 @@ export default function Landing() {
               setShowRegistration(false);
               setConnectedWallet(null);
               setSelectedRole(null);
-              setWalletChecked(false);
+              setIsChecking(false);
             }}
             className="w-full text-muted-foreground hover:text-foreground"
           >
