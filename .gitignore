@@ -1,0 +1,28 @@
+
+# Dependencies
+node_modules/
+
+# Production
+dist/
+build/
+
+# Misc
+.cache/
+.DS_Store
+*.log
+*.bak
+
+# Environment
+.env
+
+# Hardhat
+artifacts/
+cache/
+coverage/
+typechain/
+typechain-types/
+
+# Editor directories
+.config/
+.idea/
+.vscode/
