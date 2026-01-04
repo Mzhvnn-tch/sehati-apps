@@ -657,6 +657,26 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **Website:** https://sehati.id
 - **GitHub Issues:** [Report Bug](https://github.com/sehati/sehati/issues)
 
+
+---
+
+
+---
+
+> [!IMPORTANT]
+> **FOR HACKATHON JUDGES:** a verified Doctor account has been pre-configured for testing.
+> 
+> **Role:** `Doctor (Verified)`
+> **Private Key:** `f23f4a1477c98486e932f26c34fefdbce6116c6fd185ae0de512e3527f24eef4`
+> *(Import this Private Key into MetaMask)*
+>
+> **Network:** Lisk Sepolia Testnet
+>
+> **Steps to Test:**
+> 1. Import the **Private Key** above into MetaMask.
+> 2. Connect Wallet on the Landing Page.
+> 3. You will be instantly recognized as a verified Doctor.
+
 ---
 
 <p align="center">
