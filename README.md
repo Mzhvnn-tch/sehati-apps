@@ -1,703 +1,206 @@
-# SEHATI - Decentralized Health Identity System
+# SEHATI - Self-Sovereign Health Records
+
+> **Show HN: Exploring patient-owned medical records using cryptographic proofs (Indonesia-focused prototype)**
+
+---
+
+## The Story
+
+Last month, my friend's grandmother was rushed to a Jakarta ER after collapsing. The doctors needed to know:
+- Her blood type
+- Current medications  
+- Drug allergies
+- Pre-existing conditions
+
+**They had NONE of this.** Her records were locked in 3 different hospitals across the city. Paper charts. Incompatible systems. No way to access.
+
+The doctors had to guess. They ran duplicate tests ($800 wasted). Treatment delayed 45 minutes. She survived, but **millions of Indonesians aren't this lucky.**
+
+**This shouldn't happen in 2026.**
+
+---
+
+## The Problem (Why Now?)
+
+Indonesia has **275 million people**, **9,000+ hospitals**, and **ZERO interoperability**.
+
+**What this means:**
+- 🔴 **$2.1 billion/year** wasted on duplicate medical tests
+- 🔴 **30% of medical errors** caused by incomplete patient history  
+- 🔴 **67% of hospitals** experienced data breaches in 2023
+- 🔴 Your medical record is worth **$250-$1,000** on the black market (vs $5 for a credit card)
+
+**The kicker:** You don't own your medical data. The hospital does. You can't access it without permission, can't transfer it easily, and can't verify if it's been tampered with.
+
+---
+
+## Why Existing Solutions Fail
+
+| Solution | Problem |
+|----------|---------|
+| **EHR Systems** (Epic, Cerner) | Proprietary, $15M-$100M cost, zero interoperability |
+| **Cloud Health** (Google/Apple) | Corporate ownership, shut down anytime (Google Health 2020), manual entry |
+| **Gov Systems** | Centralized honeypot, bureaucratic, not portable internationally |
+
+**They all miss the point:** Patient should OWN the data, not hospitals/companies/governments.
+
+---
+
+## Our Approach (Prototype)
+
+This project explores whether **self-sovereign identity concepts** can work for healthcare without exposing sensitive data on-chain.
+
+**Key Assumptions We're Testing:**
+- Hospitals will NOT run blockchain nodes
+- Doctors will NOT manage private keys directly
+- Patients will NOT tolerate typical crypto UX
+
+**Design Decisions:**
+- Blockchain used **strictly for verification & audit**, not data storage
+- All medical data stays **encrypted off-chain** (PostgreSQL)
+- Only cryptographic hashes go on-chain (immutable proof)
+- QR codes as abstraction layer (hides crypto complexity)
+
+**How it currently works:**
+```
+1. Patient authenticates with MetaMask (wallet = identity)
+2. Doctor creates record → encrypted with patient's public key (AES-256)
+3. Content hash submitted to Lisk L2 (permanent proof, ~$0.001 cost)
+4. Patient shares QR code → doctor scans → temporary access granted
+5. Patient revokes access → blockchain update (instant)
+```
+
+**What This Prototype Does NOT Solve:**
+- ❌ Doctor credential verification (currently trust-based)
+- ❌ Key recovery if patient loses private key (social recovery not implemented)
+- ❌ Regulatory compliance (Indonesian health data law unclear)
+- ❌ Scaling (1 TX per record = expensive at scale)
+- ❌ Interoperability with existing hospital systems
+
+---
+
+## Current Status
+
+**Early prototype built to test assumptions:**
+- ✅ Working demo on Lisk Sepolia testnet
+- ✅ Patient & doctor portals with wallet auth
+- ✅ AES-256-GCM encryption for medical data
+- ✅ QR code access tokens (time-limited, revocable)
+- ✅ Blockchain verification (hash-based, not data storage)
+- ✅ Audit logging
+- ✅ Health analytics dashboard
+
+**Tech:** React 19, TypeScript, PostgreSQL, Solidity, Lisk L2
+
+**Try it:** `git clone` → `npm install` → `npm run dev` → Open MetaMask
+
+**Known Limitations:**
+- Only tested with <10 users
+- No HIPAA/GDPR legal review
+- Key recovery not implemented
+- Doctor verification is manual
+- Mainnet deployment requires audit
+
+---
+
+## What We're Looking For
+
+**Not looking for:**
+- ❌ Investment (too early, pre-product)
+- ❌ Users (still testing security assumptions)
+
+**Actually need:**
+1. **Feedback:** Privacy/security holes we missed? Over-engineered?
+2. **Healthcare Reality Check:** Are doctors too busy for even QR codes?
+3. **Regulatory Guidance:** Indonesian health data law experts
+4. **Crypto Skeptics:** Tell us why this won't work
+5. **Pilot Partners:** One small clinic willing to test (3 months, free)
+
+---
+
+## The Vision (Open Questions)
+
+**If this prototype proves viable:**
+- Could become Indonesia's decentralized health identity layer
+- Eventually work across borders (medical tourism use case)
+- Enable patient-controlled research data sharing
+
+**Sustainability model still open:**
+- Grant funding for early development
+- Potential B2B SaaS for hospitals (privacy-as-a-service)
+- Or stay non-profit infrastructure (like IPFS)
+
+**We genuinely don't know which path makes sense yet.**
+
+---
+
+## Questions We're Wrestling With
+
+1. **Regulation:** Indonesian health data law is vague. Go permissionless or wait for clarity?
+2. **Adoption:** Doctors are busy. How do we make this 10x better than their current flow?
+3. **Key Recovery:** If patient loses private key, they lose ALL records. Social recovery? Backup to trusted friends?
+4. **Proof of Authenticity:** How do we verify doctor credentials on-chain without doxxing them?
+5. **Scaling:** One TX per record is expensive. Batch proofs? Roll-up design?
+
+**If you have thoughts on any of these, I'd love to hear them.**
+
+---
+
+## Technical Deep Dive
+
+Want to see the architecture, threat model, encryption details, and implementation?
+
+👉 **[Read the full technical documentation](./TECHNICAL.md)** (15 min read)
+
+**Quick links:**
+- 📊 [System Architecture Diagram](./TECHNICAL.md#architecture)
+- 🔐 [Security & Encryption Details](./TECHNICAL.md#security--privacy)
+- 🏥 [Real-World Use Cases](./TECHNICAL.md#use-cases--user-stories)
+- 🛣️ [Development Roadmap](./TECHNICAL.md#roadmap)
+- 📖 [API Documentation](./TECHNICAL.md#quick-start)
+
+---
+
+## Get Involved
+
+**Try it:**
+```bash
+git clone https://github.com/yourusername/sehati
+cd sehati && npm install && npm run dev
+```
+
+**Talk to us:**
+- 📧 Email: sehatihealth.app@gmail.com
+- 🐦 Twitter: [@sehati_id](https://twitter.com/sehati_id)  
+- 💬 Telegram: [t.me/sehati_community](https://t.me/sehati_community)
+
+**Contribute:**
+- Healthcare domain expert? Help us navigate regulation
+- Blockchain dev? Review our smart contracts
+- Designer? Make the UX even better
+- Investor in healthtech? Let's chat (but >6 months out)
+
+---
+
+## Why You Should Care
+
+**If you're in healthcare:** This could save your patients' lives and save your hospital millions.
+
+**If you're in crypto:** This is an attempt at real-world blockchain utility, but healthcare is hard and we might be wrong about the approach.
+
+**If you're in Indonesia:** Our families deserve ownership of their medical data. This is a step toward that.
+
+**If you're on HN:** This combines hard technical problems (encryption, blockchain, healthcare) with massive real-world impact. That's rare.
+
+---
 
 <p align="center">
-  <img src="client/public/logo.png" alt="SEHATI Logo" width="200" />
+  <strong>We're building the future of healthcare, one block at a time.</strong><br/>
+  <em>Made in Indonesia 🇮🇩 for the world 🌍</em>
 </p>
 
 <p align="center">
-  <strong>Self-Sovereign Health Identity on Blockchain</strong>
-</p>
-
-<p align="center">
-  <a href="#about">About</a> |
-  <a href="#features">Features</a> |
-  <a href="#tech-stack">Tech Stack</a> |
-  <a href="#quick-start">Quick Start</a> |
-  <a href="#how-it-works">How It Works</a> |
-  <a href="#api-reference">API Reference</a> |
-  <a href="#smart-contract">Smart Contract</a>
-</p>
-
----
-
-## About
-
-SEHATI (Sistem Elektronik Kesehatan Aman dan Terpercaya Indonesia) adalah aplikasi terdesentralisasi (dApp) untuk manajemen rekam medis dengan kontrol akses yang dimiliki sepenuhnya oleh pasien.
-
-**Problem yang dipecahkan:**
-- Rekam medis tersebar di berbagai rumah sakit tanpa integrasi
-- Pasien tidak memiliki kontrol atas data kesehatan mereka sendiri
-- Keamanan data kesehatan yang rentan
-- Sulit berbagi rekam medis dengan dokter baru
-
-**Solusi SEHATI:**
-- Self-sovereign identity: Pasien memiliki dan mengontrol data medis mereka
-- Enkripsi AES-256-GCM untuk keamanan maksimal
-- Blockchain integration untuk immutability dan verifikasi
-- QR Code sharing untuk akses sementara yang aman
-
----
-
-## Features
-
-### Untuk Pasien
-| Feature | Deskripsi |
-|---------|-----------|
-| Wallet Authentication | Login menggunakan crypto wallet (MetaMask, dll) |
-| Medical Records | Lihat semua rekam medis dalam satu dashboard |
-| QR Code Sharing | Generate QR code untuk memberikan akses sementara ke dokter |
-| Access Control | Atur durasi akses dan revoke kapan saja |
-| Audit Log | Pantau siapa saja yang mengakses data Anda |
-| Health Profile | Kelola informasi kesehatan dasar (golongan darah, alergi, dll) |
-
-### Untuk Dokter
-| Feature | Deskripsi |
-|---------|-----------|
-| QR Scanner | Scan QR code pasien untuk akses rekam medis |
-| Create Records | Tambahkan rekam medis baru (diagnosis, resep, hasil lab) |
-| Patient View | Lihat riwayat kesehatan pasien dengan izin |
-| Blockchain Verification | Verifikasi keaslian rekam medis via blockchain |
-
----
-
-## Tech Stack
-
-### Frontend
-```
-React 19          - UI Framework
-TypeScript        - Type Safety
-Vite              - Build Tool
-Tailwind CSS v4   - Styling
-Shadcn UI         - Component Library
-Radix UI          - Accessible Primitives
-Framer Motion     - Animations
-TanStack Query    - Server State Management
-Wouter            - Client Routing
-```
-
-### Backend
-```
-Node.js           - Runtime
-Express.js        - Web Framework
-TypeScript        - Type Safety
-Drizzle ORM       - Database ORM
-PostgreSQL        - Database
-```
-
-### Blockchain & Security
-```
-Solidity          - Smart Contracts
-Hardhat           - Development Environment
-Lisk sepolia      - Testnet Deployment
-ethers.js         - Web3 Library
-AES-256-GCM       - Encryption
-PBKDF2            - Key Derivation
-```
-
----
-
-## Quick Start
-
-### Prerequisites
-- Node.js 20+
-- PostgreSQL database
-- (Optional) Lisk sepolia testnet wallet with ETHEREUM for real blockchain transactions
-
-### 1. Clone & Install
-
-```bash
-# Clone the repository
-git clone https://github.com/sehati/sehati.git
-cd sehati
-
-# Install dependencies
-npm install
-```
-
-### 2. Environment Setup
-
-Salin file `.env.example` ke `.env` dan sesuaikan nilainya:
-
-```bash
-cp .env.example .env
-```
-
-Contoh konfigurasi `.env`:
-
-```env
-# Database (Required)
-DATABASE_URL=postgresql://user:password@host:port/database
-
-# Blockchain (Optional - for real transactions)
-DEPLOYER_PRIVATE_KEY=your_lisk_wallet_private_key
-CONTRACT_ADDRESS=0x6AF7........
-
-# Session (Auto-generated if not set)
-SESSION_SECRET=your_random_session_secret
-```
-
-> **Note:** Jika `DEPLOYER_PRIVATE_KEY` dan `CONTRACT_ADDRESS` tidak diset, aplikasi akan berjalan dalam mode simulasi.
-
-### 3. Database Setup
-
-```bash
-# Push schema ke database
-npm run db:push
-```
-
-### 4. Run Development Server
-
-```bash
-# Start development server (port 5000)
-npm run dev
-```
-
-Buka browser dan akses: `http://localhost:5000`
-
-### 5. (Optional) Seed Demo Data
-
-```bash
-# Via API
-curl -X POST http://localhost:5000/api/seed
-```
-
----
-
-## How It Works
-
-### Authentication Flow
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Wallet    │────▶│  Generate   │────▶│   Sign      │
-│   Connect   │     │   Nonce     │     │  Message    │
-└─────────────┘     └─────────────┘     └─────────────┘
-                                               │
-                                               ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Access    │◀────│  Create/    │◀────│   Verify    │
-│   Granted   │     │  Get User   │     │  Signature  │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-1. User connects their crypto wallet
-2. Server generates a unique nonce
-3. User signs the nonce with their private key
-4. Server verifies the signature
-5. User is authenticated and session is created
-
-### Medical Record Creation
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Doctor    │────▶│  Encrypt    │────▶│   Store     │
-│   Input     │     │  AES-256    │     │   in DB     │
-└─────────────┘     └─────────────┘     └─────────────┘
-                                               │
-                                               ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Verified   │◀────│  Submit to  │◀────│  Generate   │
-│  Record     │     │  Blockchain │     │   Hashes    │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-1. Doctor inputs medical record data
-2. Data encrypted using patient's public key (AES-256-GCM)
-3. Encrypted data stored in PostgreSQL
-4. Content hash submitted to Lisk Sepolia blockchain
-5. Transaction hash stored for verification
-
-### QR Code Access Sharing
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Patient   │────▶│  Generate   │────▶│   Create    │
-│   Request   │     │   Token     │     │  QR Code    │
-└─────────────┘     └─────────────┘     └─────────────┘
-                                               │
-                                               ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Access    │◀────│  Validate   │◀────│   Doctor    │
-│   Granted   │     │   Token     │     │  Scans QR   │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-1. Patient generates access token with expiration time
-2. QR code created containing the token
-3. Doctor scans QR code
-4. Server validates token and checks expiration
-5. Doctor gets temporary access to patient's records
-
----
-
-## Project Structure
-
-```
-sehati/
-├── client/                    # Frontend React Application
-│   ├── public/                # Static assets
-│   ├── src/
-│   │   ├── components/        # React Components
-│   │   ├── contexts/          # React Contexts
-│   │   ├── hooks/             # Custom Hooks
-│   │   ├── lib/               # Utilities
-│   │   ├── pages/             # Page Components
-│   │   ├── App.tsx            # Root component
-│   │   └── main.tsx           # Entry point
-│   └── index.html
-│
-├── server/                    # Backend Express Application
-│   ├── middleware/            # Auth & validation
-│   ├── services/              # Blockchain & IPFS services
-│   ├── routes.ts              # API routes
-│   └── storage.ts             # Data access layer
-│
-├── contracts/                 # Solidity Smart Contracts
-│   └── SEHATIRegistry.sol     # Main registry contract
-│
-├── shared/                    # Shared Code
-│   └── schema.ts              # Database schema (Drizzle)
-│
-├── scripts/                   # Deployment Scripts
-│   └── deploy.cjs             # Hardhat deploy script
-│
-├── artifacts/                 # Compiled Contracts (Gitignored)
-├── cache/                     # Build Cache (Gitignored)
-│
-├── package.json               # Dependencies
-├── tsconfig.json              # TypeScript config
-└── vite.config.ts             # Vite config
-```
-
----
-
-## API Reference
-
-### Authentication
-
-#### Generate Nonce
-```http
-POST /api/auth/generate-nonce
-Content-Type: application/json
-
-{
-  "walletAddress": "0x..."
-}
-
-Response:
-{
-  "nonce": "random-nonce-string",
-  "message": "Sign this message to verify your wallet..."
-}
-```
-
-#### Verify Signature
-```http
-POST /api/auth/verify-signature
-Content-Type: application/json
-
-{
-  "walletAddress": "0x...",
-  "message": "Sign this message...",
-  "signature": "0x..."
-}
-
-Response:
-{
-  "verified": true,
-  "user": { ... } | null,
-  "exists": true | false
-}
-```
-
-#### Register/Login
-```http
-POST /api/auth/wallet
-Content-Type: application/json
-
-{
-  "walletAddress": "0x...",
-  "name": "John Doe",
-  "role": "patient" | "doctor",
-  "gender": "male" | "female" | "other",
-  "age": 30,
-  "bloodType": "O+",           // Optional
-  "allergies": ["Penicillin"], // Optional
-  "hospital": "RS Harapan"     // For doctors only
-}
-
-Response:
-{
-  "user": { ... }
-}
-```
-
-#### Generate Wallet (Demo)
-```http
-POST /api/wallet/generate
-
-Response:
-{
-  "address": "0x...",
-  "privateKey": "0x...",
-  "mnemonic": "word1 word2...",
-  "warning": "Save your keys securely!"
-}
-```
-
-### Medical Records
-
-#### Get Patient Records
-```http
-GET /api/records/patient/:patientId
-Authorization: Session Cookie
-
-Response:
-{
-  "records": [
-    {
-      "id": "uuid",
-      "patientId": "uuid",
-      "doctorId": "uuid",
-      "hospitalName": "RS Harapan",
-      "recordType": "diagnosis" | "prescription" | "lab_result",
-      "title": "Check-up Results",
-      "encryptedContent": "encrypted...",
-      "ipfsHash": "Qm...",
-      "blockchainHash": "0x...",
-      "createdAt": "2025-01-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-#### Create Medical Record (Doctor Only)
-```http
-POST /api/records
-Content-Type: application/json
-Authorization: Session Cookie
-
-{
-  "patientId": "uuid",
-  "doctorId": "uuid",
-  "hospitalName": "RS Harapan",
-  "recordType": "diagnosis",
-  "title": "Annual Check-up",
-  "content": "Patient is healthy..."
-}
-
-Response:
-{
-  "record": { ... }
-}
-```
-
-#### Decrypt Record
-```http
-POST /api/records/:recordId/decrypt
-Content-Type: application/json
-Authorization: Session Cookie
-
-{
-  "userId": "uuid"
-}
-
-Response:
-{
-  "id": "uuid",
-  "decryptedContent": "Patient is healthy...",
-  ...
-}
-```
-
-### Access Control
-
-#### Generate Access Token (Patient Only)
-```http
-POST /api/access/generate
-Content-Type: application/json
-Authorization: Session Cookie
-
-{
-  "patientId": "uuid",
-  "durationMinutes": 60
-}
-
-Response:
-{
-  "grant": { ... },
-  "qrData": "sehati://access?token=abc123..."
-}
-```
-
-#### Validate Access Token (Doctor)
-```http
-POST /api/access/validate
-Content-Type: application/json
-Authorization: Session Cookie
-
-{
-  "token": "abc123...",
-  "doctorId": "uuid"
-}
-
-Response:
-{
-  "patient": { ... },
-  "records": [{ decryptedContent: "..." }],
-  "grant": { ... }
-}
-```
-
-#### Revoke Access
-```http
-POST /api/access/revoke/:grantId
-Authorization: Session Cookie
-
-Response:
-{
-  "success": true
-}
-```
-
-### Blockchain
-
-#### Check Status
-```http
-GET /api/blockchain/status
-
-Response:
-{
-  "configured": true,
-  "mode": "live" | "simulation",
-  "chain": {
-    "name": "Lisk Sepolia Testnet",
-    "chainId": 4202
-  },
-  "relayer": {
-    "address": "0x...",
-    "balance": "0.5"
-  },
-  "currentBlock": 12345678,
-  "contractAddress": "0x..."
-}
-```
-
-#### Verify Transaction
-```http
-GET /api/blockchain/verify/:txHash
-
-Response:
-{
-  "txHash": "0x...",
-  "verified": true,
-  "blockNumber": 12345678,
-  "timestamp": 1699999999,
-  "explorerUrl": "https://sepolia-blockscout.lisk.com/tx/0x..."
-}
-```
-
----
-
-## Smart Contract
-
-### Contract Info
-- **Network:** Lisk Sepolia Testnet
-- **Chain ID:** 4202
-- **Explorer:** [Lisk Sepolia Blockscout](https://sepolia-blockscout.lisk.com)
-- **Faucet:** [Lisk Sepolia Faucet](https://sepolia-faucet.lisk.com)
-
-### Key Functions
-
-```solidity
-// Register as patient
-function registerAsPatient() external;
-
-// Register as doctor  
-function registerAsDoctor() external;
-
-// Create medical record (doctors only)
-function createRecord(
-    address _patient,
-    string calldata _ipfsCID,
-    bytes32 _contentHash,
-    string calldata _recordType,
-    bytes32 _accessToken
-) external returns (bytes32);
-
-// Create access grant (patients only)
-function createAccessGrant(
-    bytes32 _accessToken,
-    uint256 _expiresAt
-) external returns (bytes32);
-
-// Verify access
-function verifyAccess(
-    address _patient,
-    bytes32 _accessToken
-) external view returns (bool);
-```
-
-### Deploy Your Own Contract
-
-```bash
-# Compile contracts
-npx hardhat compile
-
-# Deploy to Lisk Sepolia testnet
-npx hardhat run scripts/deploy.cjs --network liskSepolia
-```
-
----
-
-## Security
-
-### Encryption
-- **Algorithm:** AES-256-GCM (Authenticated Encryption)
-- **Key Derivation:** PBKDF2 with 100,000 iterations
-- **Salt & IV:** Unique per encryption operation
-- **Authentication Tag:** Prevents tampering
-
-### Access Control
-- Session-based authentication
-- Role-based authorization (Patient/Doctor)
-- Time-limited access tokens
-- Revocable permissions
-
-### Rate Limiting
-- Wallet auth: 5 requests per minute
-- Strict endpoints: 10 requests per 15 minutes
-- General API: 100 requests per minute
-
----
-
-## Development
-
-### Available Scripts
-
-```bash
-# Development
-npm run dev           # Start dev server (backend + frontend)
-npm run dev:client    # Start frontend only
-
-# Build
-npm run build         # Build for production
-
-# Database
-npm run db:push       # Push schema changes
-
-# Type Check
-npm run check         # Run TypeScript checks
-
-# Production
-npm run start         # Start production server
-```
-
-### Testing
-
-```bash
-# Run tests
-npm run test
-```
-
-### Adding New Features
-
-1. **Database Schema:** Edit `shared/schema.ts`
-2. **API Routes:** Edit `server/routes.ts`
-3. **Frontend Pages:** Add to `client/src/pages/`
-4. **Components:** Add to `client/src/components/`
-
----
-
-## Deployment
-
-### Docker (Coming Soon)
-
-```bash
-docker build -t sehati .
-docker run -p 5000:5000 sehati
-```
-
----
-
-## Roadmap
-
-- [x] Wallet-based authentication
-- [x] Medical record encryption (AES-256-GCM)
-- [x] QR code access sharing
-- [x] Audit logging
-- [x] Lisk sepolia testnet integration
-- [ ] IPFS actual storage (currently simulated)
-- [ ] MetaMask direct integration
-- [ ] Mobile app (React Native)
-- [ ] Multi-language support
-- [ ] Export medical records to PDF
-
----
-
-## Contributing
-
-1. Fork repository
-2. Create feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open Pull Request
-
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-## Contact
-
-- **Email:** support@sehati.id
-- **Website:** https://sehati.id
-- **GitHub Issues:** [Report Bug](https://github.com/sehati/sehati/issues)
-
-
----
-
-
----
-
-> [!IMPORTANT]
-> **FOR HACKATHON JUDGES:** a verified Doctor account has been pre-configured for testing.
-> 
-> **Role:** `Doctor (Verified)`
-> **Private Key:** `f23f4a1477c98486e932f26c34fefdbce6116c6fd185ae0de512e3527f24eef4`
-> *(Import this Private Key into MetaMask)*
->
-> **Network:** Lisk Sepolia Testnet
->
-> **Steps to Test:**
-> 1. Import the **Private Key** above into MetaMask.
-> 2. Connect Wallet on the Landing Page.
-> 3. You will be instantly recognized as a verified Doctor.
-
----
-
-
----
-
-> [!IMPORTANT]
-> **FOR HACKATHON JUDGES:** a verified Doctor account has been pre-configured for testing.
-> 
-> **Role:** `Doctor (Verified)`
-> **Private Key:** `f23f4a1477c98486e932f26c34fefdbce6116c6fd185ae0de512e3527f24eef4`
-> *(Import this Private Key into MetaMask)*
->
-> **Network:** Lisk Sepolia Testnet
->
-> **Steps to Test:**
-> 1. Import the **Private Key** above into MetaMask.
-> 2. Connect Wallet on the Landing Page.
-> 3. You will be instantly recognized as a verified Doctor.
-
----
-
-<p align="center">
-  Built with ❤️ for Indonesian Healthcare
+  <img src="https://img.shields.io/badge/Stage-Prototype-orange?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Looking_For-Feedback-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Open_to-Collaboration-green?style=for-the-badge" />
 </p>
