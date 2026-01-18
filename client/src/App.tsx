@@ -6,13 +6,30 @@ import { WagmiProvider } from "wagmi";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/auth-context";
-import NotFound from "@/pages/not-found";
-import Landing from "@/pages/landing";
-import PatientDashboard from "@/pages/patient-dashboard";
-import DoctorDashboard from "@/pages/doctor-dashboard";
-import AdminDashboard from "@/pages/admin-dashboard";
-import Documentation from "@/pages/documentation";
 import { wagmiAdapter, projectId, networks } from "@/lib/wagmi";
+import { lazy, Suspense, useEffect } from "react";
+import { clearWalletConnectStorage } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import PatientDashboard from "@/pages/patient-dashboard"; // Direct import to fix loading issue
+
+// Lazy load other pages for code splitting
+const Landing = lazy(() => import("@/pages/landing"));
+const DoctorDashboard = lazy(() => import("@/pages/doctor-dashboard"));
+const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
+const Documentation = lazy(() => import("@/pages/documentation"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+
+// Loading component
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 animate-spin text-cyan-600 mx-auto mb-4" />
+        <p className="text-slate-600 font-medium">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 // Initialize AppKit
 createAppKit({
@@ -24,7 +41,7 @@ createAppKit({
   },
   themeMode: 'light',
   themeVariables: {
-    '--w3m-accent': '#06b6d4', // Cyan Neon
+    '--w3m-accent': '#06b6d4',
     '--w3m-border-radius-master': '1px',
     '--w3m-font-family': '"Space Grotesk", sans-serif',
     '--w3m-color-mix': '#ffffff',
@@ -34,21 +51,20 @@ createAppKit({
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/patient" component={PatientDashboard} />
-      <Route path="/patient/*" component={PatientDashboard} />
-      <Route path="/doctor" component={DoctorDashboard} />
-      <Route path="/doctor/*" component={DoctorDashboard} />
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/docs" component={Documentation} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageLoader />}>
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route path="/patient" component={PatientDashboard} />
+        <Route path="/patient/*" component={PatientDashboard} />
+        <Route path="/doctor" component={DoctorDashboard} />
+        <Route path="/doctor/*" component={DoctorDashboard} />
+        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/docs" component={Documentation} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
-
-import { useEffect } from "react";
-import { clearWalletConnectStorage } from "@/lib/utils";
 
 function App() {
   // Global Error Handler for WalletConnect "Zombie" Sessions

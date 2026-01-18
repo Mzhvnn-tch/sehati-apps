@@ -1,14 +1,19 @@
 // ----------------------------------------------------------------------
-import { MedicalHistoryBlock } from "@/components/medical-history-block";
 // 1. COMPONENTS & IMPORTS
 // ----------------------------------------------------------------------
 import Layout from "@/components/layout";
 import { HealthRecord } from "@/components/health-card";
 import { QRShare } from "@/components/qr-share";
 import { AuditLog } from "@/components/audit-log";
+import { MedicalHistoryBlock } from "@/components/medical-history-block";
+import { HealthAnalytics } from "@/components/health-analytics";
+import { HealthTimeline } from "@/components/health-timeline";
+import { AIHealthInsights } from "@/components/ai-health-insights";
+import { LoadingStates } from "@/components/loading-states";
+import { NoRecordsState } from "@/components/empty-states";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Share2, FileText, Activity, Blocks, Download, Loader2, ArrowLeft, LogIn, Lock, Unlock, RefreshCw } from "lucide-react";
+import { Share2, FileText, Activity, Blocks, Download, Loader2, ArrowLeft, LogIn, Lock, Unlock, RefreshCw, BarChart3, Brain, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { getPatientRecords, getAuditLogs, getUserByWallet } from "@/lib/api";
@@ -356,63 +361,124 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
           </div>
         </header>
 
-        {/* 2. Nurse Triage / Vitals Widget */}
+        {/* 2. Enhanced Dashboard with Tabs */}
         <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-5 h-5 text-cyan-600" />
-            <h3 className="font-serif font-bold text-slate-800">Latest Vitals</h3>
-            <span className="text-xs text-slate-400 font-medium ml-auto">Verified by Nurse Station</span>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <VitalStat label="Heart Rate" value={vitalsData?.heartRate || "--"} unit="bpm" />
-            <VitalStat label="Blood Pressure" value={vitalsData?.bloodPressure || "--/--"} unit="mmHg" />
-            <VitalStat label="Weight" value={vitalsData?.weight || "--"} unit="kg" />
-            <VitalStat label="Blood Type" value={vitalsData?.bloodType || user.bloodType || "--"} unit="" highlight />
-            <VitalStat label="Sleep" value={vitalsData?.sleep || "--"} unit="hrs" />
-          </div>
-        </section>
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="overview" className="gap-2">
+                <Activity className="w-4 h-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="timeline" className="gap-2">
+                <Clock className="w-4 h-4" />
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="gap-2">
+                <Brain className="w-4 h-4" />
+                AI Insights
+              </TabsTrigger>
+            </TabsList>
 
-        {/* 3. Medical Records Table (Clean List) */}
-        <section className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-            <h3 className="font-serif font-bold text-xl text-slate-800 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-slate-400" />
-              Medical History
-            </h3>
-            <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-medium">{records.length} Records</span>
-          </div>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-8">
+              {/* Vitals Widget */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="w-5 h-5 text-cyan-600" />
+                  <h3 className="font-serif font-bold text-slate-800">Latest Vitals</h3>
+                  <span className="text-xs text-slate-400 font-medium ml-auto">Verified by Nurse Station</span>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                  <VitalStat label="Heart Rate" value={vitalsData?.heartRate || "--"} unit="bpm" />
+                  <VitalStat label="Blood Pressure" value={vitalsData?.bloodPressure || "--/--"} unit="mmHg" />
+                  <VitalStat label="Weight" value={vitalsData?.weight || "--"} unit="kg" />
+                  <VitalStat label="Blood Type" value={vitalsData?.bloodType || user.bloodType || "--"} unit="" highlight />
+                  <VitalStat label="Sleep" value={vitalsData?.sleep || "--"} unit="hrs" />
+                </div>
+              </div>
 
-          <div className="p-6 bg-slate-50/50">
-            <div className="flex flex-col gap-4">
+              {/* Medical Records */}
+              <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+                <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                  <h3 className="font-serif font-bold text-xl text-slate-800 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-slate-400" />
+                    Medical History
+                  </h3>
+                  <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-medium">{records.length} Records</span>
+                </div>
+
+                <div className="p-6 bg-slate-50/50">
+                  <div className="flex flex-col gap-4">
+                    {recordsLoading ? (
+                      <LoadingStates />
+                    ) : decryptedRecords.length === 0 ? (
+                      <NoRecordsState />
+                    ) : (
+                      decryptedRecords.map((record) => (
+                        record.decryptedContent ? (
+                          <MedicalHistoryBlock key={record.id} record={record as any} />
+                        ) : (
+                          <div key={record.id} className="p-4 border border-slate-100 rounded-xl bg-white flex justify-between items-center opacity-70">
+                            <div>
+                              <h4 className="font-bold text-slate-700">{record.recordType}</h4>
+                              <p className="text-xs text-slate-400">{new Date(record.createdAt).toLocaleDateString()}</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-400 text-sm">
+                              <Lock className="w-4 h-4" /> Locked Content
+                            </div>
+                          </div>
+                        )
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Access Logs */}
+              <div className="bg-white rounded-3xl border border-slate-100 p-8">
+                <h3 className="font-serif font-bold text-lg text-slate-800 mb-6">Security Access Log</h3>
+                <MedicalTimeline logs={auditData?.logs || []} />
+              </div>
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics">
               {recordsLoading ? (
-                <p className="text-center text-slate-400 py-8">Loading records...</p>
-              ) : decryptedRecords.length === 0 ? (
-                <p className="text-center text-slate-400 py-12 italic">No medical records found.</p>
+                <LoadingStates />
               ) : (
-                decryptedRecords.map((record) => (
-                  record.decryptedContent ? (
-                    <MedicalHistoryBlock key={record.id} record={record as any} />
-                  ) : (
-                    <div key={record.id} className="p-4 border border-slate-100 rounded-xl bg-white flex justify-between items-center opacity-70">
-                      <div>
-                        <h4 className="font-bold text-slate-700">{record.recordType}</h4>
-                        <p className="text-xs text-slate-400">{new Date(record.createdAt).toLocaleDateString()}</p>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-400 text-sm">
-                        <Lock className="w-4 h-4" /> Locked Content
-                      </div>
-                    </div>
-                  )
-                ))
+                <HealthAnalytics records={decryptedRecords as MedicalRecord[]} />
               )}
-            </div>
-          </div>
-        </section>
+            </TabsContent>
 
-        {/* 4. Access Logs */}
-        <section className="bg-white rounded-3xl border border-slate-100 p-8">
-          <h3 className="font-serif font-bold text-lg text-slate-800 mb-6">Security Access Log</h3>
-          <MedicalTimeline logs={auditData?.logs || []} />
+            {/* Timeline Tab */}
+            <TabsContent value="timeline">
+              {recordsLoading ? (
+                <LoadingStates />
+              ) : (
+                <HealthTimeline records={decryptedRecords as MedicalRecord[]} />
+              )}
+            </TabsContent>
+
+            {/* AI Insights Tab */}
+            <TabsContent value="insights">
+              {recordsLoading ? (
+                <LoadingStates />
+              ) : (
+                <AIHealthInsights
+                  records={decryptedRecords as MedicalRecord[]}
+                  userProfile={{
+                    age: user.age,
+                    bloodType: user.bloodType,
+                    allergies: user.allergies
+                  }}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </section>
       </div>
     </Layout>

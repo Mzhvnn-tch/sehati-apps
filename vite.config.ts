@@ -37,6 +37,25 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Performance optimizations
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor splitting for better caching
+          'vendor-react': ['react', 'react-dom', 'react-hook-form'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-tabs', '@radix-ui/react-toast'],
+          'vendor-charts': ['recharts'],
+          'vendor-web3': ['wagmi', 'viem', 'ethers'],
+          'vendor-motion': ['framer-motion'],
+        },
+      },
+    },
+    // Chunk size limits
+    chunkSizeWarningLimit: 1000,
+    // Source maps for production debugging
+    sourcemap: true,
+    // Minification
+    minify: 'terser',
   },
   server: {
     host: "0.0.0.0",

@@ -10,6 +10,7 @@ import { MagneticButton } from "@/components/ui/magnetic-button";
 import { ParticleNetwork } from "@/components/ui/particle-network";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
+
 // --- Components ---
 
 function PremiumCard({
@@ -262,6 +263,8 @@ export default function Landing() {
                   Provider Access
                 </MagneticButton>
               </div>
+
+
             </motion.div>
 
             {/* Aesthetic Detail / 3D Abstract Representation */}

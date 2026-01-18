@@ -31,6 +31,9 @@ import { web3Service } from "./services/web3";
 import { ipfsService } from "./services/ipfs";
 import { blockchainService } from "./services/blockchain";
 
+
+
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -167,6 +170,8 @@ export async function registerRoutes(
       }
     }
   );
+
+
 
   app.post("/api/auth/generate-nonce",
     strictLimiter,

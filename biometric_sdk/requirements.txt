@@ -1,0 +1,5 @@
+opencv-python>=4.0
+scikit-image>=0.19
+reedsolo>=1.7
+numpy
+cryptography
