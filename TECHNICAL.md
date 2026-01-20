@@ -628,6 +628,95 @@ npx hardhat run scripts/deploy.cjs --network liskSepolia
 
 ---
 
+## 🔑 Demo Admin Wallet for Testing & Research
+
+### ⚠️ IMPORTANT: FOR TESTNET USE ONLY
+
+---
+
+### 📋 **Why This Section Exists**
+
+This project includes **publicly shared admin credentials** to facilitate immediate **testing and demonstration**. This decision enables full system verification without requiring manual approval from the repository owner.
+
+#### **1. Blockchain Verification**
+Doctor approval requires a transaction on the `registerDoctor()` smart contract function, which is restricted to the admin role. By sharing testnet admin credentials, we allow any developer to verify this on-chain interaction independently.
+
+#### **2. Accessible Testing**
+Without these credentials, cloning the repository would result in a "stuck" state for doctor registration. Providing the demo wallet ensures a smooth, end-to-end testing experience for researchers and developers.
+
+#### **3. Standard Practice**
+Sharing demo credentials for non-production environments is a common practice in open-source projects to lower the barrier to entry for testing and review.
+
+**Note:** These credentials are widely distributed and strictly for **Lisk Sepolia Testnet** usage.
+
+---
+
+### 🔐 **Demo Admin Wallet Credentials**
+
+Use these credentials to test the admin dashboard and approve doctor registrations.
+
+**Demo Admin Wallet (Lisk Sepolia Testnet)**
+
+- **Wallet Address:** `0xc771b3c8c495875df90f39467b9aeeac992f18fc`
+- **Testnet Private Key (Public for Demo):** `0xd90f7d77717d3ad8cc725c9b8956e922b09ed63c1c0c445a183f0ebed678d69c`
+- **Chain ID:** 4202
+
+> **Security Note:** This private key is public knowledge. It contains no real funds and grants access only to the testnet contract.
+
+---
+
+### 🧪 **How to Use**
+
+#### **Testing Doctor Approval Flow:**
+
+**Step 1: Register as a Doctor**
+- Connect any wallet and register.
+- Status will be **PENDING**.
+
+**Step 2: Import Demo Admin Wallet**
+- Import the **Testnet Private Key** above into MetaMask.
+- Switch to Lisk Sepolia network.
+
+**Step 3: Approve Doctor**
+- Go to `http://localhost:5000/admin`.
+- Connect with the demo admin wallet.
+- Approve the pending doctor registration.
+
+**Step 4: Verify on Blockchain**
+- Check the transaction hash on the [Lisk Sepolia Explorer](https://sepolia-blockscout.lisk.com/).
+
+---
+
+### 🎯 **Production Deployment**
+
+> **⚠️ CRITICAL: DO NOT USE DEMO CREDENTIALS IN PRODUCTION**
+
+For a live deployment:
+
+1.  **Generate a New Wallet:** Create a secure admin wallet for mainnet.
+2.  **Secure Storage:** Store the private key in a secure environment variable or vault. Never commit it to version control.
+3.  **Update Environment:**
+    ```env
+    ADMIN_WALLET_ADDRESS=0x_YOUR_SECURE_PRODUCTION_WALLET
+    ADMIN_PRIVATE_KEY=0x_YOUR_SECURE_PRODUCTION_KEY
+    ```
+
+---
+
+### 📚 **For Reviewers**
+
+This setup ensures that:
+- The system is fully verifiable on-chain.
+- The distinction between development (demo) and production security models is clear.
+- Testing is frictionless for technical reviewers.
+
+**Verification Steps:**
+1.  Clone repository.
+2.  Use demo admin wallet to approve a test doctor.
+3.  Verify the `DOCTOR_ROLE` assignment on the testnet explorer.
+
+---
+
 ## 🏗️ Architecture
 
 ### **System Overview**
