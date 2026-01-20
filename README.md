@@ -164,7 +164,7 @@ Want to see the architecture, threat model, encryption details, and implementati
 - 📊 [System Architecture Diagram](./TECHNICAL.md#architecture)
 - 🔐 [Security & Encryption Details](./TECHNICAL.md#security--privacy)
 - 🏥 [Real-World Use Cases](./TECHNICAL.md#use-cases--user-stories)
-- 🛣️ [Development Roadmap](./TECHNICAL.md#roadmap)
+- 🛣️ [Development Roadmap](./ROADMAP.md)
 - 📖 [API Documentation](./TECHNICAL.md#quick-start)
 
 ---

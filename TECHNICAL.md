@@ -1087,42 +1087,12 @@ Private Key: NEVER leaves user's device
 
 ## 🛣️ Roadmap
 
-### **Phase 1: MVP ✅ (Current)**
-- [x] Wallet authentication
-- [x] Medical record encryption
-- [x] QR code access sharing
-- [x] Audit logging
-- [x] Blockchain verification (testnet)
-- [x] Health analytics dashboard
-- [x] AI health insights
-- [x] Interactive timeline
+We have moved our detailed development roadmap to a separate document.
 
-### **Phase 2: Production Launch 🚧 (Q2 2026)**
-- [ ] Mainnet deployment (Lisk or Polygon)
-- [ ] Mobile app (React Native)
-- [ ] Multi-language support (EN, ID, CN)
-- [ ] IPFS integration (decentralized storage)
-- [ ] MetaMask direct integration
-- [ ] Doctor verification system
-- [ ] Hospital partnership program
+� **[View the Full Roadmap](./ROADMAP.md)**
 
-### **Phase 3: Ecosystem Growth 📅 (Q3-Q4 2026)**
-- [ ] Insurance integration API
-- [ ] Pharmacy e-prescription system
-- [ ] Lab result auto-upload
-- [ ] Telemedicine integration
-- [ ] Medical device IoT sync
-- [ ] Government health ID bridge
-- [ ] International hospital network
-
-### **Phase 4: Advanced Features 🔮 (2027)**
-- [ ] AI-powered diagnosis assistant
-- [ ] Predictive health analytics
-- [ ] Genomic data integration
-- [ ] Clinical trial matching
-- [ ] Health token rewards
-- [ ] Decentralized health insurance
-- [ ] Cross-chain interoperability
+**Current Focus:** Phase 1 (MVP) Verification & Testing.
+**Next Milestone:** Phase 2 (Production Launch) - Q2 2026.
 
 ---
 
