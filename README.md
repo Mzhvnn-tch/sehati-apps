@@ -146,6 +146,14 @@ This project explores whether **self-sovereign identity concepts** can work for 
 
 ---
 
+## 🧪 Demo & Testing
+
+This project uses a **shared demo admin wallet** on Lisk Sepolia testnet to allow full end-to-end testing of the doctor approval workflow.
+
+👉 **[Get Demo Admin Credentials in TECHNICAL.md](./TECHNICAL.md#demo-admin-wallet-credentials)**
+
+---
+
 ## Technical Deep Dive
 
 Want to see the architecture, threat model, encryption details, and implementation?
