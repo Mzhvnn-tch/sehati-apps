@@ -179,8 +179,6 @@ cd sehati && npm install && npm run dev
 
 **Talk to us:**
 - 📧 Email: sehatihealth.app@gmail.com
-- 🐦 Twitter: [@sehati_id](https://twitter.com/sehati_id)  
-- 💬 Telegram: [t.me/sehati_community](https://t.me/sehati_community)
 
 **Contribute:**
 - Healthcare domain expert? Help us navigate regulation
