@@ -65,7 +65,7 @@ This project explores whether **self-sovereign identity concepts** can work for 
 ```
 1. Patient authenticates with MetaMask (wallet = identity)
 2. Doctor creates record → encrypted with patient's public key (AES-256)
-3. Content hash submitted to Lisk L2 (permanent proof, ~$0.001 cost)
+3. Content hash submitted to Ethereum Sepolia (permanent proof, ~$0.001 cost)
 4. Patient shares QR code → doctor scans → temporary access granted
 5. Patient revokes access → blockchain update (instant)
 ```
@@ -82,7 +82,7 @@ This project explores whether **self-sovereign identity concepts** can work for 
 ## Current Status
 
 **Early prototype built to test assumptions:**
-- ✅ Working demo on Lisk Sepolia testnet
+- ✅ Working demo on Ethereum Sepolia testnet
 - ✅ Patient & doctor portals with wallet auth
 - ✅ AES-256-GCM encryption for medical data
 - ✅ QR code access tokens (time-limited, revocable)
@@ -90,7 +90,7 @@ This project explores whether **self-sovereign identity concepts** can work for 
 - ✅ Audit logging
 - ✅ Health analytics dashboard
 
-**Tech:** React 19, TypeScript, PostgreSQL, Solidity, Lisk L2
+**Tech:** React 19, TypeScript, PostgreSQL, Solidity, Ethereum Sepolia
 
 **Try it:** `git clone` → `npm install` → `npm run dev` → Open MetaMask
 
@@ -148,7 +148,7 @@ This project explores whether **self-sovereign identity concepts** can work for 
 
 ## 🧪 Demo & Testing
 
-This project uses a **shared demo admin wallet** on Lisk Sepolia testnet to allow full end-to-end testing of the doctor approval workflow.
+This project uses a **shared demo admin wallet** on Ethereum Sepolia testnet to allow full end-to-end testing of the doctor approval workflow.
 
 👉 **[Get Demo Admin Credentials in TECHNICAL.md](./TECHNICAL.md#demo-admin-wallet-credentials)**
 

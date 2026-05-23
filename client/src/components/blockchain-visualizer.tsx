@@ -106,7 +106,7 @@ export function BlockchainVisualizer({ transactions: propTransactions }: Blockch
                         <Blocks className="w-6 h-6 text-purple-600" />
                         Blockchain Activity
                     </h3>
-                    <p className="text-sm text-muted-foreground">Real-time transactions on Lisk Sepolia</p>
+                    <p className="text-sm text-muted-foreground">Real-time transactions on Ethereum Sepolia</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />

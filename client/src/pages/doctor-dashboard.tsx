@@ -20,9 +20,9 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { clearWalletConnectStorage } from "@/lib/utils";
 import type { User, MedicalRecord } from "@shared/schema";
-import { useAppKitAccount, useDisconnect, AppKitButton } from "@reown/appkit/react";
+import { WalletConnect } from "@/components/wallet-connect";
 import { DoctorRegistration } from "@/components/doctor-registration";
-import { useAccount, useSwitchChain } from "wagmi";
+import { useAccount, useSwitchChain, useDisconnect } from "wagmi";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 
 // ----------------------------------------------------------------------
@@ -32,7 +32,7 @@ export default function DoctorDashboard() {
   const { user, loginWithSignature, isLoading: authLoading, disconnect: authDisconnect } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAccount();
   const { chainId } = useAccount();
   const signer = useEthersSigner();
   const { disconnect } = useDisconnect();
@@ -66,7 +66,14 @@ export default function DoctorDashboard() {
         setIsChecking(true);
         try {
           const { user: existingUser } = await getUserByWallet(address);
-          if (existingUser && existingUser.role === "doctor") setLoginRequired(true);
+          if (existingUser) {
+            if (existingUser.role === "doctor") {
+              setLoginRequired(true);
+            } else {
+              toast({ title: "Redirecting", description: "You are registered as a patient." });
+              window.location.href = "/patient";
+            }
+          }
         } catch (error: any) {
           if (error.status === 404 || error.message?.includes("User not found")) setShowRegistration(true);
         } finally { setIsChecking(false); }
@@ -80,6 +87,13 @@ export default function DoctorDashboard() {
       setShowRegistration(false);
       setLoginRequired(false);
       setIsChecking(false);
+    } else {
+      setTimeout(() => {
+        const w3aModal = document.getElementById("w3a-modal");
+        if (w3aModal) w3aModal.style.display = "none";
+        const overlay = document.querySelector(".w3a-modal__overlay");
+        if (overlay) (overlay as HTMLElement).style.display = "none";
+      }, 500);
     }
   }, [isConnected]);
 
@@ -92,9 +106,9 @@ export default function DoctorDashboard() {
   };
 
   const handleLogin = async () => {
-    if (Number(chainId) !== 4202) {
-      toast({ title: "Wrong Network", description: "Switching to Lisk Sepolia...", duration: 3000 });
-      try { switchChain({ chainId: 4202 }); } catch (e) { }
+    if (Number(chainId) !== 11155111) {
+      toast({ title: "Wrong Network", description: "Switching to Ethereum Sepolia...", duration: 3000 });
+      try { switchChain({ chainId: 11155111 }); } catch (e) { }
       return;
     }
     if (!signer || !address) return;
@@ -144,7 +158,7 @@ export default function DoctorDashboard() {
           <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">Doctor Console</h1>
           <p className="text-slate-500 mb-8 font-medium">Licensed Access Only</p>
           <div className="flex justify-center mb-8 scale-110">
-            <AppKitButton />
+            <WalletConnect />
           </div>
           <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600" onClick={() => setLocation("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
@@ -161,19 +175,23 @@ export default function DoctorDashboard() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="diamond-card max-w-md w-full p-10 rounded-3xl relative z-10 text-center"
+          className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 border border-slate-100 relative z-10 text-center"
         >
-          <div className="w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center mx-auto mb-6 text-purple-600 animate-pulse">
+          <div className="w-16 h-16 rounded-full bg-cyan-50 flex items-center justify-center mx-auto mb-6 text-cyan-600 animate-pulse">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-serif font-bold text-slate-900 mb-2">Identify Verification</h1>
-          <p className="text-slate-500 mb-8">Sign to prove ownership of this node.</p>
+          <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Security Verification</h1>
+          <p className="text-slate-500 mb-8 font-light">
+            Your data is encrypted. Sign the message to prove ownership.
+          </p>
 
-          <MagneticButton className="w-full bg-slate-900 text-white font-bold h-12 mb-4 hover:bg-slate-800" onClick={handleLogin} disabled={isLoggingIn}>
-            {isLoggingIn ? <Loader2 className="animate-spin w-5 h-5" /> : "Verify Credentials"}
-          </MagneticButton>
+          <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-12 mb-4 rounded-xl shadow-md" onClick={handleLogin} disabled={isLoggingIn}>
+            {isLoggingIn ? <Loader2 className="animate-spin w-5 h-5" /> : "Verify Identity"}
+          </Button>
 
-          <Button variant="ghost" className="text-slate-400" onClick={handleDisconnect}>Cancel</Button>
+          <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600 hover:bg-slate-50" onClick={handleDisconnect}>
+            Cancel
+          </Button>
         </motion.div>
       </div>
     );
@@ -390,7 +408,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
                 <div className="text-center mb-6">
                   <CheckCircle2 className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
                   <h3 className="text-2xl font-serif font-bold text-slate-800">Record Immutable</h3>
-                  <p className="text-slate-500">Successfully written to Lisk Sepolia.</p>
+                  <p className="text-slate-500">Successfully written to Ethereum Sepolia.</p>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100 font-mono text-xs">
                   <div className="flex justify-between mb-1"><span className="text-slate-400">TX</span> <span className="text-cyan-600 truncate max-w-[150px]">{lastCreatedRecord.txHash}</span></div>
@@ -414,7 +432,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
           <Button variant="outline" className="text-xs h-8 ml-2" onClick={() => setManualTokenInput(manualTokenInput ? "" : " ")}>
             {manualTokenInput ? "Cancel Input" : "Manual Input"}
           </Button>
-          <AppKitButton />
+          <WalletConnect />
         </div>
       </div>
 
@@ -618,7 +636,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
                     <div className="absolute inset-0 flex items-center justify-center font-bold text-xl text-slate-700">{progress}%</div>
                   </div>
                   <h4 className="font-bold text-slate-800 mb-2">Processing Secure Record</h4>
-                  <p className="text-sm text-slate-400">{animState === 'encrypting' ? 'Encrypting with Patient Key...' : animState === 'uploading' ? 'Hashing to IPFS...' : 'Minting on Lisk Sepolia...'}</p>
+                  <p className="text-sm text-slate-400">{animState === 'encrypting' ? 'Encrypting with Patient Key...' : animState === 'uploading' ? 'Hashing to IPFS...' : 'Minting on Ethereum Sepolia...'}</p>
                 </div>
               )
               }

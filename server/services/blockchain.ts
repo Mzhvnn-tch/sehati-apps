@@ -43,15 +43,15 @@ export interface MetaTransactionRequest {
 class BlockchainService {
   private provider: JsonRpcProvider | null = null;
   private contract: Contract | null = null;
-  private chainId: number = 4202;
-  private explorerBaseUrl: string = 'https://sepolia-blockscout.lisk.com';
+  private chainId: number = 11155111;
+  private explorerBaseUrl: string = 'https://sepolia.etherscan.io';
 
   constructor() {
     this.initialize();
   }
 
   private initialize(): void {
-    const rpcUrl = process.env.LISK_SEPOLIA_RPC || 'https://rpc.sepolia-api.lisk.com';
+    const rpcUrl = process.env.SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
     const contractAddress = process.env.CONTRACT_ADDRESS;
 
     try {
@@ -205,12 +205,48 @@ class BlockchainService {
   getChainInfo(): { chainId: number; name: string; explorerUrl: string } {
     return {
       chainId: this.chainId,
-      name: 'Polygon Amoy Testnet',
+      name: 'Ethereum Sepolia Testnet',
       explorerUrl: this.explorerBaseUrl
     };
   }
 
 
+
+  async fundWallet(targetAddress: string, amountEth: string = "0.005"): Promise<boolean> {
+    const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY;
+    if (!adminPrivateKey || !this.provider) {
+      console.warn('[Blockchain] Faucet disabled: No ADMIN_PRIVATE_KEY or provider');
+      return false;
+    }
+
+    try {
+      // Normalize address to proper EIP-55 checksum format
+      const checksumAddress = ethers.getAddress(targetAddress.toLowerCase());
+      const adminWallet = new ethers.Wallet(adminPrivateKey, this.provider);
+      
+      // Check target balance first
+      const balance = await this.provider.getBalance(checksumAddress);
+      const minBalance = ethers.parseEther("0.001");
+      
+      if (balance > minBalance) {
+        console.log(`[Blockchain] Wallet ${checksumAddress} already has sufficient funds (${ethers.formatEther(balance)} ETH). Skipping faucet.`);
+        return true;
+      }
+
+      console.log(`[Blockchain] Funding wallet ${checksumAddress} with ${amountEth} ETH...`);
+      const tx = await adminWallet.sendTransaction({
+        to: checksumAddress,
+        value: ethers.parseEther(amountEth)
+      });
+      
+      await tx.wait(1);
+      console.log(`[Blockchain] Successfully funded wallet ${checksumAddress}. TX: ${tx.hash}`);
+      return true;
+    } catch (error) {
+      console.error(`[Blockchain] Failed to fund wallet ${targetAddress}:`, error);
+      return false;
+    }
+  }
 
   async getTransactionByHash(txHash: string): Promise<{
     blockNumber: number;

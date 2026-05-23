@@ -16,10 +16,10 @@ module.exports = {
     hardhat: {
       chainId: 31337,
     },
-    liskSepolia: {
-      url: process.env.LISK_SEPOLIA_RPC || "https://sepolia.lisk.com",
-      chainId: 4202,
-      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/YOUR-PROJECT-ID",
+      chainId: 11155111,
+      accounts: process.env.ADMIN_PRIVATE_KEY ? [process.env.ADMIN_PRIVATE_KEY] : [],
     },
     amoy: {
       url: process.env.POLYGON_AMOY_RPC || "https://rpc-amoy.polygon.technology",

@@ -1,23 +1,21 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createAppKit } from "@reown/appkit/react";
+
 import { WagmiProvider } from "wagmi";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/auth-context";
-import { wagmiAdapter, projectId, networks } from "@/lib/wagmi";
-import { lazy, Suspense, useEffect } from "react";
+import { config } from "@/lib/wagmi";
+import { Suspense, useEffect } from "react";
 import { clearWalletConnectStorage } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
-import PatientDashboard from "@/pages/patient-dashboard"; // Direct import to fix loading issue
-
-// Lazy load other pages for code splitting
-const Landing = lazy(() => import("@/pages/landing"));
-const DoctorDashboard = lazy(() => import("@/pages/doctor-dashboard"));
-const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
-const Documentation = lazy(() => import("@/pages/documentation"));
-const NotFound = lazy(() => import("@/pages/not-found"));
+import PatientDashboard from "@/pages/patient-dashboard";
+import Landing from "@/pages/landing";
+import DoctorDashboard from "@/pages/doctor-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard";
+import Documentation from "@/pages/documentation";
+import NotFound from "@/pages/not-found";
 
 // Loading component
 function PageLoader() {
@@ -31,23 +29,7 @@ function PageLoader() {
   );
 }
 
-// Initialize AppKit
-createAppKit({
-  adapters: [wagmiAdapter],
-  networks,
-  projectId,
-  features: {
-    analytics: true
-  },
-  themeMode: 'light',
-  themeVariables: {
-    '--w3m-accent': '#06b6d4',
-    '--w3m-border-radius-master': '1px',
-    '--w3m-font-family': '"Space Grotesk", sans-serif',
-    '--w3m-color-mix': '#ffffff',
-    '--w3m-color-mix-strength': 10
-  }
-});
+
 
 function Router() {
   return (
@@ -91,7 +73,7 @@ function App() {
   }, []);
 
   return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TooltipProvider>

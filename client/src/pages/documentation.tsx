@@ -28,7 +28,7 @@ const DOC_SECTIONS = [
                     <div className="p-6 rounded-xl bg-white/5 border border-white/10">
                         <Network className="w-8 h-8 text-primary mb-4" />
                         <h3 className="text-xl font-bold text-white mb-2">Decentralized Trust</h3>
-                        <p className="text-muted-foreground text-sm">Access rights and record integrity are verified on the Lisk blockchain, eliminating central points of failure.</p>
+                        <p className="text-muted-foreground text-sm">Access rights and record integrity are verified on the Ethereum Sepolia blockchain, eliminating central points of failure.</p>
                     </div>
                 </div>
             </div>
@@ -64,7 +64,7 @@ const DOC_SECTIONS = [
 
                     <div className="relative pl-8 border-l-2 border-primary/20">
                         <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary" />
-                        <h3 className="text-xl font-bold text-white mb-2">3. Verification Layer (Lisk Sepolia)</h3>
+                        <h3 className="text-xl font-bold text-white mb-2">3. Verification Layer (Ethereum Sepolia)</h3>
                         <p className="text-muted-foreground">
                             Smart contracts registry stores the mapping of <code>User Address -&gt; IPFS Hash</code>.
                             It also manages the Access Control List (ACL) for doctor permissions.
@@ -107,7 +107,7 @@ const DOC_SECTIONS = [
         content: (
             <div className="space-y-6">
                 <h2 className="text-3xl font-serif font-bold text-white">Smart Contracts</h2>
-                <p className="text-muted-foreground">Deployed on Lisk Sepolia Testnet.</p>
+                <p className="text-muted-foreground">Deployed on Ethereum Sepolia Testnet.</p>
 
                 <div className="space-y-4">
                     <div className="p-4 bg-white/5 rounded-lg border border-white/10 flex justify-between items-center group">

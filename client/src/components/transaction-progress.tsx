@@ -18,7 +18,7 @@ const STEPS: StepConfig[] = [
     { id: "encrypt", label: "Encryption", description: "Securing data with AES-256..." },
     { id: "ipfs", label: "Decentralized Storage", description: "Pinning proof to IPFS network..." },
     { id: "sign", label: "Digital Signature", description: "Waiting for wallet confirmation..." },
-    { id: "blockchain", label: "Lisk Consensus", description: "Finalizing block validation..." },
+    { id: "blockchain", label: "Sepolia Consensus", description: "Finalizing block validation..." },
     { id: "db", label: "Local Indexing", description: "Syncing hospital database..." },
 ];
 

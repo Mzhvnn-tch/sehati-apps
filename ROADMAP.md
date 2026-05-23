@@ -10,14 +10,14 @@ This document outlines the development trajectory for Sehati, from current MVP s
 - [x] Medical record encryption (AES-256-GCM)
 - [x] QR code access sharing (Time-limited)
 - [x] Audit logging (Immutable history)
-- [x] Blockchain verification (Lisk Sepolia Testnet)
+- [x] Blockchain verification (Ethereum Sepolia Testnet)
 - [x] Health analytics dashboard
 - [x] AI health insights
 - [x] Interactive timeline
 
 ### **Phase 2: Production Launch 🚧 (Q2 2026)**
 **Focus:** Scalability, decentralized storage, and mobile accessibility.
-- [ ] Mainnet deployment (Lisk or Polygon)
+- [ ] Mainnet deployment (Ethereum or Polygon)
 - [ ] Mobile app (React Native)
 - [ ] Multi-language support (EN, ID, CN)
 - [ ] IPFS integration (decentralized storage for large files)

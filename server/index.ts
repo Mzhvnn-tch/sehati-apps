@@ -17,6 +17,12 @@ declare module "http" {
 
 setupSecurity(app);
 
+// Bypass ngrok browser warning for all responses (needed for Vite dynamic imports)
+app.use((_req, res, next) => {
+  res.setHeader("ngrok-skip-browser-warning", "true");
+  next();
+});
+
 app.use(
   express.json({
     verify: (req, _res, buf) => {

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Microscope, Pill, FileText, Search, Filter, ChevronDown } from "lucide-react";
+import { Calendar, Microscope, Pill, FileText, Search, Filter, ChevronDown, Lock, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -127,12 +127,16 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
                                 >
                                     {/* Timeline Node */}
                                     <motion.div
-                                        className={`absolute left-4 w-8 h-8 rounded-full bg-${color}-500 border-4 border-white shadow-lg flex items-center justify-center z-10`}
+                                        className={`absolute left-4 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center z-10 shadow-[0_0_15px_rgba(0,0,0,0.1)] ring-4 ring-offset-2 ring-offset-slate-50`}
                                         whileHover={{ scale: 1.2 }}
                                         style={{
                                             backgroundColor: color === 'blue' ? '#3b82f6' :
                                                 color === 'emerald' ? '#10b981' :
-                                                    color === 'purple' ? '#a855f7' : '#6b7280'
+                                                    color === 'purple' ? '#a855f7' : '#6b7280',
+                                            boxShadow: color === 'blue' ? '0 0 20px rgba(59,130,246,0.5)' :
+                                                color === 'emerald' ? '0 0 20px rgba(16,185,129,0.5)' :
+                                                    color === 'purple' ? '0 0 20px rgba(168,85,247,0.5)' : '0 0 20px rgba(107,114,128,0.5)',
+                                            borderColor: 'white'
                                         }}
                                     >
                                         <Icon className="w-4 h-4 text-white" />
@@ -140,12 +144,11 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
 
                                     {/* Record Card */}
                                     <motion.div
-                                        className="diamond-card rounded-xl p-6 cursor-pointer hover:shadow-xl transition-all"
+                                        className="bg-white/80 backdrop-blur-md border border-white/60 shadow-lg shadow-slate-200/40 rounded-2xl p-6 cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1"
                                         onClick={() => {
                                             setExpandedId(isExpanded ? null : record.id);
                                             onRecordClick?.(record);
                                         }}
-                                        whileHover={{ y: -2 }}
                                     >
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex-1">
@@ -172,7 +175,7 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
                                                         {format(new Date(record.createdAt), 'PPP')}
                                                     </span>
                                                     <span>•</span>
-                                                    <span>{record.hospitalName}</span>
+                                                    <span className="font-medium text-slate-600">{record.hospitalName}</span>
                                                 </div>
                                             </div>
                                             <ChevronDown
@@ -191,21 +194,45 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
                                                     transition={{ duration: 0.2 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="pt-4 mt-4 border-t border-slate-200 space-y-3">
-                                                        <div className="bg-slate-50 rounded-lg p-4">
-                                                            <p className="text-sm text-slate-600 font-mono">
-                                                                {record.encryptedContent ? 'Encrypted Content' : 'No content available'}
-                                                            </p>
+                                                    <div className="pt-4 mt-4 border-t border-slate-100 space-y-4">
+                                                        <div className="bg-slate-50/80 rounded-xl p-5 border border-slate-100/50">
+                                                            <div className="text-sm text-slate-700 leading-relaxed">
+                                                                {(() => {
+                                                                    // @ts-ignore
+                                                                    const contentToParse = record.decryptedContent;
+                                                                    if (!contentToParse) {
+                                                                        return <span className="font-mono text-slate-400 flex items-center gap-2"><Lock className="w-3 h-3" /> Encrypted Content (Please Unlock)</span>;
+                                                                    }
+                                                                    try {
+                                                                        const parsed = JSON.parse(contentToParse);
+                                                                        return (
+                                                                            <div className="space-y-3">
+                                                                                {parsed.diagnosis && (
+                                                                                    <div><span className="font-bold text-slate-800 block mb-1">Diagnosis</span> {parsed.diagnosis}</div>
+                                                                                )}
+                                                                                {parsed.prescription && (
+                                                                                    <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100/50"><span className="font-bold text-blue-800 block mb-1 flex items-center gap-2"><Pill className="w-3 h-3"/> Prescription</span> <span className="font-mono text-blue-900">{parsed.prescription}</span></div>
+                                                                                )}
+                                                                                {parsed.allergies && (
+                                                                                    <div className="bg-red-50/50 p-3 rounded-lg border border-red-100/50"><span className="font-bold text-red-800 block mb-1 flex items-center gap-2"><AlertTriangle className="w-3 h-3"/> Allergies</span> <span className="font-medium text-red-900">{parsed.allergies}</span></div>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    } catch {
+                                                                        return <span className="whitespace-pre-line">{contentToParse}</span>;
+                                                                    }
+                                                                })()}
+                                                            </div>
                                                         </div>
 
                                                         {record.blockchainHash && (
-                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                <span className="font-mono bg-purple-50 px-2 py-1 rounded border border-purple-200">
-                                                                    TX: {record.blockchainHash.substring(0, 10)}...
+                                                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                                <span className="font-mono bg-slate-100 px-2 py-1 rounded-md border border-slate-200 shadow-sm flex items-center gap-1">
+                                                                    TX: {record.blockchainHash.substring(0, 16)}...
                                                                 </span>
                                                                 {record.ipfsHash && (
-                                                                    <span className="font-mono bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                                                                        IPFS: {record.ipfsHash.substring(0, 10)}...
+                                                                    <span className="font-mono bg-slate-100 px-2 py-1 rounded-md border border-slate-200 shadow-sm flex items-center gap-1">
+                                                                        IPFS: {record.ipfsHash.substring(0, 16)}...
                                                                     </span>
                                                                 )}
                                                             </div>

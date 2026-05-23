@@ -73,6 +73,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
+  const autoFundWallet = async (walletAddress: string) => {
+    try {
+      await fetch("/api/faucet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ walletAddress }),
+      });
+      console.log("[Faucet] Auto-fund requested for", walletAddress);
+    } catch (e) {
+      console.warn("[Faucet] Auto-fund failed (non-critical):", e);
+    }
+  };
+
   const connectWithWalletSignature = async (data: RegistrationData, signature: string, message: string) => {
     setIsLoading(true);
     try {
@@ -92,6 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setUser(newUser);
       localStorage.setItem("sehati_user", JSON.stringify(newUser));
+
+      // Auto-fund wallet with gas fees (fire and forget)
+      autoFundWallet(data.walletAddress);
     } catch (error: any) {
       console.error("Failed to connect wallet with signature:", error);
       const errorMessage = error?.message || "Failed to complete registration. Please try again.";
@@ -129,6 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (verifyResult.exists && verifyResult.user) {
         setUser(verifyResult.user);
         localStorage.setItem("sehati_user", JSON.stringify(verifyResult.user));
+        // Auto-fund wallet with gas fees (fire and forget)
+        autoFundWallet(walletAddress);
         return { success: true, verified: true, exists: true, userRole: verifyResult.user.role as "patient" | "doctor" };
       }
 
@@ -136,6 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session.authenticated && session.user) {
         setUser(session.user);
         localStorage.setItem("sehati_user", JSON.stringify(session.user));
+        // Auto-fund wallet with gas fees (fire and forget)
+        autoFundWallet(walletAddress);
         return { success: true, verified: true, exists: true, userRole: session.user.role as "patient" | "doctor" };
       }
 

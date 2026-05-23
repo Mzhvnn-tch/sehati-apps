@@ -15,6 +15,7 @@ export const users = pgTable("users", {
   age: integer("age").notNull(),
   hospital: text("hospital"), // For doctors - where they practice
   publicKey: text("public_key"), // For encryption
+  encryptedPrivateKey: text("encrypted_private_key"), // For device sync (Zero-Knowledge Keystore)
   isVerified: boolean("is_verified").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

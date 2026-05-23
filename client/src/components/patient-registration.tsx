@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { generateNonce } from "@/lib/api";
-import { generateKeyPair } from "@/lib/encryption";
+import { generateKeyPair, encryptPrivateKeyWithPIN } from "@/lib/encryption";
 import { BrowserProvider } from "ethers";
 import { LogOut } from "lucide-react";
 // @ts-ignore
@@ -24,6 +24,7 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
     name: "",
     age: "",
     gender: "male" as "male" | "female" | "other",
+    pin: "",
   });
   const { toast } = useToast();
   const { connectWithWalletSignature } = useAuth();
@@ -35,10 +36,10 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.age) {
+    if (!formData.name.trim() || !formData.age || formData.pin.length !== 6) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please fill in all fields and ensure Health PIN is exactly 6 digits.",
         variant: "destructive",
       });
       return;
@@ -66,11 +67,11 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
       if (address) {
         // Network Check (Added for Robustness)
         const chainIdNumber = Number(chainId);
-        if (chainIdNumber && chainIdNumber !== 4202) {
+        if (chainIdNumber && chainIdNumber !== 11155111) {
           console.warn(`⚠️ Registration: Wrong Network ${chainIdNumber}`);
-          toast({ title: "Wrong Network", description: "Switching to Lisk Sepolia for registration...", duration: 3000 });
+          toast({ title: "Wrong Network", description: "Switching to Ethereum Sepolia for registration...", duration: 3000 });
           try {
-            switchChain({ chainId: 4202 });
+            switchChain({ chainId: 11155111 });
             // We return here to let the switch happen. User needs to click Register again after switch.
             // Or we could await if switchChain was async in a way that blocks, but usually it triggers a prompt.
             setLoading(false);
@@ -111,18 +112,30 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
           // Step 1.5: Register on Blockchain (CRITICAL FIX)
           toast({
             title: "Step 1/4",
-            description: "Registering identity on Blockchain...",
+            description: "Funding vault and registering identity on Blockchain...",
             duration: 15000,
           });
 
           try {
+            // Auto-Faucet Call
+            try {
+              const faucetRes = await fetch("/api/faucet", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ walletAddress })
+              });
+              if (!faucetRes.ok) console.warn("Faucet call failed or skipped");
+            } catch (e) {
+              console.warn("Faucet error:", e);
+            }
+
             const tx = await registerAsPatientOnChain(signer);
             console.log("🔗 Blockchain Registration Tx:", tx.hash);
             // We don't necessarily need to wait for confirmation for UI responsiveness, 
             // but strictly speaking we should. For now, let's fire and forget or wait 1 block if we want to be safe.
             // But to keep it fast, we assume success or let backend handle eventual consistency if needed.
             // Ideally: await tx.wait(); 
-            toast({ title: "Blockchain Tx Sent", description: "Identity is being minted on Lisk Sepolia." });
+            toast({ title: "Blockchain Tx Sent", description: "Identity is being minted on Ethereum Sepolia." });
           } catch (e: any) {
             console.error("Blockchain registration failed:", e);
             if (e.message.includes("already registered")) {
@@ -173,6 +186,21 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
           };
 
           await connectWithWalletSignature(dataWithKey, signature, message);
+          
+          // [NEW] Zero-Knowledge Keystore Backup
+          toast({
+            title: "Backup Setup",
+            description: "Encrypting and syncing your Keystore securely...",
+            duration: 5000,
+          });
+          const encryptedPrivateKey = await encryptPrivateKeyWithPIN(privateKeyStr, formData.pin);
+          const backupRes = await fetch("/api/auth/backup-key", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ encryptedPrivateKey })
+          });
+          if (!backupRes.ok) throw new Error("Failed to sync encrypted keystore");
+
           console.log("✅ Registration completed successfully!");
 
         } catch (error: any) {
@@ -296,6 +324,24 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
             <option value="female">Female</option>
             <option value="other">Other</option>
           </select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-gray-700">Health PIN (6 Digits)</label>
+          <Input
+            type="password"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={6}
+            placeholder="Create a 6-digit PIN for Recovery"
+            value={formData.pin}
+            onChange={(e) => setFormData({ ...formData, pin: e.target.value.replace(/[^0-9]/g, '') })}
+            disabled={loading}
+            className="font-mono tracking-[0.5em] text-center"
+          />
+          <p className="text-[10px] text-gray-500 mt-1">
+            This PIN encrypts your medical data key. Do not forget it!
+          </p>
         </div>
 
         <Button

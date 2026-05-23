@@ -1,6 +1,6 @@
 import { MedicalRecord, User } from "@shared/schema";
 import { format } from "date-fns";
-import { ExternalLink, Stethoscope, FileText, Pill, AlertTriangle, ShieldCheck, Activity } from "lucide-react";
+import { ExternalLink, Stethoscope, FileText, Pill, AlertTriangle, ShieldCheck, Activity, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MedicalHistoryBlockProps {
@@ -33,87 +33,108 @@ export function MedicalHistoryBlock({ record, doctor }: MedicalHistoryBlockProps
     const allergiesText = data.allergies;
 
     return (
-        <div className="group relative bg-white/70 backdrop-blur-sm border border-slate-100 rounded-3xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 hover:border-cyan-200/50 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-white via-transparent to-cyan-50/30 opacity-50" />
-            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-4">
+        <div className="group relative bg-white/80 backdrop-blur-xl border border-white/60 rounded-[2rem] p-6 md:p-8 transition-all duration-500 hover:shadow-2xl hover:shadow-cyan-100/40 hover:-translate-y-1 overflow-hidden shadow-xl shadow-slate-200/40">
+            {/* Subtle Glassmorphism Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-transparent to-cyan-50/30 pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-6 md:gap-8">
 
-                {/* LEFT: Type & Date */}
-                <div className="flex-shrink-0 min-w-[150px]">
-                    <h3 className="text-xl font-serif font-bold text-slate-800 uppercase tracking-tighter">
+                {/* LEFT: Type & Date (Visual Anchor) */}
+                <div className="flex-shrink-0 min-w-[160px] relative">
+                    {/* Glowing Accent Line */}
+                    <div className="absolute -left-6 md:-left-8 top-0 bottom-0 w-1.5 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
+                    <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-800 uppercase tracking-tight leading-none mb-3">
                         {record.recordType.replace("_", " ")}
                     </h3>
-                    <div className="mt-1 flex flex-col gap-1 text-xs font-medium text-slate-400">
-                        <span>{format(new Date(record.createdAt), "dd MMM yyyy")}</span>
-                        <span className="flex items-center gap-1">
-                            <Stethoscope className="w-3 h-3" />
-                            {doctor ? `Dr. ${doctor.name}` : `Doctor ID: ${record.doctorId.substring(0, 6)}...`}
+                    <div className="flex flex-col gap-2 text-sm font-medium text-slate-500">
+                        <span className="flex items-center gap-2 bg-slate-50/80 px-3 py-1.5 rounded-full border border-slate-100/50 w-fit shadow-sm">
+                            <Calendar className="w-4 h-4 text-cyan-600" />
+                            {(() => {
+                                const dateNum = Number(record.createdAt);
+                                const dateObj = new Date(isNaN(dateNum) ? record.createdAt : dateNum);
+                                return isNaN(dateObj.getTime()) ? "Unknown Date" : format(dateObj, "dd MMM yyyy");
+                            })()}
                         </span>
-                        <span className="text-cyan-600 font-bold">{record.hospitalName}</span>
+                        <span className="flex items-center gap-2 px-1">
+                            <Stethoscope className="w-4 h-4 text-slate-400" />
+                            {doctor ? `Dr. ${doctor.name}` : `Dr. ${record.doctorId.substring(0, 6).toUpperCase()}`}
+                        </span>
+                        <span className="text-cyan-700 font-bold px-1">{record.hospitalName}</span>
                     </div>
                 </div>
 
-                {/* CENTER: Clinical Content */}
-                <div className="flex-1 space-y-4">
-                    {/* Diagnosis */}
-                    <div>
-                        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line font-medium border-l-2 border-slate-200 pl-3">
+                {/* CENTER: Clinical Content (Color Grouped Blocks) */}
+                <div className="flex-1 space-y-5 w-full">
+                    {/* Diagnosis / Title */}
+                    <div className="relative pl-4 border-l-2 border-cyan-200/50">
+                        <h4 className="text-xl md:text-2xl font-serif font-bold text-cyan-900 mb-2">
+                            {record.title}
+                        </h4>
+                        <p className="text-base text-slate-700 leading-relaxed whitespace-pre-line font-medium">
                             {diagnosisText}
                         </p>
                     </div>
 
-                    {/* Prescription Section */}
+                    {/* Prescription Section (Blue Block) */}
                     {prescriptionText && (
-                        <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
-                            <div className="flex items-center gap-2 mb-1 text-blue-700 font-bold text-xs uppercase">
-                                <Pill className="w-3 h-3" /> Prescription
+                        <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/30 rounded-2xl p-4 border border-blue-100/50 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+                            <div className="flex items-center gap-2 mb-2 text-blue-700 font-bold text-xs uppercase tracking-wider">
+                                <Pill className="w-4 h-4" /> Prescribed Medication
                             </div>
-                            <p className="text-xs text-blue-900 font-mono whitespace-pre-line">
+                            <p className="text-sm text-blue-900 font-mono whitespace-pre-line leading-relaxed">
                                 {prescriptionText}
                             </p>
                         </div>
                     )}
 
-                    {/* Allergies Section */}
+                    {/* Allergies Section (Red Block) */}
                     {allergiesText && (
-                        <div className="bg-red-50/50 rounded-lg p-3 border border-red-100 inline-block">
-                            <div className="flex items-center gap-2 text-red-700 font-bold text-xs uppercase">
-                                <AlertTriangle className="w-3 h-3" /> Allergies Noted
+                        <div className="bg-gradient-to-br from-red-50/80 to-rose-50/30 rounded-2xl p-4 border border-red-100/50 shadow-sm relative overflow-hidden">
+                             <div className="absolute top-0 right-0 w-16 h-16 bg-red-400/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+                            <div className="flex items-center gap-2 text-red-600 font-bold text-xs uppercase tracking-wider mb-2">
+                                <AlertTriangle className="w-4 h-4 animate-pulse" /> Critical Allergies
                             </div>
-                            <p className="text-xs text-red-900 font-medium mt-1">
+                            <p className="text-sm text-red-900 font-medium leading-relaxed">
                                 {allergiesText}
                             </p>
                         </div>
                     )}
 
-                    {/* Vitals Section (New Unified) */}
+                    {/* Vitals Section (Cyan Block) */}
                     {data.vitals && (data.vitals.heartRate || data.vitals.bloodPressure) && (
-                        <div className="mt-4 pt-4 border-t border-slate-100">
-                            <div className="flex items-center gap-2 mb-2 text-slate-400 font-bold text-xs uppercase tracking-wider">
-                                <Activity className="w-3 h-3" /> Vitals & Observations
+                        <div className="bg-gradient-to-br from-cyan-50/50 to-teal-50/20 rounded-2xl p-4 border border-cyan-100/30 shadow-sm">
+                            <div className="flex items-center gap-2 mb-3 text-cyan-700 font-bold text-xs uppercase tracking-wider">
+                                <Activity className="w-4 h-4" /> Recorded Vitals
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {data.vitals.heartRate && (
-                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                        <span className="text-[10px] text-slate-400 uppercase block">Heart Rate</span>
-                                        <span className="text-sm font-bold text-slate-700">{data.vitals.heartRate} <span className="text-xs font-normal text-slate-400">bpm</span></span>
+                                    <div className="bg-white/60 p-3 rounded-xl border border-white shadow-sm flex flex-col justify-center items-center text-center">
+                                        <span className="text-[10px] text-cyan-600 uppercase font-bold tracking-widest mb-1">Heart</span>
+                                        <span className="text-lg font-black text-slate-800 leading-none">{data.vitals.heartRate}</span>
+                                        <span className="text-[9px] text-slate-400 font-medium">bpm</span>
                                     </div>
                                 )}
                                 {data.vitals.bloodPressure && (
-                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                        <span className="text-[10px] text-slate-400 uppercase block">BP</span>
-                                        <span className="text-sm font-bold text-slate-700">{data.vitals.bloodPressure}</span>
+                                    <div className="bg-white/60 p-3 rounded-xl border border-white shadow-sm flex flex-col justify-center items-center text-center">
+                                        <span className="text-[10px] text-cyan-600 uppercase font-bold tracking-widest mb-1">BP</span>
+                                        <span className="text-lg font-black text-slate-800 leading-none">{data.vitals.bloodPressure}</span>
+                                        <span className="text-[9px] text-slate-400 font-medium">mmHg</span>
                                     </div>
                                 )}
                                 {data.vitals.temperature && (
-                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                        <span className="text-[10px] text-slate-400 uppercase block">Temp</span>
-                                        <span className="text-sm font-bold text-slate-700">{data.vitals.temperature}°C</span>
+                                    <div className="bg-white/60 p-3 rounded-xl border border-white shadow-sm flex flex-col justify-center items-center text-center">
+                                        <span className="text-[10px] text-cyan-600 uppercase font-bold tracking-widest mb-1">Temp</span>
+                                        <span className="text-lg font-black text-slate-800 leading-none">{data.vitals.temperature}</span>
+                                        <span className="text-[9px] text-slate-400 font-medium">°C</span>
                                     </div>
                                 )}
                                 {data.vitals.weight && (
-                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                        <span className="text-[10px] text-slate-400 uppercase block">Weight</span>
-                                        <span className="text-sm font-bold text-slate-700">{data.vitals.weight} kg</span>
+                                    <div className="bg-white/60 p-3 rounded-xl border border-white shadow-sm flex flex-col justify-center items-center text-center">
+                                        <span className="text-[10px] text-cyan-600 uppercase font-bold tracking-widest mb-1">Weight</span>
+                                        <span className="text-lg font-black text-slate-800 leading-none">{data.vitals.weight}</span>
+                                        <span className="text-[9px] text-slate-400 font-medium">kg</span>
                                     </div>
                                 )}
                             </div>
@@ -122,25 +143,28 @@ export function MedicalHistoryBlock({ record, doctor }: MedicalHistoryBlockProps
                 </div>
 
                 {/* RIGHT: Actions */}
-                <div className="flex-shrink-0 flex flex-col gap-2">
+                <div className="flex-shrink-0 flex flex-col items-end md:items-center gap-3">
                     <Button
                         variant="outline"
                         size="sm"
-                        className="text-xs h-8 gap-2 hover:bg-slate-50 border-slate-200"
-                        onClick={() => window.open(`https://sepolia-blockscout.lisk.com/tx/${record.blockchainHash}`, '_blank')}
+                        className="text-xs h-10 px-4 rounded-xl gap-2 bg-white/50 border-slate-200 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-200 transition-colors shadow-sm"
+                        onClick={() => window.open(`https://sepolia.etherscan.io/tx/${record.blockchainHash}`, '_blank')}
                     >
-                        <ExternalLink className="w-3 h-3" /> View in Blockscout
+                        <ExternalLink className="w-4 h-4" /> View Blockscout
                     </Button>
-                    <div className="text-[10px] text-center text-slate-300 font-mono uppercase tracking-widest mt-1">
-                        Immutable
+                    
+                    {/* Futuristic Immutable Badge */}
+                    <div className="flex items-center gap-2 bg-slate-900/5 px-3 py-1.5 rounded-lg border border-slate-900/10 backdrop-blur-sm">
+                        <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">Immutable</span>
                     </div>
                 </div>
 
             </div>
-            {/* Decorative Corner */}
-            <div className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.8)]" />
-                <div className="absolute top-[18px] right-[18px] w-32 h-32 bg-cyan-400/5 rounded-full blur-2xl" />
+            
+            {/* Decorative Glowing Orb in Corner - Sovereignity Gum Theme */}
+            <div className="absolute top-0 right-0 w-32 h-32 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none mix-blend-multiply">
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-cyan-400/20 to-fuchsia-400/20 rounded-full blur-3xl" />
             </div>
         </div>
     );

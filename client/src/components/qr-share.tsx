@@ -8,12 +8,12 @@ import { useMutation } from "@tanstack/react-query";
 import { generateQRAccess } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useEthersSigner, createAccessGrantOnChain, estimateGasForAccessGrant } from "@/lib/blockchain";
-import { useAppKitAccount } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 
 export function QRShare({ patientId, walletAddress }: { patientId: string, walletAddress: string }) {
   const { toast } = useToast();
   const signer = useEthersSigner();
-  const { isConnected, address } = useAppKitAccount();
+  const { isConnected, address } = useAccount();
 
   const [timeLeft, setTimeLeft] = useState(0);
   const [qrData, setQrData] = useState("");
@@ -166,16 +166,23 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
 
   if (!qrData && !generateMutation.isPending) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl shadow-primary/5 border border-primary/10 p-8 flex flex-col items-center max-w-sm w-full mx-auto">
-        <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">Share Medical Access</h3>
-          <p className="text-sm text-muted-foreground">
-            Generate a QR code to grant temporary access to your records.
+      <div className="bg-white/60 backdrop-blur-xl rounded-2xl shadow-xl shadow-slate-200/40 border border-white p-8 flex flex-col items-center max-w-sm w-full mx-auto relative overflow-hidden">
+        <div className="text-center mb-6 relative z-10">
+          <h3 className="text-xl font-bold text-slate-800 mb-1">Data Sovereignty</h3>
+          <p className="text-sm text-slate-500 font-medium">
+            Generate a secure QR node to grant temporary access.
           </p>
         </div>
-        <Button onClick={regenerate} className="w-full">
-          Generate QR Code
-        </Button>
+        
+        <button 
+          onClick={() => regenerate()}
+          className="w-full relative group rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-purple-600 opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative px-6 py-3.5 flex items-center justify-center gap-2">
+             <span className="text-white font-bold tracking-wide text-sm">Generate QR Access</span>
+          </div>
+        </button>
       </div>
     );
   }

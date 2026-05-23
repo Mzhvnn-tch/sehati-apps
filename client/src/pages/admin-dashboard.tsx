@@ -32,10 +32,10 @@ export default function AdminDashboard() {
     // Network Check Effect
     useEffect(() => {
         const chainIdNumber = Number(chainId);
-        if (isConnected && chainIdNumber && chainIdNumber !== 4202) {
-            toast({ title: "Wrong Network", description: "Switching to Lisk Sepolia...", duration: 3000 });
+        if (isConnected && chainIdNumber && chainIdNumber !== 11155111) {
+            toast({ title: "Wrong Network", description: "Switching to Ethereum Sepolia...", duration: 3000 });
             try {
-                switchChain({ chainId: 4202 });
+                switchChain({ chainId: 11155111 });
             } catch (e) {
                 console.error("Auto-switch failed:", e);
             }
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
                                 </div>
                                 <div className="pt-2">
                                     <p className="text-xs text-slate-400 italic">
-                                        Note: Approving a doctor incurs a gas fee on the Lisk Sepolia network.
+                                        Note: Approving a doctor incurs a gas fee on the Ethereum Sepolia network.
                                     </p>
                                 </div>
                             </CardContent>

@@ -26,49 +26,25 @@ function PremiumCard({
   icon: any;
   delay?: number;
 }) {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent) {
-    const { left, top } = currentTarget.getBoundingClientRect();
-    mouseX.set(clientX - left);
-    mouseY.set(clientY - top);
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
       viewport={{ once: true }}
-      className="group relative diamond-card rounded-2xl overflow-hidden cursor-pointer h-full"
-      onMouseMove={handleMouseMove}
+      className="group relative bg-white border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 rounded-3xl overflow-hidden cursor-pointer h-full"
       onClick={onClick}
     >
-      {/* Spotlight Effect - Cyan/Pink */}
-      <motion.div
-        className="pointer-events-none absolute -inset-px opacity-0 transition duration-500 group-hover:opacity-100"
-        style={{
-          background: useMotionTemplate`
-            radial-gradient(
-              600px circle at ${mouseX}px ${mouseY}px,
-              rgba(6, 182, 212, 0.1),
-              transparent 80%
-            )
-          `,
-        }}
-      />
-
       <div className="relative p-8 flex flex-col h-full z-10">
-        <div className="w-12 h-12 rounded-xl bg-cyan-50/50 border border-cyan-100 flex items-center justify-center mb-6 group-hover:bg-cyan-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
+        <div className="w-12 h-12 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center mb-6 group-hover:bg-cyan-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
           <Icon className="w-6 h-6 text-cyan-600" />
         </div>
 
-        <h3 className="text-2xl font-serif font-bold text-gray-900 mb-3 group-hover:text-cyan-600 transition-colors">
-          <CipherText text={title} delay={0.5 + delay} />
+        <h3 className="text-2xl font-serif font-bold text-slate-800 mb-3 group-hover:text-cyan-600 transition-colors">
+          {title}
         </h3>
 
-        <div className="text-muted-foreground leading-relaxed flex-1 font-light">
+        <div className="text-slate-500 leading-relaxed flex-1 font-light">
           {children}
         </div>
 
@@ -127,7 +103,7 @@ export default function Landing() {
                 Protocol
                 <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-cyan-400 transition-all group-hover:w-full" />
               </DialogTrigger>
-              <DialogContent className="diamond-card text-foreground max-w-2xl">
+              <DialogContent className="bg-white border-slate-100 shadow-xl text-slate-800 max-w-2xl rounded-3xl">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-serif text-cyan-700">The Sehati Protocol</DialogTitle>
                 </DialogHeader>
@@ -159,7 +135,7 @@ export default function Landing() {
                 Encryption
                 <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-cyan-400 transition-all group-hover:w-full" />
               </DialogTrigger>
-              <DialogContent className="diamond-card text-foreground max-w-2xl">
+              <DialogContent className="bg-white border-slate-100 shadow-xl text-slate-800 max-w-2xl rounded-3xl">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-serif text-cyan-700">Zero-Knowledge Encryption</DialogTitle>
                 </DialogHeader>
@@ -181,9 +157,9 @@ export default function Landing() {
                 Network
                 <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-cyan-400 transition-all group-hover:w-full" />
               </DialogTrigger>
-              <DialogContent className="diamond-card text-foreground max-w-2xl">
+              <DialogContent className="bg-white border-slate-100 shadow-xl text-slate-800 max-w-2xl rounded-3xl">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-serif text-cyan-700">Lisk Sepolia Network</DialogTitle>
+                  <DialogTitle className="text-2xl font-serif text-cyan-700">Ethereum Sepolia Network</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                   <div className="flex items-center justify-between p-4 rounded-lg bg-emerald-50 border border-emerald-100">
@@ -194,7 +170,7 @@ export default function Landing() {
                     <span className="text-xs text-muted-foreground font-mono">Block #482910</span>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Verification and Access Control logic is executed on the Lisk Sepolia testnet. This ensures immutability and transparency for every permission grant and revocation.
+                    Verification and Access Control logic is executed on the Ethereum Sepolia testnet. This ensures immutability and transparency for every permission grant and revocation.
                   </p>
                 </div>
               </DialogContent>
@@ -232,16 +208,22 @@ export default function Landing() {
                 <CipherText text="System Operational: Sepolia" />
               </motion.div>
 
-              <h1 className="text-6xl md:text-8xl font-serif font-medium text-slate-900 leading-[1.1]">
+              <h1 className="text-6xl md:text-8xl font-serif font-medium text-slate-900 leading-[1.1] pb-4">
                 Health Data <br />
-                <span className="text-gradient-diamond font-bold italic">
-                  <CipherText text="Sovereignty." delay={0.2} />
-                </span>
+                <motion.span 
+                  initial={{ opacity: 0, y: 40, rotateX: -80, filter: "blur(10px)" }}
+                  animate={{ opacity: 1, y: 0, rotateX: 0, filter: "blur(0px)" }}
+                  transition={{ delay: 0.5, duration: 1.2, type: "spring", bounce: 0.4 }} 
+                  className="inline-block text-gradient-diamond font-bold italic pb-4 pr-6"
+                  style={{ transformOrigin: "bottom", transformPerspective: 1000 }}
+                >
+                  Sovereignty.
+                </motion.span>
               </h1>
 
               <p className="text-lg text-slate-600 max-w-lg leading-relaxed font-light">
                 The world's first decentralized medical identity protocol.
-                End-to-end encrypted, patient-controlled, and verified on Lisk.
+                End-to-end encrypted, patient-controlled, and verified on Sepolia.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -269,15 +251,12 @@ export default function Landing() {
 
             {/* Aesthetic Detail / 3D Abstract Representation */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotate: -5 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              transition={{ delay: 0.3, duration: 1.2, type: "spring" }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 1.2 }}
               className="relative hidden lg:block h-[500px]"
             >
-              {/* Diamond Glow behind */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-cyan-300/30 to-purple-300/30 rounded-[2rem] blur-[80px] opacity-60" />
-
-              <div className="relative w-full h-full diamond-card rounded-[2rem] p-8 flex flex-col justify-between overflow-hidden shadow-2xl">
+              <div className="relative w-full h-full bg-white rounded-[2rem] p-8 flex flex-col justify-between overflow-hidden shadow-2xl border border-slate-100">
                 {/* Decorative Grid */}
                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.05]" />
 
@@ -341,7 +320,7 @@ export default function Landing() {
           <div className="mt-32 pt-16 border-t border-slate-200/60 grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
               { label: "Encryption", value: "AES-256" },
-              { label: "Blockchain", value: "Lisk Sepolia" },
+              { label: "Blockchain", value: "Ethereum Sepolia" },
               { label: "Uptime", value: "99.9%" },
               { label: "Privacy", value: "Zero-Knowledge" },
             ].map((stat, i) => (

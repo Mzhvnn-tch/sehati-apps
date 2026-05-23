@@ -13,6 +13,9 @@ export async function setupVite(server: Server, app: Express) {
     middlewareMode: true,
     hmr: { server, path: "/vite-hmr" },
     allowedHosts: true as const,
+    headers: {
+      "ngrok-skip-browser-warning": "true",
+    },
   };
 
   const vite = await createViteServer({

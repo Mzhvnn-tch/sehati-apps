@@ -46,7 +46,7 @@ export function HealthRecord({
     setIsDecrypted(true);
   };
 
-  const getBlockscoutUrl = (txHash: string) => `https://sepolia-blockscout.lisk.com/tx/${txHash}`;
+  const getBlockscoutUrl = (txHash: string) => `https://sepolia.etherscan.io/tx/${txHash}`;
   const truncateHash = (hash: string, chars: number = 8) => !hash ? "" : `${hash.substring(0, chars)}...${hash.substring(hash.length - chars)}`;
 
   return (
@@ -77,7 +77,7 @@ export function HealthRecord({
 
         <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-full border border-slate-200">
           <ShieldCheck className="w-3.5 h-3.5 text-cyan-500" />
-          <span className="text-[10px] font-bold text-slate-500">LISK SAFE</span>
+          <span className="text-[10px] font-bold text-slate-500">ETHEREUM SAFE</span>
         </div>
       </div>
 

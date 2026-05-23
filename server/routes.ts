@@ -225,6 +225,31 @@ export async function registerRoutes(
     }
   );
 
+  app.post("/api/auth/backup-key", authMiddleware, async (req, res) => {
+    try {
+      const { encryptedPrivateKey } = req.body;
+      if (!encryptedPrivateKey) {
+        return res.status(400).json({ error: "Missing encrypted private key" });
+      }
+
+      await storage.updateUser(req.user!.id, { encryptedPrivateKey });
+      
+      await storage.createAuditLog({
+        actorId: req.user!.id,
+        targetId: req.user!.id,
+        action: "KeystoreBackedUp",
+        entityType: "user",
+        metadata: JSON.stringify({ device: req.headers['user-agent'] }),
+        transactionHash: null,
+      });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Backup key error:", error);
+      res.status(500).json({ error: "Failed to backup key" });
+    }
+  });
+
 
 
   app.get("/api/users/:walletAddress",
@@ -665,6 +690,26 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/faucet", strictLimiter, async (req, res) => {
+    try {
+      const { walletAddress } = req.body;
+      if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+        return res.status(400).json({ error: "Invalid wallet address" });
+      }
+
+      const success = await blockchainService.fundWallet(walletAddress);
+      
+      if (success) {
+        res.json({ success: true, message: "Wallet funded successfully or already has sufficient balance" });
+      } else {
+        res.status(500).json({ error: "Failed to fund wallet" });
+      }
+    } catch (error) {
+      console.error("Faucet error:", error);
+      res.status(500).json({ error: "Faucet service unavailable" });
+    }
+  });
+
   app.get("/api/blockchain/verify/:txHash", async (req, res) => {
     try {
       const { txHash } = req.params;
@@ -688,7 +733,7 @@ export async function registerRoutes(
           data: txDetails.data,
           explorerUrl: txDetails.explorerUrl,
           chain: chainInfo,
-          message: "Transaction verified on Polygon Amoy Testnet"
+          message: "Transaction verified on Ethereum Sepolia Testnet"
         });
       } else {
         res.json({
@@ -696,7 +741,7 @@ export async function registerRoutes(
           verified: false,
           explorerUrl,
           chain: chainInfo,
-          message: "Transaction not found or pending. Click the link to check on Polygonscan"
+          message: "Transaction not found or pending. Click the link to check on Etherscan"
         });
       }
     } catch (error) {

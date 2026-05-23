@@ -189,3 +189,87 @@ function str2ab(str: string): ArrayBuffer {
     }
     return buf;
 }
+
+// --- Keystore Logic (Zero-Knowledge Backup) ---
+export async function encryptPrivateKeyWithPIN(privateKeyStr: string, pin: string): Promise<string> {
+    // 1. Generate salt and derive AES-GCM key from PIN using PBKDF2
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
+    const enc = new TextEncoder();
+    const pinKey = await window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(pin),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+    );
+    const aesKey = await window.crypto.subtle.deriveKey(
+        {
+            name: "PBKDF2",
+            salt: salt,
+            iterations: 100000, // High iteration count for security against brute-force
+            hash: "SHA-256",
+        },
+        pinKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt"]
+    );
+
+    // 2. Encrypt the privateKeyStr
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encryptedContent = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        aesKey,
+        enc.encode(privateKeyStr)
+    );
+
+    // 3. Package as JSON
+    const payload = {
+        salt: arrayBufferToBase64(salt.buffer),
+        iv: arrayBufferToBase64(iv.buffer),
+        data: arrayBufferToBase64(encryptedContent),
+    };
+    return JSON.stringify(payload);
+}
+
+export async function decryptPrivateKeyWithPIN(encryptedPayloadStr: string, pin: string): Promise<string> {
+    try {
+        const payload = JSON.parse(encryptedPayloadStr);
+        if (!payload.salt || !payload.iv || !payload.data) throw new Error("Invalid keystore format");
+
+        const salt = base64ToArrayBuffer(payload.salt);
+        const iv = base64ToArrayBuffer(payload.iv);
+        const encryptedData = base64ToArrayBuffer(payload.data);
+
+        const enc = new TextEncoder();
+        const pinKey = await window.crypto.subtle.importKey(
+            "raw",
+            enc.encode(pin),
+            "PBKDF2",
+            false,
+            ["deriveKey"]
+        );
+        const aesKey = await window.crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt: salt,
+                iterations: 100000,
+                hash: "SHA-256",
+            },
+            pinKey,
+            { name: "AES-GCM", length: 256 },
+            false,
+            ["decrypt"]
+        );
+
+        const decryptedContent = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            aesKey,
+            encryptedData
+        );
+
+        return new TextDecoder().decode(decryptedContent);
+    } catch (e) {
+        throw new Error("Invalid PIN or corrupted keystore");
+    }
+}

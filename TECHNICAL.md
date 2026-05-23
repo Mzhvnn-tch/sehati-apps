@@ -290,7 +290,7 @@ Hospital Admin → Can modify/delete records → Patient has no proof
 SEHATI (Blockchain):
 ```
 Medical Record Created 
-→ Hash stored on Lisk Blockchain 
+→ Hash stored on Ethereum Sepolia 
 → PERMANENT & TAMPER-PROOF 
 → Anyone can verify authenticity
 ```
@@ -304,7 +304,7 @@ Medical Record Created
 **Technical Implementation:**
 1. Doctor creates medical record
 2. Content encrypted with patient's public key
-3. Content hash (SHA-256) submitted to Lisk Sepolia blockchain
+3. Content hash (SHA-256) submitted to Ethereum Sepolia blockchain
 4. Transaction hash stored as permanent proof
 5. Anyone can verify: `hash(record) == blockchain_hash`
 
@@ -522,7 +522,7 @@ Express Session    - Secure session management
 ```
 Solidity           - Smart contract language
 Hardhat            - Development framework
-Lisk Sepolia       - Layer 2 testnet (Ethereum compatible)
+Ethereum Sepolia   - Ethereum testnet network
 ethers.js          - Web3 library for Ethereum
 Wagmi              - React Hooks for Ethereum
 Reown AppKit       - Wallet connection UI
@@ -554,7 +554,7 @@ Tree Shaking       - Remove unused code
 - Node.js 20+ ([Download](https://nodejs.org))
 - PostgreSQL database ([Download](https://www.postgresql.org/download/))
 - MetaMask or compatible Web3 wallet ([Download](https://metamask.io))
-- (Optional) Lisk Sepolia testnet tokens
+- (Optional) Ethereum Sepolia testnet tokens
 
 ### **1. Clone & Install**
 
@@ -620,8 +620,8 @@ Open browser: `http://localhost:5000`
 # Compile contract
 npx hardhat compile
 
-# Deploy to Lisk Sepolia
-npx hardhat run scripts/deploy.cjs --network liskSepolia
+# Deploy to Ethereum Sepolia
+npx hardhat run script/deploy.cjs --network sepolia
 
 # Copy deployed address to .env CONTRACT_ADDRESS
 ```
@@ -647,7 +647,7 @@ Without these credentials, cloning the repository would result in a "stuck" stat
 #### **3. Standard Practice**
 Sharing demo credentials for non-production environments is a common practice in open-source projects to lower the barrier to entry for testing and review.
 
-**Note:** These credentials are widely distributed and strictly for **Lisk Sepolia Testnet** usage.
+**Note:** These credentials are widely distributed and strictly for **Ethereum Sepolia Testnet** usage.
 
 ---
 
@@ -655,11 +655,11 @@ Sharing demo credentials for non-production environments is a common practice in
 
 Use these credentials to test the admin dashboard and approve doctor registrations.
 
-**Demo Admin Wallet (Lisk Sepolia Testnet)**
+**Demo Admin Wallet (Ethereum Sepolia Testnet)**
 
 - **Wallet Address:** `0xc771b3c8c495875df90f39467b9aeeac992f18fc`
 - **Testnet Private Key (Public for Demo):** `0xd90f7d77717d3ad8cc725c9b8956e922b09ed63c1c0c445a183f0ebed678d69c`
-- **Chain ID:** 4202
+- **Chain ID:** 11155111
 
 > **Security Note:** This private key is public knowledge. It contains no real funds and grants access only to the testnet contract.
 
@@ -675,7 +675,7 @@ Use these credentials to test the admin dashboard and approve doctor registratio
 
 **Step 2: Import Demo Admin Wallet**
 - Import the **Testnet Private Key** above into MetaMask.
-- Switch to Lisk Sepolia network.
+- Switch to Ethereum Sepolia network.
 
 **Step 3: Approve Doctor**
 - Go to `http://localhost:5000/admin`.
@@ -683,7 +683,7 @@ Use these credentials to test the admin dashboard and approve doctor registratio
 - Approve the pending doctor registration.
 
 **Step 4: Verify on Blockchain**
-- Check the transaction hash on the [Lisk Sepolia Explorer](https://sepolia-blockscout.lisk.com/).
+- Check the transaction hash on the [Etherscan Sepolia Explorer](https://sepolia.etherscan.io/).
 
 ---
 
@@ -751,7 +751,7 @@ This setup ensures that:
                            │ Web3 RPC
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Lisk Sepolia Blockchain (Layer 2)               │
+│              Ethereum Sepolia Blockchain                     │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │          SEHATI Smart Contract                        │   │
 │  │  ┌─────────────┐  ┌──────────────┐  ┌────────────┐  │   │
@@ -779,7 +779,7 @@ This setup ensures that:
 3. FRONTEND submits to blockchain (optional for demo)
    ├─ Generate content hash: SHA-256(encrypted_data)
    ├─ Call smart contract: createRecord()
-   ├─ Transaction broadcast to Lisk
+   ├─ Transaction broadcast to Ethereum Sepolia
    └─ Receive transaction hash: 0x8f2a...
 
 4. FRONTEND sends to backend
@@ -1206,7 +1206,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 - [Vite](https://vitejs.dev) - Build tool
 - [Tailwind CSS](https://tailwindcss.com) - Styling
 - [Shadcn UI](https://ui.shadcn.com) - Component library
-- [Lisk](https://lisk.com) - Blockchain platform
+- [Ethereum](https://ethereum.org) - Blockchain platform
 - [PostgreSQL](https://www.postgresql.org) - Database
 - [Hardhat](https://hardhat.org) - Smart contract development
 

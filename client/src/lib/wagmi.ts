@@ -1,43 +1,65 @@
-import { createStorage, cookieStorage } from 'wagmi'
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-// mainnet and sepolia removed to force Lisk Sepolia
-import { type AppKitNetwork } from '@reown/appkit/networks'
-import { defineChain } from '@reown/appkit/networks'
+import { createConfig, http, createStorage, cookieStorage } from 'wagmi'
+import { defineChain } from 'viem'
+import { Web3Auth } from "@web3auth/modal"
+import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK } from "@web3auth/base"
+import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider"
+import { Web3AuthConnector } from "@web3auth/web3auth-wagmi-connector"
 
-export const projectId = '0f835a14e7056382454b2d9f13a0be56'
+const clientId = "BJI1ggIxFGa8hmqGQxEYXHGjKNkQjWNwMxcpjyXLO7OEFNzon8UC6P1_HDPuM47uikNNUFSZs-PWnYDK4bLB5_c";
 
-// Define Lisk Sepolia manually as it might not be in the default export
-export const liskSepolia = defineChain({
-    id: 4202,
-    caipNetworkId: 'eip155:4202',
-    chainNamespace: 'eip155',
-    name: 'Lisk Sepolia',
+const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+
+export const sepolia = defineChain({
+    id: 11155111,
+    name: 'Ethereum Sepolia',
     nativeCurrency: {
         decimals: 18,
-        name: 'Lisk',
-        symbol: 'LSK',
+        name: 'Sepolia Ether',
+        symbol: 'ETH',
     },
     rpcUrls: {
         default: {
-            http: ['https://rpc.sepolia-api.lisk.com'],
-            webSocket: ['wss://ws.sepolia-api.lisk.com'],
+            http: [SEPOLIA_RPC],
         },
     },
     blockExplorers: {
-        default: { name: 'Blockscout', url: 'https://sepolia-blockscout.lisk.com' },
+        default: { name: 'Etherscan', url: 'https://sepolia.etherscan.io' },
     },
     testnet: true,
 })
 
-export const networks = [liskSepolia] as [AppKitNetwork, ...AppKitNetwork[]]
+const chainConfig = {
+    chainNamespace: CHAIN_NAMESPACES.EIP155,
+    chainId: "0xaa36a7", // 11155111 in hex
+    rpcTarget: SEPOLIA_RPC,
+    displayName: "Ethereum Sepolia",
+    blockExplorerUrl: "https://sepolia.etherscan.io",
+    ticker: "ETH",
+    tickerName: "Sepolia Ether",
+}
 
-export const wagmiAdapter = new WagmiAdapter({
+const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfig } })
+
+export const web3AuthInstance = new Web3Auth({
+    clientId,
+    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+    chainConfig,
+    privateKeyProvider,
+})
+
+export const web3AuthConnector = Web3AuthConnector({
+    web3AuthInstance
+})
+
+export const config = createConfig({
+    chains: [sepolia],
+    transports: {
+        [sepolia.id]: http(SEPOLIA_RPC),
+    },
+    connectors: [web3AuthConnector],
     storage: createStorage({
         storage: cookieStorage
     }),
     ssr: true,
-    projectId,
-    networks
 })
 
-export const config = wagmiAdapter.wagmiConfig

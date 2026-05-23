@@ -109,12 +109,24 @@ export function DoctorRegistration({ walletAddress, onSuccess, onDisconnect }: D
           const { publicKeyStr, privateKeyStr } = await generateKeyPair();
           localStorage.setItem(`sehati_priv_${walletAddress}`, privateKeyStr);
 
-          // Step 2: Generate nonce
+          // Step 2: Generate nonce & Fund Wallet
           toast({
             title: "Step 1/3",
-            description: "Generating verification message...",
+            description: "Funding vault and generating verification message...",
             duration: 5000,
           });
+
+          try {
+            const faucetRes = await fetch("/api/faucet", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ walletAddress })
+            });
+            if (!faucetRes.ok) console.warn("Faucet call failed or skipped");
+          } catch (e) {
+            console.warn("Faucet error:", e);
+          }
+
           const { message } = await generateNonce(walletAddress);
 
           // Step 3: Sign message

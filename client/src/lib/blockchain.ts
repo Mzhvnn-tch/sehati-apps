@@ -72,7 +72,7 @@ export function useEthersSigner({ chainId }: { chainId?: number } = {}) {
     );
 }
 
-export const SEHATI_REGISTRY_ADDRESS = "0x8c38d7FB22A07B151d5B1AEc7b23b58C6d48B8fd"; // Sepolia Lisk Testnet
+export const SEHATI_REGISTRY_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "0x8c38d7FB22A07B151d5B1AEc7b23b58C6d48B8fd"; // Ethereum Sepolia Testnet
 
 export const SEHATI_REGISTRY_ABI = [
     "function registerAsPatient() external",

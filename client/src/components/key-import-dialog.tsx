@@ -17,9 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 interface KeyImportDialogProps {
     walletAddress: string;
     onSuccess: () => void;
+    children?: React.ReactNode;
 }
 
-export function KeyImportDialog({ walletAddress, onSuccess }: KeyImportDialogProps) {
+export function KeyImportDialog({ walletAddress, onSuccess, children }: KeyImportDialogProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [keyInput, setKeyInput] = useState("");
     const { toast } = useToast();
@@ -31,19 +32,17 @@ export function KeyImportDialog({ walletAddress, onSuccess }: KeyImportDialogPro
         }
 
         try {
-            // Basic validation (check if it looks like a key)
-            if (keyInput.length < 50) { // Arbitrary simple check
+            if (keyInput.length < 50) {
                 toast({ title: "Invalid Key", description: "This key looks too short. Please check your backup file.", variant: "destructive" });
                 return;
             }
 
-            // Save to localStorage
             localStorage.setItem(`sehati_priv_${walletAddress}`, keyInput.trim());
 
             toast({ title: "Success", description: "Key imported successfully! Decrypting records..." });
             setIsOpen(false);
             setKeyInput("");
-            onSuccess(); // Trigger parent reload/decrypt
+            onSuccess();
         } catch (e) {
             toast({ title: "Error", description: "Failed to save key.", variant: "destructive" });
         }
@@ -52,10 +51,12 @@ export function KeyImportDialog({ walletAddress, onSuccess }: KeyImportDialogPro
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50">
-                    <LockOpen className="w-4 h-4" />
-                    Restore Key
-                </Button>
+                {children || (
+                    <Button variant="outline" size="sm" className="gap-2 text-blue-600 border-blue-200 hover:bg-blue-50">
+                        <LockOpen className="w-4 h-4" />
+                        Restore Key
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
