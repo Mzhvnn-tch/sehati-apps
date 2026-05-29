@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MedicalHistoryBlock } from "@/components/medical-history-block";
 import { useState, useEffect } from "react";
-import { Search, UserCheck, FilePlus, X, Blocks, ExternalLink, CheckCircle2, Loader2, Stethoscope, ArrowLeft, LogIn, UserCog, ScanLine, Activity, ShieldCheck, Microscope } from "lucide-react";
+import { Search, UserCheck, FilePlus, X, Blocks, ExternalLink, CheckCircle2, Loader2, Stethoscope, ArrowLeft, LogIn, UserCog, ScanLine, Activity, ShieldCheck, Microscope, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { useMutation } from "@tanstack/react-query";
@@ -215,6 +215,31 @@ export default function DoctorDashboard() {
             />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // 5. Verification Gate
+  if (user && !user.isVerified) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 border border-slate-100 relative z-10 text-center"
+        >
+          <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-6 text-amber-500 animate-pulse">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Pending Verification</h1>
+          <p className="text-slate-500 mb-8 font-medium leading-relaxed">
+            Your credentials are under review by the hospital administration. You will be granted access once your medical license is verified.
+          </p>
+
+          <Button variant="outline" className="w-full text-slate-500 border-slate-200 hover:bg-slate-50 h-12 rounded-xl" onClick={handleDisconnect}>
+            <LogOut className="w-4 h-4 mr-2" /> Sign Out
+          </Button>
+        </motion.div>
       </div>
     );
   }

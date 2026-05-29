@@ -72,22 +72,27 @@ export function useEthersSigner({ chainId }: { chainId?: number } = {}) {
     );
 }
 
-export const SEHATI_REGISTRY_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "0x8c38d7FB22A07B151d5B1AEc7b23b58C6d48B8fd"; // Ethereum Sepolia Testnet
+export const SEHATI_REGISTRY_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "0xa913A07bD88C94E5230d1521Ac25aDD9a1AA7067"; // Ethereum Sepolia Testnet
 
 export const SEHATI_REGISTRY_ABI = [
     "function registerAsPatient() external",
     "function registerDoctor(address _doctor) external",
+    "function registerPharmacist(address _pharmacist) external",
     "function createAccessGrant(bytes32 _accessToken, uint256 _durationMinutes) external returns (bytes32)",
     "function createRecord(address _patient, string calldata _ipfsCID, bytes32 _contentHash, string calldata _recordType, bytes32 _accessToken) external returns (bytes32)",
     "function useAccessGrant(bytes32 _grantId) external",
     "function revokeAccessGrant(bytes32 _grantId) external",
+    "function fulfillPrescription(bytes32 _recordId) external",
     "function getPatientRecords(address _patient) external view returns (bytes32[] memory)",
     "function getRecord(bytes32 _recordId) external view returns (string memory ipfsCID, bytes32 contentHash, address patient, address doctor, string memory recordType, uint256 timestamp)",
     "function isPatient(address _user) external view returns (bool)",
     "function isDoctor(address _user) external view returns (bool)",
+    "function isPharmacist(address _user) external view returns (bool)",
+    "function prescriptionFulfilled(bytes32) external view returns (bool)",
     "event UserRegistered(address indexed user, string role, uint256 timestamp)",
     "event RecordCreated(bytes32 indexed recordId, address indexed patient, address indexed doctor, string ipfsCID, bytes32 contentHash, string recordType, uint256 timestamp)",
-    "event AccessGrantCreated(bytes32 indexed grantId, address indexed patient, bytes32 accessToken, uint256 expiresAt, uint256 timestamp)"
+    "event AccessGrantCreated(bytes32 indexed grantId, address indexed patient, bytes32 accessToken, uint256 expiresAt, uint256 timestamp)",
+    "event PrescriptionFulfilled(bytes32 indexed recordId, address indexed pharmacist, uint256 timestamp)"
 ];
 
 export async function getContract(signer: ethers.Signer) {
@@ -140,6 +145,12 @@ export async function createRecordOnChain(
 export async function registerDoctorOnChain(signer: ethers.Signer, doctorAddress: string) {
     const contract = await getContract(signer);
     const tx = await contract.registerDoctor(doctorAddress);
+    return tx;
+}
+
+export async function registerPharmacistOnChain(signer: ethers.Signer, pharmacistAddress: string) {
+    const contract = await getContract(signer);
+    const tx = await contract.registerPharmacist(pharmacistAddress);
     return tx;
 }
 

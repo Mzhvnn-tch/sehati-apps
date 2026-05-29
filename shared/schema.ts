@@ -3,12 +3,12 @@ import { pgTable, text, varchar, timestamp, boolean, integer } from "drizzle-orm
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table (represents both patients and doctors)
+// Users table (represents patients, doctors, and pharmacists)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   walletAddress: text("wallet_address").notNull().unique(),
   name: text("name").notNull(),
-  role: text("role").notNull(), // "patient" or "doctor"
+  role: text("role").notNull(), // "patient", "doctor", or "pharmacist"
   gender: text("gender").notNull(), // "male", "female", "other"
   bloodType: text("blood_type"),
   allergies: text("allergies").array(),
@@ -39,6 +39,7 @@ export const medicalRecords = pgTable("medical_records", {
   encryptedContent: text("encrypted_content").notNull(), // AES encrypted medical data
   ipfsHash: text("ipfs_hash"), // Simulated IPFS hash
   blockchainHash: text("blockchain_hash"), // Simulated blockchain transaction hash
+  isFulfilled: boolean("is_fulfilled").default(false), // For prescriptions
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -58,6 +59,7 @@ export const accessGrants = pgTable("access_grants", {
   encryptionKey: text("encryption_key").notNull(), // Temporary decryption key
   expiresAt: timestamp("expires_at").notNull(),
   isActive: boolean("is_active").notNull().default(true),
+  maxUses: integer("max_uses").notNull().default(3), // Anti-spam scan limit
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

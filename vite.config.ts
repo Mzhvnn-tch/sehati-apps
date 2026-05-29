@@ -62,6 +62,10 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: {
+      "Cross-Origin-Opener-Policy": "unsafe-none",
+      "Cross-Origin-Embedder-Policy": "unsafe-none"
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],

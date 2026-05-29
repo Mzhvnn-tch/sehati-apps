@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 contract SEHATIRegistry is AccessControl, ReentrancyGuard {
     bytes32 public constant PATIENT_ROLE = keccak256("PATIENT_ROLE");
     bytes32 public constant DOCTOR_ROLE = keccak256("DOCTOR_ROLE");
+    bytes32 public constant PHARMACIST_ROLE = keccak256("PHARMACIST_ROLE");
 
     struct MedicalRecord {
         string ipfsCID;
@@ -31,6 +32,7 @@ contract SEHATIRegistry is AccessControl, ReentrancyGuard {
     mapping(bytes32 => AccessGrant) public accessGrants;
     mapping(address => bytes32[]) public patientAccessGrants;
     mapping(address => mapping(bytes32 => bytes32)) public patientTokenToGrantId;
+    mapping(bytes32 => bool) public prescriptionFulfilled;
 
     uint256 public recordCount;
     uint256 public grantCount;
@@ -62,6 +64,11 @@ contract SEHATIRegistry is AccessControl, ReentrancyGuard {
         address indexed patient,
         uint256 timestamp
     );
+    event PrescriptionFulfilled(
+        bytes32 indexed recordId,
+        address indexed pharmacist,
+        uint256 timestamp
+    );
 
     constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -74,9 +81,15 @@ contract SEHATIRegistry is AccessControl, ReentrancyGuard {
     }
 
     function registerDoctor(address _doctor) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(!hasRole(PATIENT_ROLE, _doctor) && !hasRole(DOCTOR_ROLE, _doctor), "Already registered");
+        require(!hasRole(PATIENT_ROLE, _doctor) && !hasRole(DOCTOR_ROLE, _doctor) && !hasRole(PHARMACIST_ROLE, _doctor), "Already registered");
         _grantRole(DOCTOR_ROLE, _doctor);
         emit UserRegistered(_doctor, "doctor", block.timestamp);
+    }
+
+    function registerPharmacist(address _pharmacist) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(!hasRole(PATIENT_ROLE, _pharmacist) && !hasRole(DOCTOR_ROLE, _pharmacist) && !hasRole(PHARMACIST_ROLE, _pharmacist), "Already registered");
+        _grantRole(PHARMACIST_ROLE, _pharmacist);
+        emit UserRegistered(_pharmacist, "pharmacist", block.timestamp);
     }
 
     function createRecord(
@@ -246,5 +259,19 @@ contract SEHATIRegistry is AccessControl, ReentrancyGuard {
 
     function isDoctor(address _user) external view returns (bool) {
         return hasRole(DOCTOR_ROLE, _user);
+    }
+
+    function isPharmacist(address _user) external view returns (bool) {
+        return hasRole(PHARMACIST_ROLE, _user);
+    }
+
+    function fulfillPrescription(bytes32 _recordId) external onlyRole(PHARMACIST_ROLE) {
+        MedicalRecord storage record = records[_recordId];
+        require(record.exists, "Record not found");
+        require(keccak256(abi.encodePacked(record.recordType)) == keccak256(abi.encodePacked("prescription")), "Not a prescription");
+        require(!prescriptionFulfilled[_recordId], "Already fulfilled");
+
+        prescriptionFulfilled[_recordId] = true;
+        emit PrescriptionFulfilled(_recordId, msg.sender, block.timestamp);
     }
 }

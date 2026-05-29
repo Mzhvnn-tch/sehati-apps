@@ -45,9 +45,10 @@ interface DoctorRegistrationProps {
   onSuccess: () => void;
   onDisconnect?: () => void;
   isWalletConnect?: boolean;
+  role?: "doctor" | "pharmacist";
 }
 
-export function DoctorRegistration({ walletAddress, onSuccess, onDisconnect }: DoctorRegistrationProps) {
+export function DoctorRegistration({ walletAddress, onSuccess, onDisconnect, role = "doctor" }: DoctorRegistrationProps) {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null); // [NEW] Track focus
   const { toast } = useToast();
@@ -80,7 +81,7 @@ export function DoctorRegistration({ walletAddress, onSuccess, onDisconnect }: D
       const registrationData = {
         walletAddress,
         name: data.name,
-        role: "doctor" as const,
+        role: role as "doctor" | "pharmacist",
         gender: data.gender,
         age: data.age,
         hospital: data.practice,
@@ -269,7 +270,7 @@ export function DoctorRegistration({ walletAddress, onSuccess, onDisconnect }: D
       </div>
 
       <div className="space-y-1">
-        <h2 className="text-2xl font-bold text-gray-900">Doctor Registration</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{role === "pharmacist" ? "Pharmacist Registration" : "Doctor Registration"}</h2>
         <p className="text-sm text-gray-500">Complete your profile to start accessing the registry.</p>
       </div>
 
@@ -304,9 +305,9 @@ export function DoctorRegistration({ walletAddress, onSuccess, onDisconnect }: D
               name="practice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Practice Location</FormLabel>
+                  <FormLabel>{role === "pharmacist" ? "Pharmacy Name" : "Practice Location"}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Jakarta Medical Center" {...field} disabled={loading} className="bg-white/80 backdrop-blur-sm" />
+                    <Input placeholder={role === "pharmacist" ? "e.g., Apotek Sehati" : "e.g., Jakarta Medical Center"} {...field} disabled={loading} className="bg-white/80 backdrop-blur-sm" />
                   </FormControl>
                   <AnimatePresence>
                     {form.formState.errors.practice && (

@@ -71,8 +71,8 @@ export default function Landing() {
     cleanup();
   }, [disconnect]);
 
-  const handlePortalSelect = (role: "patient" | "doctor") => {
-    navigate(role === "patient" ? "/patient" : "/doctor");
+  const handlePortalSelect = (role: "patient" | "doctor" | "pharmacist") => {
+    navigate(role === "patient" ? "/patient" : role === "doctor" ? "/doctor" : "/pharmacist");
   };
 
   return (
@@ -225,28 +225,6 @@ export default function Landing() {
                 The world's first decentralized medical identity protocol.
                 End-to-end encrypted, patient-controlled, and verified on Sepolia.
               </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <MagneticButton
-                  size="lg"
-                  className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 font-semibold px-8 h-12 text-base rounded-full shadow-[0_4px_14px_rgba(6,182,212,0.3)] border-none"
-                  strength={0.3}
-                  onClick={() => handlePortalSelect("patient")}
-                >
-                  Retrieve Records
-                </MagneticButton>
-                <MagneticButton
-                  size="lg"
-                  variant="outline"
-                  className="border-slate-200 text-slate-700 hover:bg-slate-50 h-12 px-8 rounded-full bg-white/50 backdrop-blur-sm"
-                  strength={0.2}
-                  onClick={() => handlePortalSelect("doctor")}
-                >
-                  Provider Access
-                </MagneticButton>
-              </div>
-
-
             </motion.div>
 
             {/* Aesthetic Detail / 3D Abstract Representation */}
@@ -296,7 +274,7 @@ export default function Landing() {
           </div>
 
           {/* Features / Portals */}
-          <div className="grid md:grid-cols-2 gap-8 mt-32">
+          <div className="grid md:grid-cols-3 gap-8 mt-32">
             <PremiumCard
               title="Patient Portal"
               icon={Fingerprint}
@@ -313,6 +291,15 @@ export default function Landing() {
               delay={0.4}
             >
               Streamlined verification for doctors and clinics. Issue verifiable credentials and sync patient records securely without central database reliance.
+            </PremiumCard>
+
+            <PremiumCard
+              title="Pharmacy Portal"
+              icon={Hexagon}
+              onClick={() => handlePortalSelect("pharmacist")}
+              delay={0.6}
+            >
+              Fulfill prescriptions securely. Scan patient access QR codes to verify authenticity and prevent double-spending of medical prescriptions on-chain.
             </PremiumCard>
           </div>
 

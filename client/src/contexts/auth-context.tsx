@@ -11,13 +11,13 @@ interface LoginResult {
   success: boolean;
   verified: boolean;
   exists: boolean;
-  userRole?: "patient" | "doctor";
+  userRole?: "patient" | "doctor" | "pharmacist";
 }
 
 interface RegistrationData {
   walletAddress: string;
   name: string;
-  role: "patient" | "doctor";
+  role: "patient" | "doctor" | "pharmacist";
   gender: "male" | "female" | "other";
   age: number;
   bloodType?: string | null;
@@ -147,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("sehati_user", JSON.stringify(verifyResult.user));
         // Auto-fund wallet with gas fees (fire and forget)
         autoFundWallet(walletAddress);
-        return { success: true, verified: true, exists: true, userRole: verifyResult.user.role as "patient" | "doctor" };
+        return { success: true, verified: true, exists: true, userRole: verifyResult.user.role as "patient" | "doctor" | "pharmacist" };
       }
 
       const session = await checkSession();
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("sehati_user", JSON.stringify(session.user));
         // Auto-fund wallet with gas fees (fire and forget)
         autoFundWallet(walletAddress);
-        return { success: true, verified: true, exists: true, userRole: session.user.role as "patient" | "doctor" };
+        return { success: true, verified: true, exists: true, userRole: session.user.role as "patient" | "doctor" | "pharmacist" };
       }
 
       return { success: false, verified: true, exists: false };

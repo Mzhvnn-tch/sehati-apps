@@ -89,7 +89,7 @@ export async function generateNonce(walletAddress: string): Promise<{
 export async function connectWallet(data: {
   walletAddress: string;
   name: string;
-  role: "patient" | "doctor";
+  role: "patient" | "doctor" | "pharmacist";
   gender: "male" | "female" | "other";
   age: number;
   bloodType?: string | null;

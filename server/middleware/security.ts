@@ -33,6 +33,7 @@ declare module 'express-session' {
       id: string;
       walletAddress: string;
       role: string;
+      isVerified: boolean;
     };
     authenticated: boolean;
     verifiedWallet?: string;
@@ -72,6 +73,7 @@ declare global {
         id: string;
         walletAddress: string;
         role: string;
+        isVerified: boolean;
       };
     }
   }
@@ -94,6 +96,7 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
       id: user.id,
       walletAddress: user.walletAddress,
       role: user.role,
+      isVerified: user.isVerified,
     };
     
     next();
@@ -111,6 +114,11 @@ export const requireRole = (roles: string[]) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Access denied. Insufficient permissions.' });
     }
+
+    // Security Gate: Doctors and Pharmacists must be verified by admin
+    if ((req.user.role === 'doctor' || req.user.role === 'pharmacist') && !req.user.isVerified) {
+      return res.status(403).json({ error: `${req.user.role} account pending verification by administration.` });
+    }
     
     next();
   };
@@ -118,6 +126,7 @@ export const requireRole = (roles: string[]) => {
 
 export const requirePatient = requireRole(['patient']);
 export const requireDoctor = requireRole(['doctor']);
+export const requirePharmacist = requireRole(['pharmacist']);
 export const requirePatientOrDoctor = requireRole(['patient', 'doctor']);
 
 export const validateWalletAddress = (req: Request, res: Response, next: NextFunction) => {
@@ -166,19 +175,20 @@ export const setupSecurity = (app: Express) => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        styleSrcElem: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://*.hcaptcha.com", "https://hcaptcha.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://*.hcaptcha.com", "https://hcaptcha.com"],
+        styleSrcElem: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://*.hcaptcha.com", "https://hcaptcha.com"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "wss:", "https:"],
         fontSrc: ["'self'", "https:", "https://fonts.gstatic.com", "data:"],
         objectSrc: ["'none'"],
         mediaSrc: ["'self'"],
-        frameSrc: ["'self'"],
+        frameSrc: ["'self'", "https://auth.web3auth.io", "https://*.hcaptcha.com", "https://hcaptcha.com"],
+        workerSrc: ["'self'", "blob:"],
       },
     },
-    crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginEmbedderPolicy: { policy: 'unsafe-none' },
+    crossOriginOpenerPolicy: { policy: 'unsafe-none' },
   }));
   
   app.use(limiter);

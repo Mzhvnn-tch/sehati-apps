@@ -6,7 +6,6 @@ import { HealthRecord } from "@/components/health-card";
 import { QRShare } from "@/components/qr-share";
 import { AuditLog } from "@/components/audit-log";
 import { MedicalHistoryBlock } from "@/components/medical-history-block";
-import { HealthAnalytics } from "@/components/health-analytics";
 import { HealthTimeline } from "@/components/health-timeline";
 import { AIHealthInsights } from "@/components/ai-health-insights";
 import { LoadingStates } from "@/components/loading-states";
@@ -14,8 +13,8 @@ import { NoRecordsState } from "@/components/empty-states";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Share2, FileText, Activity, Blocks, Download, Loader2, ArrowLeft, LogIn, Lock, Unlock, RefreshCw, BarChart3, Brain, Clock, ShieldAlert, Pill } from "lucide-react";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Share2, FileText, Activity, Blocks, Download, Loader2, ArrowLeft, LogIn, Lock, Unlock, RefreshCw, BarChart3, Brain, Clock, ShieldAlert, Pill, AlertTriangle, Fingerprint } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { getPatientRecords, getAuditLogs, getUserByWallet } from "@/lib/api";
@@ -28,7 +27,7 @@ import { WalletConnect } from "@/components/wallet-connect";
 import { PatientRegistration } from "@/components/patient-registration";
 import { KeyExportDialog } from "@/components/key-export-dialog";
 import { KeyImportDialog } from "@/components/key-import-dialog";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useEthersSigner } from "@/lib/blockchain";
 import { useAccount, useSwitchChain, useDisconnect } from "wagmi";
@@ -48,8 +47,8 @@ function MagneticCard({ children }: { children: React.ReactNode }) {
     const { left, top, width, height } = currentTarget.getBoundingClientRect();
     const xPct = clientX - left - width / 2;
     const yPct = clientY - top - height / 2;
-    x.set(xPct / 15); // Reduced intensity for subtle effect
-    y.set(yPct / 15);
+    x.set(xPct / 25); // Reduced intensity for subtle effect
+    y.set(yPct / 25);
   }
 
   function handleMouseLeave() {
@@ -69,7 +68,7 @@ function MagneticCard({ children }: { children: React.ReactNode }) {
         rotateY,
         transformStyle: "preserve-3d",
       }}
-      className="perspective-1000"
+      className="perspective-1000 h-full"
     >
       {children}
     </motion.div>
@@ -326,13 +325,7 @@ export default function PatientDashboard() {
 
 
 // ----------------------------------------------------------------------
-// 3. DASHBOARD CONTENT (LoggedIn)
-// ----------------------------------------------------------------------
-// ----------------------------------------------------------------------
-// 3. DIAMOND DASHBOARD CONTENT (LoggedIn)
-// ----------------------------------------------------------------------
-// ----------------------------------------------------------------------
-// 3. DIAMOND DASHBOARD CONTENT (LoggedIn)
+// 3. DIAMOND DASHBOARD CONTENT (LoggedIn) - TRUE HUD PROMAX
 // ----------------------------------------------------------------------
 function PatientDashboardContent({ user, records, recordsLoading, auditData }: { user: any, records: any[], recordsLoading: boolean, auditData: any }) {
   const [decryptedRecords, setDecryptedRecords] = useState<(MedicalRecord & { decryptedContent?: string })[]>([]);
@@ -401,21 +394,58 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
   const latestVitals = decryptedRecords.find(r => r.recordType === 'VITALS');
   const vitalsData = latestVitals?.decryptedContent ? JSON.parse(latestVitals.decryptedContent) : null;
 
+  // Extract dynamic Active Regimens from all records
+  const activeRegimens = decryptedRecords.reduce((acc: any[], r) => {
+    try {
+      if (r.decryptedContent) {
+        const payload = JSON.parse(r.decryptedContent);
+        if (payload.prescription && payload.prescription !== "None" && payload.prescription.trim() !== "") {
+           // Basic parser: split string to extract name and dose
+           const words = payload.prescription.split(' ');
+           const name = words[0];
+           const dose = words.slice(1).join(' ') || "Prescribed by Doctor";
+           acc.push({
+             name: name.length > 20 ? name.substring(0, 20) + '...' : name,
+             dose: dose.length > 30 ? dose.substring(0, 30) + '...' : dose,
+             count: "-- CAPS", // Dynamic inventory not yet supported by smart contract
+             progress: 100, 
+             color: acc.length % 2 === 0 ? "from-blue-400 to-indigo-600" : "from-purple-400 to-fuchsia-600",
+             shadow: acc.length % 2 === 0 ? "shadow-blue-500/20" : "shadow-purple-500/20"
+           });
+        }
+      }
+    } catch (e) {}
+    return acc;
+  }, []);
+
   return (
     <Layout>
+      <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#FAFCFF]">
+         <motion.div 
+           animate={{ scale: [1, 1.2, 1], x: [0, 100, 0], y: [0, 50, 0] }}
+           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+           className="absolute -top-40 -right-20 w-[800px] h-[800px] bg-cyan-200/20 rounded-full blur-[120px] mix-blend-multiply opacity-60" 
+         />
+         <motion.div 
+           animate={{ scale: [1.1, 1, 1.1], x: [0, -80, 0], y: [0, -40, 0] }}
+           transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+           className="absolute top-1/2 -left-40 w-[600px] h-[600px] bg-indigo-200/20 rounded-full blur-[150px] mix-blend-multiply opacity-50" 
+         />
+      </div>
+
       <Dialog open={showRecovery} onOpenChange={setShowRecovery}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md border-none bg-white/80 backdrop-blur-2xl shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-orange-500" />
+            <DialogTitle className="flex items-center gap-2 text-xl font-serif font-bold text-slate-800">
+              <ShieldAlert className="w-6 h-6 text-orange-500" />
               Keystore Recovery Required
             </DialogTitle>
-            <DialogDescription>
-              We noticed your encryption keys are missing from this browser (likely due to a new device or cleared cache).
-              Please enter your 6-digit Health PIN to recover your secure Keystore.
+            <DialogDescription className="text-slate-500">
+              We noticed your encryption keys are missing.
+              Please enter your 6-digit Health PIN to recover your secure vault.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-6 flex justify-center">
+          <div className="py-8 flex justify-center">
             <Input
               type="password"
               inputMode="numeric"
@@ -424,378 +454,308 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
               placeholder="••••••"
               value={recoveryPin}
               onChange={(e) => setRecoveryPin(e.target.value.replace(/[^0-9]/g, ''))}
-              className="text-center font-mono tracking-[1em] text-2xl h-14"
+              className="text-center font-mono tracking-[1em] text-3xl h-16 bg-white/50 border-slate-100 rounded-2xl"
             />
           </div>
           <DialogFooter>
-            <Button onClick={handleRecover} disabled={recovering || recoveryPin.length !== 6} className="w-full">
-              {recovering ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
-              Unlock Records
+            <Button onClick={handleRecover} disabled={recovering || recoveryPin.length !== 6} className="w-full bg-slate-900 hover:bg-slate-800 h-14 rounded-2xl text-lg font-bold shadow-xl">
+              {recovering ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Unlock className="w-5 h-5 mr-2" />}
+              Unlock clinical Records
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <div className="relative min-h-screen pb-20">
-        {/* Ambient Gum Background (Sovereignity Vibe - 30% reduced for Clinical Trust) */}
-        <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#FAFCFF]">
-           <div className="absolute -top-40 -right-20 w-[600px] h-[600px] bg-cyan-300/20 rounded-full blur-[120px] mix-blend-multiply opacity-70" />
-           <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-fuchsia-300/20 rounded-full blur-[150px] mix-blend-multiply opacity-60" />
+      {/* --- HUD PROVIDER WRAPPER --- */}
+      <Tabs defaultValue="overview" className="h-[calc(100vh-8rem)] max-h-[900px] min-h-[650px] flex flex-col gap-6 animate-in fade-in duration-1000">
+        
+        {/* TOP: SMART HUD HEADER */}
+        <div className="flex justify-between items-end px-2">
+          <div>
+            <h1 className="text-4xl font-serif font-bold text-slate-800 tracking-tight flex items-center gap-3">
+              Medical Operating System
+            </h1>
+            <p className="text-sm text-slate-600 font-medium tracking-wide">Secure Patient Portal • Data sovereignty active</p>
+          </div>
+          
+          <TabsList className="bg-white/40 backdrop-blur-2xl p-1.5 rounded-full border border-white/60 shadow-xl flex h-auto">
+            <TabsTrigger value="overview" className="rounded-full px-8 py-2.5 data-[state=active]:bg-white data-[state=active]:text-cyan-700 font-bold text-xs transition-all shadow-sm">Overview</TabsTrigger>
+            <TabsTrigger value="timeline" className="rounded-full px-8 py-2.5 data-[state=active]:bg-white data-[state=active]:text-cyan-700 font-bold text-xs transition-all">Clinical History</TabsTrigger>
+          </TabsList>
         </div>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-            
-            {/* LEFT COLUMN: Identity & Access (span 3) */}
-            <div className="xl:col-span-3 space-y-6">
-              {/* Profile Card (Glassmorphism) */}
-              <div className="bg-white/60 backdrop-blur-xl p-8 rounded-3xl border border-white shadow-xl shadow-slate-200/40 flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-100 to-white flex items-center justify-center border-4 border-white shadow-lg mb-6 relative">
-                  <img
-                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=${user.walletAddress}`}
-                    alt="Avatar"
-                    className="w-14 h-14 opacity-70 mix-blend-multiply"
-                  />
-                  <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-400 rounded-full border-2 border-white" />
+        <div className="grid grid-cols-12 gap-6 flex-1 overflow-hidden">
+          
+          {/* LEFT: IDENTITY (3/12) — stagger 0ms */}
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.55, ease: "easeOut", delay: 0 }}
+            className="col-span-3 flex flex-col gap-6 overflow-hidden"
+          >
+             <motion.div whileHover={{ y: -5 }} className="diamond-card p-6 rounded-[2.5rem] flex flex-col items-center">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-cyan-50 to-white flex items-center justify-center border-4 border-white shadow-2xl mb-5 relative group">
+                   <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${user.walletAddress}`} className="w-16 h-16 mix-blend-multiply opacity-80 group-hover:scale-110 transition-transform" />
+                   <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-1 right-1 w-6 h-6 bg-emerald-400 rounded-full border-4 border-white shadow-md" />
                 </div>
-                <h1 className="text-2xl font-serif font-bold text-slate-800 mb-1">{user.name}</h1>
-                <p className="text-slate-500 text-xs font-mono bg-white/80 px-3 py-1.5 rounded-full border border-slate-100 shadow-sm mb-6">
-                  ID: {user.walletAddress.substring(0, 10)}...
-                </p>
-                
+                <h2 className="text-2xl font-serif font-bold text-slate-800 text-center leading-tight mb-2">{user.name}</h2>
+                <div className="flex gap-2 w-full mt-4">
+                   <div className="flex-1 bg-white/50 p-3 rounded-[1.5rem] border border-white/80 text-center shadow-sm">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Patient Age</p>
+                      <p className="text-lg font-bold text-slate-700">{user.age}</p>
+                   </div>
+                   <div className="flex-1 bg-white/50 p-3 rounded-[1.5rem] border border-white/80 text-center shadow-sm">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Blood Unit</p>
+                      <p className="text-lg font-bold text-cyan-600">{user.bloodType}</p>
+                   </div>
+                </div>
+             </motion.div>
 
-              </div>
-
-              {/* Smart QR Card */}
-              <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white shadow-xl shadow-slate-200/40 overflow-hidden">
+             <div className="diamond-card rounded-[2.5rem] flex-1 overflow-hidden relative group">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/20 pointer-events-none" />
                 <QRShare patientId={user.id} walletAddress={user.walletAddress} />
-              </div>
-            </div>
+             </div>
+          </motion.div>
 
-            {/* CENTER COLUMN: Adaptive Intelligence (span 6) */}
-            <div className="xl:col-span-6 space-y-8">
-              
-              {/* Floating Tab Navigation */}
-              <div className="flex justify-center sticky top-4 z-50">
-                <TabsList className="bg-white/70 backdrop-blur-xl p-1.5 rounded-full border border-white shadow-lg shadow-slate-200/50 flex h-auto">
-                  <TabsTrigger value="overview" className="rounded-full px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-cyan-700 data-[state=active]:shadow-sm transition-all gap-2 text-sm font-medium">
-                    <Activity className="w-4 h-4" /> Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="analytics" className="rounded-full px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-cyan-700 data-[state=active]:shadow-sm transition-all gap-2 text-sm font-medium">
-                    <BarChart3 className="w-4 h-4" /> Analytics
-                  </TabsTrigger>
-                  <TabsTrigger value="timeline" className="rounded-full px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-cyan-700 data-[state=active]:shadow-sm transition-all gap-2 text-sm font-medium">
-                    <Clock className="w-4 h-4" /> Timeline
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              {/* Main Content Area */}
-              <TabsContent value="overview" className="space-y-8 mt-0">
-                
-                {/* Elite Hierarchical Vitals */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Primary Vital: Heart Rate (Massive Card) */}
-                  <div className="col-span-2 md:col-span-1 bg-white/60 backdrop-blur-xl p-6 rounded-3xl border border-white shadow-xl shadow-slate-200/40 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-rose-400/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-rose-400/20 transition-all duration-500" />
-                    <div className="flex justify-between items-start mb-6 relative z-10">
-                      <span className="text-xs font-bold text-rose-500 uppercase tracking-widest flex items-center gap-2">
-                        <Activity className="w-4 h-4" /> Heart Rate
-                      </span>
-                      <span className="text-[10px] bg-white px-2 py-1 rounded-full text-slate-400 font-medium shadow-sm">Verified</span>
-                    </div>
-                    <div className="flex items-baseline gap-2 relative z-10">
-                      <span className="text-6xl font-black text-slate-800 tracking-tighter">{vitalsData?.heartRate || "--"}</span>
-                      <span className="text-lg font-bold text-slate-400">bpm</span>
-                    </div>
-                    {/* Faint Waveform SVG */}
-                    <svg className="absolute bottom-0 left-0 w-full h-16 opacity-20 text-rose-500" preserveAspectRatio="none" viewBox="0 0 100 100">
-                      <path d="M0,50 Q25,50 30,30 T40,50 T50,80 T60,50 T100,50" fill="none" stroke="currentColor" strokeWidth="2" />
-                    </svg>
-                  </div>
-
-                  {/* Primary Vital: Blood Pressure (Massive Card) */}
-                  <div className="col-span-2 md:col-span-1 bg-white/60 backdrop-blur-xl p-6 rounded-3xl border border-white shadow-xl shadow-slate-200/40 relative overflow-hidden group">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-cyan-400/20 transition-all duration-500" />
-                    <div className="flex justify-between items-start mb-6 relative z-10">
-                      <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest flex items-center gap-2">
-                        <Activity className="w-4 h-4" /> Blood Pressure
-                      </span>
-                      <span className="text-[10px] bg-white px-2 py-1 rounded-full text-slate-400 font-medium shadow-sm">Verified</span>
-                    </div>
-                    <div className="flex items-baseline gap-2 relative z-10">
-                      <span className="text-5xl font-black text-slate-800 tracking-tighter">{vitalsData?.bloodPressure || "--/--"}</span>
-                      <span className="text-lg font-bold text-slate-400">mmHg</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Secondary Vitals Pills */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="bg-white/60 backdrop-blur-md px-5 py-4 rounded-2xl border border-white shadow-sm flex flex-col justify-center gap-1 hover:bg-white/80 transition-colors">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Weight</span>
-                    <span className="text-xl font-bold text-slate-700">{vitalsData?.weight || "--"} <span className="text-xs text-slate-400 font-normal">kg</span></span>
-                  </div>
-                  <div className="bg-cyan-50/60 backdrop-blur-md px-5 py-4 rounded-2xl border border-cyan-100 shadow-sm flex flex-col justify-center gap-1 hover:bg-cyan-50/80 transition-colors">
-                    <span className="text-[10px] font-bold text-cyan-600 uppercase tracking-widest">Blood Type</span>
-                    <span className="text-xl font-bold text-cyan-900">{vitalsData?.bloodType || user.bloodType || "--"}</span>
-                  </div>
-                  <div className="bg-white/60 backdrop-blur-md px-5 py-4 rounded-2xl border border-white shadow-sm flex flex-col justify-center gap-1 hover:bg-white/80 transition-colors">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sleep</span>
-                    <span className="text-xl font-bold text-slate-700">{vitalsData?.sleep || "--"} <span className="text-xs text-slate-400 font-normal">hrs</span></span>
-                  </div>
-                  <div className="bg-fuchsia-50/60 backdrop-blur-md px-5 py-4 rounded-2xl border border-fuchsia-100 shadow-sm flex flex-col justify-center gap-1 hover:bg-fuchsia-50/80 transition-colors">
-                    <span className="text-[10px] font-bold text-fuchsia-600 uppercase tracking-widest">Temp</span>
-                    <span className="text-xl font-bold text-fuchsia-900">{vitalsData?.temperature || "--"} <span className="text-xs text-fuchsia-600/70 font-normal">°C</span></span>
-                  </div>
-                </div>
-
-                {/* ZERO-SCROLL HUD: Active Medications Widget */}
-                <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white shadow-xl shadow-slate-200/40 p-6 md:p-8 flex-1 mt-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-serif font-bold text-xl text-slate-800 flex items-center gap-3">
-                      <Pill className="w-5 h-5 text-blue-500" />
-                      Active Medications
-                    </h3>
-                    <span className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold uppercase tracking-wider border border-blue-100">Today</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Medication Card 1 */}
-                    <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/30 rounded-2xl p-5 border border-blue-100/50 relative overflow-hidden group hover:shadow-md transition-all">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-blue-400/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-400/20 transition-all duration-500" />
-                      <div className="relative z-10 flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="font-bold text-blue-900 text-lg">Amoxicillin</h4>
-                          <p className="text-xs text-blue-700/70 font-medium">Antibiotic 500mg</p>
-                        </div>
-                        <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg border border-blue-100 text-blue-800 font-bold text-xs shadow-sm">
-                          3x Sehari
-                        </div>
+          {/* CENTER: BENTO HUB (6/12) — stagger 150ms */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: "easeOut", delay: 0.15 }}
+            className="col-span-6 flex flex-col gap-6 overflow-hidden"
+          >
+             <TabsContent value="overview" className="m-0 flex flex-col gap-6 h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* COMPACT BENTO VITALS GRID */}
+                <div className="grid grid-cols-2 gap-6">
+                   <MagneticCard>
+                      <div className="diamond-card p-8 rounded-[2.5rem] bg-white/40 h-[240px] relative overflow-hidden group border-cyan-100/50 shadow-cyan-900/5 shadow-2xl">
+                         <div className="flex justify-between items-center mb-8 relative z-10">
+                            <span className="text-xs font-black text-rose-500 uppercase tracking-widest bg-rose-50/80 px-4 py-1.5 rounded-full border border-rose-100/50 flex items-center gap-2">
+                               <Activity className={`w-4 h-4 ${vitalsData ? 'animate-pulse' : ''}`} /> Cardiac Rhythm
+                            </span>
+                            <div className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm ${
+                              vitalsData
+                                ? 'text-emerald-700 bg-emerald-50/90'
+                                : 'text-slate-500 bg-slate-50'
+                            }`}>
+                              {vitalsData
+                                ? `RECORDED ${new Date(latestVitals!.createdAt).toLocaleDateString('id-ID', { day:'numeric', month:'short' })}`
+                                : 'NO DATA YET'}
+                            </div>
+                         </div>
+                         {vitalsData ? (
+                           <div className="flex items-baseline gap-3 relative z-10">
+                              <motion.span initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} className="text-8xl font-black text-slate-800 tracking-tighter drop-shadow-sm">{vitalsData.heartRate}</motion.span>
+                              <span className="text-2xl font-bold text-slate-600">bpm</span>
+                           </div>
+                         ) : (
+                           <div className="flex flex-col items-center justify-center h-28 gap-2 relative z-10">
+                             <Activity className="w-10 h-10 text-slate-200" />
+                             <p className="text-xs text-slate-400 font-medium text-center">Vitals recorded during<br/>doctor visits</p>
+                           </div>
+                         )}
+                         
+                         {/* Dynamic Waveform Visualizer — only when data exists */}
+                         {vitalsData && (
+                           <div className="absolute bottom-0 left-0 w-full h-12 flex items-end opacity-20 overflow-hidden pointer-events-none px-1 gap-[1px]">
+                              {Array.from({length: 40}).map((_, i) => (
+                                 <motion.div 
+                                   key={i} 
+                                   animate={{ height: [10, Math.random() * 40 + 10, 10] }} 
+                                   transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.05 }} 
+                                   className="w-full bg-rose-400 rounded-t-sm" 
+                                 />
+                              ))}
+                           </div>
+                         )}
                       </div>
-                      <div className="relative z-10 flex items-center gap-2">
-                        <div className="flex-1 bg-white/60 h-2 rounded-full overflow-hidden border border-blue-100">
-                          <div className="bg-blue-500 w-[60%] h-full rounded-full" />
-                        </div>
-                        <span className="text-[10px] font-bold text-blue-800">Sisa 12</span>
+                   </MagneticCard>
+
+                   <div className="flex flex-col gap-4">
+                      <motion.div whileHover={{ x: 5 }} className="diamond-card p-6 rounded-[2rem] flex flex-col justify-between flex-1 bg-white/60 border-indigo-100/50 shadow-2xl shadow-indigo-900/5">
+                         <span className="text-[11px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                            <Fingerprint className="w-4 h-4" /> Vascular Pressure
+                         </span>
+                         <div className="flex items-baseline gap-2">
+                            <span className={`text-5xl font-black tracking-tighter ${vitalsData ? 'text-slate-800' : 'text-slate-300'}`}>
+                              {vitalsData?.bloodPressure || "--/--"}
+                            </span>
+                            <span className="text-xs font-bold text-slate-600 uppercase">mmHg</span>
+                         </div>
+                      </motion.div>
+                      <motion.div whileHover={{ x: 5 }} className="diamond-card p-6 rounded-[2rem] flex flex-col justify-between flex-1 bg-fuchsia-50/20 border-fuchsia-100/50 shadow-2xl shadow-fuchsia-900/5">
+                         <span className="text-[11px] font-black text-fuchsia-600 uppercase tracking-widest">Thermic Index</span>
+                         <div className="flex items-baseline gap-2">
+                            <span className={`text-5xl font-black tracking-tighter ${vitalsData ? 'text-slate-800' : 'text-slate-300'}`}>
+                              {vitalsData?.temperature || "--"}
+                            </span>
+                            <span className="text-2xl font-bold text-fuchsia-400">°C</span>
+                         </div>
+                      </motion.div>
+                   </div>
+                </div>
+
+                {/* PROMAX MEDICATION HUD (INTERNAL SCROLL) */}
+                <div className="diamond-card p-8 rounded-[3rem] flex-1 overflow-hidden flex flex-col border-white/60 shadow-2xl shadow-slate-900/5">
+                   <div className="flex items-center justify-between mb-8">
+                      <h3 className="font-serif font-bold text-2xl text-slate-800 flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                            <Pill className="w-6 h-6" />
+                         </div>
+                         Active Regimen
+                      </h3>
+                      <div className="flex items-center gap-2">
+                         <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Active</span>
                       </div>
-                    </div>
+                   </div>
+                   <div className="grid grid-cols-2 gap-6 overflow-y-auto pr-2 scrollbar-hide">
+                      {activeRegimens.length > 0 ? (
+                        activeRegimens.map((m: any, i: number) => (
+                         <motion.div key={i} whileHover={{ scale: 1.02 }} className="bg-white/40 p-6 rounded-[2rem] border border-white hover:border-cyan-100 transition-all group shadow-sm hover:shadow-xl flex flex-col justify-center min-h-[120px]">
+                            <div className="flex justify-between items-center">
+                               <div>
+                                  <h4 className="font-bold text-slate-800 text-lg group-hover:text-cyan-700 transition-colors break-words max-w-[140px]">{m.name}</h4>
+                                  <p className="text-[11px] font-medium text-slate-600 mt-1 uppercase tracking-tight break-words max-w-[140px]">{m.dose}</p>
+                               </div>
+                               <div className="bg-white/80 p-2.5 rounded-xl border border-slate-50 shadow-sm shrink-0">
+                                  <Pill className="w-5 h-5 text-cyan-600" />
+                               </div>
+                            </div>
+                         </motion.div>
+                        ))
+                      ) : (
+                        <div className="col-span-2 flex flex-col items-center justify-center py-10 bg-white/30 rounded-[2rem] border border-white/50 border-dashed">
+                          <Pill className="w-8 h-8 text-slate-300 mb-3" />
+                          <p className="text-slate-600 font-medium text-sm">No active protocols or prescriptions</p>
+                        </div>
+                      )}
+                   </div>
+                </div>
+             </TabsContent>
+             
+             <TabsContent value="timeline" className="m-0 h-full overflow-hidden">
+                <div className="diamond-card rounded-[3rem] p-8 h-full overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between mb-8">
+                     <h3 className="font-serif font-bold text-2xl text-slate-800 flex items-center gap-3">
+                        <FileText className="w-7 h-7 text-cyan-500" />
+                        Clinical Archive
+                     </h3>
+                     <span className="text-[10px] font-black bg-slate-900 text-white px-5 py-2 rounded-full tracking-widest">{records.length} ENTRIES</span>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto pr-2 scrollbar-hide">
+                    <HealthTimeline records={decryptedRecords as MedicalRecord[]} />
+                  </div>
+                </div>
+             </TabsContent>
+          </motion.div>
 
-                    {/* Medication Card 2 */}
-                    <div className="bg-gradient-to-br from-purple-50/80 to-fuchsia-50/30 rounded-2xl p-5 border border-purple-100/50 relative overflow-hidden group hover:shadow-md transition-all">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-purple-400/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2 group-hover:bg-purple-400/20 transition-all duration-500" />
-                      <div className="relative z-10 flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="font-bold text-purple-900 text-lg">Omeprazole</h4>
-                          <p className="text-xs text-purple-700/70 font-medium">Gastric 20mg</p>
-                        </div>
-                        <div className="bg-white/80 backdrop-blur-sm px-3 py-1 rounded-lg border border-purple-100 text-purple-800 font-bold text-xs shadow-sm">
-                          1x Sehari
-                        </div>
+          {/* RIGHT: SECURITY & PROTOCOLS (3/12) — stagger 300ms */}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.55, ease: "easeOut", delay: 0.3 }}
+            className="col-span-3 flex flex-col h-full overflow-hidden"
+          >
+             <div className="diamond-card p-8 rounded-[2.5rem] flex flex-col h-full bg-white/60 border-slate-100 shadow-2xl shadow-slate-900/5">
+                <div className="flex items-center gap-4 mb-8">
+                   <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+                      <ShieldAlert className="w-5 h-5" />
+                   </div>
+                   <h3 className="font-serif font-bold text-xl text-slate-800">Security Node</h3>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-1 scrollbar-hide transform-gpu">
+                   <MedicalTimeline logs={auditData?.logs ? auditData.logs.slice(0,10) : []} />
+                </div>
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                   <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 flex items-center gap-4">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <div>
+                         <p className="text-[10px] font-black text-emerald-800 uppercase">Encryption Engine</p>
+                         <p className="text-xs font-bold text-emerald-600">AES-256 ACTIVE</p>
                       </div>
-                      <div className="relative z-10 flex items-center gap-2">
-                        <div className="flex-1 bg-white/60 h-2 rounded-full overflow-hidden border border-purple-100">
-                          <div className="bg-purple-500 w-[80%] h-full rounded-full" />
-                        </div>
-                        <span className="text-[10px] font-bold text-purple-800">Sisa 24</span>
-                      </div>
-                    </div>
-                  </div>
+                   </div>
                 </div>
-              </TabsContent>
+             </div>
+          </motion.div>
 
-              <TabsContent value="analytics">
-                <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white shadow-xl shadow-slate-200/40 overflow-hidden p-6">
-                  {recordsLoading ? <LoadingStates /> : <HealthAnalytics records={decryptedRecords as MedicalRecord[]} />}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="timeline" className="space-y-6">
-                {/* Medical Records Core - MASTER-DETAIL UI */}
-                <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white shadow-xl shadow-slate-200/40 p-6 md:p-8">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-serif font-bold text-2xl text-slate-800 flex items-center gap-3">
-                      <FileText className="w-6 h-6 text-cyan-500" />
-                      Medical History
-                    </h3>
-                    <span className="text-xs bg-white text-slate-500 px-4 py-1.5 rounded-full font-bold shadow-sm border border-slate-100">{records.length} Records</span>
-                  </div>
-
-                  <div className="flex flex-col gap-6">
-                    {recordsLoading ? (
-                      <LoadingStates />
-                    ) : decryptedRecords.length === 0 ? (
-                      <NoRecordsState />
-                    ) : (
-                      <>
-                        {/* MASTER: Horizontal Scrollable Timeline */}
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                          {decryptedRecords.map((record) => {
-                            const isSelected = (selectedRecordId || decryptedRecords[0].id) === record.id;
-                            const dateNum = Number(record.createdAt);
-                            const dateObj = new Date(isNaN(dateNum) ? record.createdAt : dateNum);
-                            const dateStr = isNaN(dateObj.getTime()) ? "Unknown Date" : new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(dateObj);
-                            
-                            return (
-                              <button
-                                key={record.id}
-                                onClick={() => setSelectedRecordId(record.id as number)}
-                                className={`flex-shrink-0 snap-start text-left p-4 rounded-2xl border transition-all duration-300 w-48 ${
-                                  isSelected 
-                                    ? "bg-cyan-50/80 border-cyan-300 shadow-md ring-2 ring-cyan-100 ring-offset-1" 
-                                    : "bg-white/50 border-slate-200/60 hover:bg-white/80 hover:border-cyan-200"
-                                }`}
-                              >
-                                <div className="text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center justify-between">
-                                  <span className={isSelected ? "text-cyan-700" : "text-slate-500"}>
-                                    {record.recordType.replace("_", " ")}
-                                  </span>
-                                  {!record.decryptedContent && <Lock className="w-3 h-3 text-slate-400" />}
-                                </div>
-                                <div className={`font-medium ${isSelected ? "text-cyan-950" : "text-slate-700"}`}>
-                                  {dateStr}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {/* DETAIL: Active Record View */}
-                        <div className="mt-2 relative animate-in slide-in-from-right-4 fade-in duration-300">
-                          {(() => {
-                            const activeRecord = decryptedRecords.find(r => r.id === (selectedRecordId || decryptedRecords[0].id));
-                            if (!activeRecord) return null;
-                            if (!activeRecord.decryptedContent) {
-                               return (
-                                <div className="p-8 border border-slate-200/50 rounded-3xl bg-white/50 backdrop-blur-sm flex flex-col justify-center items-center opacity-70">
-                                  <Lock className="w-8 h-8 text-slate-300 mb-3" />
-                                  <h4 className="font-bold text-slate-700 text-lg mb-1">Record Locked</h4>
-                                  <p className="text-sm text-slate-400 text-center mb-6">Unlock your keystore to view this {activeRecord.recordType} record.</p>
-                                  <KeyImportDialog walletAddress={user.walletAddress} onSuccess={() => setDecryptTrigger(p => p + 1)}>
-                                    <button className="bg-slate-800 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-md hover:bg-slate-700 transition-colors flex items-center gap-2">
-                                      <Unlock className="w-4 h-4" /> Unlock Data Vault
-                                    </button>
-                                  </KeyImportDialog>
-                                </div>
-                               );
-                            }
-                            return <MedicalHistoryBlock key={`detail-${activeRecord.id}`} record={activeRecord as any} />;
-                          })()}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-white/60 backdrop-blur-xl rounded-3xl border border-white shadow-xl shadow-slate-200/40 overflow-hidden p-6 mt-8">
-                  {recordsLoading ? <LoadingStates /> : <HealthTimeline records={decryptedRecords as MedicalRecord[]} />}
-                </div>
-              </TabsContent>
-
-            </div>
-
-            {/* RIGHT COLUMN: Insights & Story (span 3) */}
-            <div className="xl:col-span-3 space-y-6">
-
-              {/* Patient Identity Node */}
-              <div className="bg-slate-900/5 backdrop-blur-xl p-6 rounded-3xl border border-slate-200/50 shadow-sm relative overflow-hidden group">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">Patient Node</span>
-                  <div className="flex items-center gap-1.5 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-[pulse_2s_infinite]" />
-                    <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider">Optimal</span>
-                  </div>
-                </div>
-                <div className="font-mono text-sm font-bold text-slate-800 break-all mb-1">
-                  {user.walletAddress.substring(0,8)}...{user.walletAddress.substring(36)}
-                </div>
-                <div className="text-[10px] text-slate-500 font-medium">Decentralized Identity Active</div>
-              </div>
-
-              {/* Mini Security Logs */}
-              <div className="bg-white/60 backdrop-blur-xl p-6 rounded-3xl border border-white shadow-xl shadow-slate-200/40">
-                <div className="flex items-center gap-2 mb-6">
-                  <ShieldAlert className="w-4 h-4 text-slate-400" />
-                  <h3 className="font-serif font-bold text-slate-800">Security Logs</h3>
-                </div>
-                <div className="max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
-                   <MedicalTimeline logs={auditData?.logs ? auditData.logs.slice(0,5) : []} />
-                </div>
-                {auditData?.logs?.length > 5 && (
-                  <TabsList className="bg-transparent p-0 w-full mt-4">
-                     <TabsTrigger value="security" className="w-full text-xs text-slate-500 font-medium hover:text-slate-800">
-                        View All Logs &rarr;
-                     </TabsTrigger>
-                  </TabsList>
-                )}
-              </div>
-
-              {/* Full AI Insights Tab Content (Hidden unless triggered) */}
-              <TabsContent value="insights" className="hidden">
-                  <AIHealthInsights
-                    records={decryptedRecords as MedicalRecord[]}
-                    userProfile={{ age: user.age, bloodType: user.bloodType, allergies: user.allergies }}
-                  />
-              </TabsContent>
-              <TabsContent value="security" className="hidden">
-                  {/* Kept minimal as logic moved to Mini Security Logs, but full content can be accessed here if needed */}
-              </TabsContent>
-
-            </div>
-
-          </div>
-        </Tabs>
-      </div>
+        </div>
+      </Tabs>
     </Layout>
   );
 }
 
 // --- SUB-COMPONENTS ---
 
-function baseVitalStat({ label, value, unit, highlight }: any) {
-  // ... logic
-}
-
 function VitalStat({ label, value, unit, highlight }: { label: string, value: string, unit: string, highlight?: boolean }) {
   const isNoData = value === "--" || value === "--/--";
   const applyHighlight = highlight && !isNoData;
   return (
     <div className={`p-4 rounded-2xl border transition-all duration-300 ${applyHighlight ? 'bg-cyan-50 border-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.1)]' : 'bg-white border-slate-100 hover:border-cyan-100'} flex flex-col justify-between h-[104px] shadow-sm`}>
-      <span className={`text-[10px] font-bold uppercase tracking-widest ${applyHighlight ? 'text-cyan-600' : 'text-slate-400'}`}>{label}</span>
+      <span className={`text-[10px] font-bold uppercase tracking-widest ${applyHighlight ? 'text-cyan-600' : 'text-slate-600'}`}>{label}</span>
       <div className="flex items-baseline gap-1 mt-auto">
         <span className={`text-3xl font-serif font-bold tracking-tight ${isNoData ? 'text-slate-200' : applyHighlight ? 'text-cyan-900' : 'text-slate-800'}`}>{value}</span>
-        {!isNoData && <span className={`text-xs font-medium mb-1 ${applyHighlight ? 'text-cyan-600' : 'text-slate-400'}`}>{unit}</span>}
+        {!isNoData && <span className={`text-xs font-medium mb-1 ${applyHighlight ? 'text-cyan-600' : 'text-slate-600'}`}>{unit}</span>}
       </div>
     </div>
   )
 }
 
 function MedicalTimeline({ logs }: { logs: any[] }) {
-  if (logs.length === 0) return <div className="text-slate-400 text-center py-4 text-sm">No activity recorded.</div>;
+  if (logs.length === 0) return <div className="text-slate-600 text-center py-4 text-sm font-medium">No system events logged.</div>;
 
   return (
-    <div className="relative border-l border-slate-100 ml-2 space-y-6">
+    <div className="relative border-l-2 border-slate-100 ml-3 space-y-4">
       {logs.map((log, i) => (
-        <div key={i} className="relative pl-6">
-          <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-slate-300 ring-1 ring-slate-100" />
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-bold text-slate-700">{log.action}</span>
-              <span className="font-mono text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+        <Dialog key={i}>
+          <DialogTrigger asChild>
+            <div className="relative pl-8 group cursor-pointer hover:bg-slate-50/50 p-2 rounded-xl transition-all -ml-2">
+              <div className="absolute left-[7px] top-3.5 w-4 h-4 rounded-full border-4 border-white bg-slate-200 group-hover:bg-cyan-500 transition-colors shadow-sm" />
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="font-black text-cyan-700 uppercase tracking-tighter group-hover:underline underline-offset-4 decoration-cyan-300 transition-all">{log.action}</span>
+                  <span className="font-mono text-slate-600 group-hover:text-cyan-600 transition-colors">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed truncate">
+                  <span className="font-mono bg-white px-1.5 py-0.5 rounded text-slate-600 border border-slate-200/60 shadow-sm">{(log.actorWallet || "System").substring(0, 8)}...</span>
+                  <span className="mx-2 text-slate-200">/</span>
+                  {log.metadata ? JSON.parse(log.metadata).recordType || log.entityType : "Request Authorized"}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-slate-600">
-              Performed by <span className="font-mono bg-slate-50 px-1 rounded text-slate-500">{(log.performedBy || "").substring(0, 8)}...</span>
-              <span className="mx-1 text-slate-300">|</span>
-              {log.details || "Access Request"}
-            </p>
-          </div>
-        </div>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md bg-white/80 backdrop-blur-2xl border-white/60 shadow-2xl rounded-3xl">
+             <DialogHeader>
+               <DialogTitle className="flex items-center gap-2 font-serif text-2xl text-slate-800">
+                  <ShieldAlert className="w-6 h-6 text-cyan-600" /> Audit Log Detail
+               </DialogTitle>
+               <DialogDescription className="text-slate-500">
+                  Cryptographic trail of this system event.
+               </DialogDescription>
+             </DialogHeader>
+             <div className="space-y-4 py-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Event Type</span>
+                      <span className="text-xs font-bold text-cyan-700 uppercase">{log.action}</span>
+                   </div>
+                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Timestamp</span>
+                      <span className="text-xs font-mono text-slate-700">{new Date(log.createdAt).toLocaleString()}</span>
+                   </div>
+                   <div className="flex flex-col gap-1 border-b border-slate-100 pb-2">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Actor ID (Wallet)</span>
+                      <span className="text-xs font-mono text-slate-700 bg-white p-1.5 rounded border border-slate-100 shadow-sm break-all">{log.actorWallet || "System Automaton"}</span>
+                   </div>
+                   <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Transaction Hash</span>
+                      <span className="text-xs font-mono text-emerald-600 bg-emerald-50 p-1.5 rounded border border-emerald-100 shadow-sm break-all">{log.transactionHash || "Pending Confirmation..."}</span>
+                   </div>
+                </div>
+             </div>
+          </DialogContent>
+        </Dialog>
       ))}
     </div>
   )
 }
-
-
-
-
-

@@ -16,6 +16,7 @@ import DoctorDashboard from "@/pages/doctor-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
 import Documentation from "@/pages/documentation";
 import NotFound from "@/pages/not-found";
+import PharmacistDashboard from "@/pages/pharmacist-dashboard";
 
 // Loading component
 function PageLoader() {
@@ -40,6 +41,8 @@ function Router() {
         <Route path="/patient/*" component={PatientDashboard} />
         <Route path="/doctor" component={DoctorDashboard} />
         <Route path="/doctor/*" component={DoctorDashboard} />
+        <Route path="/pharmacist" component={PharmacistDashboard} />
+        <Route path="/pharmacist/*" component={PharmacistDashboard} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/docs" component={Documentation} />
         <Route component={NotFound} />

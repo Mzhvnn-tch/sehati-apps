@@ -14,6 +14,7 @@ import {
   authMiddleware,
   requirePatient,
   requireDoctor,
+  requirePharmacist,
   walletAuthLimiter,
   strictLimiter,
   validateWalletAddress,
@@ -84,6 +85,7 @@ export async function registerRoutes(
           id: user.id,
           walletAddress: user.walletAddress,
           role: user.role,
+          isVerified: user.isVerified,
         };
         req.session.authenticated = true;
 
@@ -133,6 +135,7 @@ export async function registerRoutes(
             id: user.id,
             walletAddress: user.walletAddress,
             role: user.role,
+            isVerified: user.isVerified,
           };
           req.session.authenticated = true;
 
@@ -416,7 +419,63 @@ export async function registerRoutes(
     }
   );
 
+  app.get("/api/records/prescriptions",
+    authMiddleware,
+    requirePharmacist,
+    async (req, res) => {
+      try {
+        const { patientId } = req.query;
+        if (!patientId || typeof patientId !== 'string') {
+          return res.status(400).json({ error: "Missing patientId" });
+        }
+        // Fetch all records for patient
+        const allRecords = await storage.getMedicalRecordsByPatient(patientId);
+        // Filter only prescriptions
+        const prescriptions = allRecords.filter(r => r.recordType === "prescription");
+        
+        res.json({ records: prescriptions });
+      } catch (error: any) {
+        console.error("Get prescriptions error:", error);
+        res.status(500).json({ error: "Failed to retrieve prescriptions" });
+      }
+    }
+  );
 
+  app.post("/api/records/:id/fulfill",
+    authMiddleware,
+    requirePharmacist,
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const record = await storage.getMedicalRecord(id);
+        
+        if (!record || record.recordType !== "prescription") {
+          return res.status(404).json({ error: "Prescription not found" });
+        }
+        if (record.isFulfilled) {
+          return res.status(400).json({ error: "Prescription already fulfilled" });
+        }
+
+        const updatedRecord = await storage.updateMedicalRecord(id, { isFulfilled: true });
+
+        await storage.createAuditLog({
+          actorId: req.user!.id,
+          targetId: record.id,
+          action: "PrescriptionFulfilled",
+          entityType: "record",
+          metadata: JSON.stringify({
+            patientId: record.patientId,
+          }),
+          transactionHash: req.body.blockchainHash || null,
+        });
+
+        res.json({ success: true, record: updatedRecord });
+      } catch (error: any) {
+        console.error("Fulfill prescription error:", error);
+        res.status(500).json({ error: "Failed to fulfill prescription" });
+      }
+    }
+  );
 
   app.post("/api/access/generate",
     authMiddleware,
@@ -503,6 +562,9 @@ export async function registerRoutes(
             transactionHash: generateBlockchainHash(),
           });
         }
+
+        // Decrement the anti-spam QR Code max usage counter
+        await storage.decrementAccessGrantUsage(grant.id);
 
         res.json({
           patient: {
@@ -621,7 +683,7 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Admin access required" });
       }
 
-      const pendingDoctors = await storage.getPendingDoctors();
+      const pendingDoctors = await storage.getPendingProfessionals();
       res.json({ doctors: pendingDoctors });
     } catch (error: any) {
       console.error("Get pending doctors error:", error);

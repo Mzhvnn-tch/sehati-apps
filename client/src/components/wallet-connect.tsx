@@ -146,35 +146,41 @@ export function WalletConnect({ className, initialRole, autoOpen }: WalletConnec
   }
 
   return (
-    <Button
-      onClick={async () => {
-        try {
-          const connector = connectors.find(c => c.id === 'web3auth') || connectors[0];
-          if (!connector) throw new Error("Web3Auth connector not found");
-          await connectAsync({ connector });
-        } catch (err: any) {
-          console.error("Connection error:", err);
-          
-          // BULLETPROOF FIX: Web3Auth modal often gets stuck on "You are connected" and forces user to click X.
-          // When they click X, Wagmi aborts with an error. 
-          // BUT Web3Auth actually succeeded and saved the session to localStorage!
-          // If the session exists, we just reload the page to let Wagmi auto-connect seamlessly.
-          if (localStorage.getItem("Web3Auth-cachedAdapter")) {
-            window.location.reload();
-            return;
-          }
+    <div className={`flex flex-col gap-3 w-full ${className}`}>
+      <Button
+        onClick={async () => {
+          try {
+            const connector = connectors.find(c => c.id === 'web3auth') || connectors.find(c => c.name.toLowerCase().includes('web3auth'));
+            if (!connector) throw new Error("Web3Auth connector not found");
+            await connectAsync({ connector });
+          } catch (err: any) {
+            console.error("Connection error:", err);
+            
+            if (localStorage.getItem("Web3Auth-cachedAdapter")) {
+              window.location.reload();
+              return;
+            }
+  
+            const w3aModal = document.getElementById("w3a-modal");
+            if (w3aModal) w3aModal.style.display = "none";
+            const overlay = document.querySelector(".w3a-modal__overlay");
+            if (overlay) (overlay as HTMLElement).style.display = "none";
 
-          // Force cleanup Web3Auth modal on error if not reloading
-          const w3aModal = document.getElementById("w3a-modal");
-          if (w3aModal) w3aModal.style.display = "none";
-          const overlay = document.querySelector(".w3a-modal__overlay");
-          if (overlay) (overlay as HTMLElement).style.display = "none";
-        }
-      }}
-      className={`gap-2 h-12 px-8 bg-cyan-600 hover:bg-cyan-700 text-white rounded-full shadow-md font-bold transition-all ${className}`}
-    >
-      <Wallet className="w-5 h-5" />
-      Connect Web3Auth
-    </Button>
+            const errorMsg = err.message || "";
+            // Do not alert if user simply closed the modal or rejected
+            if (!errorMsg.toLowerCase().includes("user rejected") && !errorMsg.toLowerCase().includes("closed the modal")) {
+              alert("Web3Auth failed to open: " + (err.message || "Unknown error"));
+            }
+          }
+        }}
+        className="w-full gap-2 h-12 bg-cyan-600 hover:bg-cyan-700 text-white rounded-full shadow-md font-bold transition-all"
+      >
+        <Wallet className="w-5 h-5" />
+        Web3Auth (Email/Google) — Gasless
+      </Button>
+      <p className="text-xs text-center text-muted-foreground -mt-2">
+        Tidak perlu ETH, gas fee disponsori penuh
+      </p>
+    </div>
   );
 }
