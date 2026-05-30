@@ -560,7 +560,7 @@ Tree Shaking       - Remove unused code
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sehati.git
+git clone https://github.com/Mzhvnn-tch/sehati
 cd sehati
 
 # Install dependencies
