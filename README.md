@@ -173,7 +173,7 @@ Want to see the architecture, threat model, encryption details, and implementati
 
 **Try it:**
 ```bash
-git clone https://github.com/yourusername/sehati
+git clone https://github.com/Mzhvnn-tch/sehati
 cd sehati && npm install && npm run dev
 ```
 
