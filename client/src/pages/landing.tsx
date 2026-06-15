@@ -76,26 +76,74 @@ export default function Landing() {
           <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-bold text-slate-500">
             <Dialog>
               <DialogTrigger className="hover:text-[#020617] transition-colors duration-300">Protocol</DialogTrigger>
-              <DialogContent className="bg-[#fafafa] border-none shadow-2xl p-16 max-w-3xl rounded-none">
-                <DialogHeader>
-                  <DialogTitle className="font-heading text-5xl font-medium mb-6 tracking-tight text-[#020617]">Decentralized Trust.</DialogTitle>
-                </DialogHeader>
-                <div className="text-slate-600 font-light text-2xl leading-relaxed">
-                  <p>AuraMed reimagines medical data ownership through advanced cryptographic key pairs. Your data, your absolute rules.</p>
+              <DialogContent className="bg-[#fafafa] border-none shadow-[0_30px_100px_rgba(2,6,23,0.3)] p-0 max-w-6xl rounded-none overflow-hidden text-[#020617] [&>button]:text-[#020617] [&>button]:opacity-50 hover:[&>button]:opacity-100">
+                <div className="grid md:grid-cols-2 min-h-[600px]">
+                  {/* Left Column - Stark Light */}
+                  <div className="p-12 md:p-24 flex flex-col justify-between">
+                    <div>
+                      <DialogTitle className="font-heading text-6xl md:text-7xl font-medium tracking-tighter leading-[1] text-[#020617] mb-12">
+                        Decentralized <br/>
+                        <span className="text-slate-400">Trust.</span>
+                      </DialogTitle>
+                    </div>
+                    <p className="text-slate-600 font-light text-2xl leading-relaxed max-w-md">
+                      AuraMed reimagines medical data ownership through advanced cryptographic key pairs. Your data, your absolute rules.
+                    </p>
+                  </div>
+
+                  {/* Right Column - Stark Dark */}
+                  <div className="bg-[#020617] text-white p-12 md:p-24 flex flex-col justify-center">
+                    <div className="space-y-12">
+                      {[
+                        { step: "01", title: "Cryptographic Keys", desc: "Your wallet signature derives a deterministic AES-256-GCM key." },
+                        { step: "02", title: "Local Encryption", desc: "Data is locked on your device before it ever touches the network." },
+                        { step: "03", title: "On-Chain Audit", desc: "Every single access request is logged transparently on Sepolia." }
+                      ].map((item, i) => (
+                        <div key={i} className="border-b border-slate-800 pb-8 last:border-0 last:pb-0">
+                          <span className="font-mono text-xs uppercase tracking-[0.2em] text-slate-500 block mb-4">{item.step}</span>
+                          <h4 className="font-heading text-3xl font-medium mb-3 text-white">{item.title}</h4>
+                          <p className="text-slate-400 font-light text-lg leading-relaxed">{item.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
+
             <Dialog>
               <DialogTrigger className="hover:text-[#020617] transition-colors duration-300">Security</DialogTrigger>
-              <DialogContent className="bg-[#fafafa] border-none shadow-2xl p-16 max-w-3xl rounded-none">
-                <DialogHeader>
-                  <DialogTitle className="font-heading text-5xl font-medium mb-6 tracking-tight text-[#020617]">Absolute Privacy.</DialogTitle>
-                </DialogHeader>
-                <div className="text-slate-600 font-light text-2xl leading-relaxed">
-                  <p>Locked securely on your device before it ever reaches our servers. Unreadable by anyone—even us—without your explicit permission.</p>
+              <DialogContent className="bg-[#fafafa] border-none shadow-[0_30px_100px_rgba(2,6,23,0.3)] p-0 max-w-6xl rounded-none overflow-hidden text-[#020617] [&>button]:text-[#020617] [&>button]:opacity-50 hover:[&>button]:opacity-100">
+                <div className="grid md:grid-cols-2 min-h-[600px]">
+                  <div className="p-12 md:p-24 flex flex-col justify-between">
+                    <div>
+                      <DialogTitle className="font-heading text-6xl md:text-7xl font-medium tracking-tighter leading-[1] text-[#020617] mb-12">
+                        Absolute <br/>
+                        <span className="text-slate-400">Privacy.</span>
+                      </DialogTitle>
+                    </div>
+                    <p className="text-slate-600 font-light text-2xl leading-relaxed max-w-md">
+                      Unreadable by anyone—even us—without your explicit permission. We employ zero-knowledge architectures for total control.
+                    </p>
+                  </div>
+                  <div className="bg-[#020617] text-white p-12 md:p-24 flex flex-col justify-center">
+                    <div className="space-y-16">
+                      <div className="border-b border-slate-800 pb-12">
+                        <span className="font-mono text-xs uppercase tracking-[0.2em] text-slate-500 block mb-6">Encryption Standard</span>
+                        <div className="font-heading text-4xl font-medium text-white mb-4 tracking-tight">AES-256-GCM</div>
+                        <p className="text-slate-400 font-light text-lg leading-relaxed">The absolute gold standard for secure, authenticated data transmission globally.</p>
+                      </div>
+                      <div>
+                        <span className="font-mono text-xs uppercase tracking-[0.2em] text-slate-500 block mb-6">Authentication</span>
+                        <div className="font-heading text-4xl font-medium text-white mb-4 tracking-tight">zk-SNARKs</div>
+                        <p className="text-slate-400 font-light text-lg leading-relaxed">Prove identity mathematically without ever revealing the underlying sensitive data.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
+
             <button onClick={() => navigate("/docs")} className="hover:text-[#020617] transition-colors duration-300">Docs</button>
           </div>
         </div>
@@ -123,7 +171,7 @@ export default function Landing() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.2, delay: 0.3, ease: velvetEasing }}
-                className="block text-slate-800"
+                className="block text-slate-400"
               >
                 Zero compromise.
               </motion.span>
