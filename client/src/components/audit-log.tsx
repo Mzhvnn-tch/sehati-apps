@@ -4,74 +4,66 @@ import type { AuditLog as AuditLogType } from "@shared/schema";
 export function AuditLog({ logs }: { logs: AuditLogType[] }) {
   if (logs.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <p>No activity yet</p>
+      <div className="border-2 border-[#020617] bg-white p-12 text-center shadow-[8px_8px_0px_0px_rgba(2,6,23,1)]">
+        <span className="font-mono text-xs uppercase tracking-[0.3em] font-bold text-[#020617]">Vault is Empty</span>
+        <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-slate-500">No cryptographic audit trails found.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {logs.map((log) => {
-        const getIcon = () => {
-          switch (log.action) {
-            case "RecordAdded":
-              return <FileUp className="w-4 h-4" />;
-            case "AccessGranted":
-              return <Key className="w-4 h-4" />;
-            case "AccessRevoked":
-              return <ShieldAlert className="w-4 h-4" />;
-            case "RecordViewed":
-              return <CheckCircle2 className="w-4 h-4" />;
-            default:
-              return <CheckCircle2 className="w-4 h-4" />;
-          }
-        };
+    <div className="w-full border-2 border-[#020617] bg-white shadow-[12px_12px_0px_0px_rgba(2,6,23,1)]">
+      {/* Table Header */}
+      <div className="hidden md:grid grid-cols-12 gap-4 p-6 border-b-2 border-[#020617] bg-[#020617] text-white">
+        <div className="col-span-3 font-mono text-[10px] uppercase tracking-[0.3em] font-bold">Action</div>
+        <div className="col-span-2 font-mono text-[10px] uppercase tracking-[0.3em] font-bold">Timestamp</div>
+        <div className="col-span-4 font-mono text-[10px] uppercase tracking-[0.3em] font-bold">Details</div>
+        <div className="col-span-3 font-mono text-[10px] uppercase tracking-[0.3em] font-bold">On-Chain TX</div>
+      </div>
 
-        const getColor = () => {
-          switch (log.action) {
-            case "RecordAdded":
-              return "bg-blue-100 text-blue-600";
-            case "AccessRevoked":
-              return "bg-orange-100 text-orange-600";
-            default:
-              return "bg-green-100 text-green-600";
-          }
-        };
-
-        return (
-          <div key={log.id} className="flex items-start gap-4 p-4 rounded-lg border border-gray-100 bg-white/50 hover:bg-white transition-colors">
-            <div className={`mt-1 p-2 rounded-full ${getColor()}`}>
-              {getIcon()}
-            </div>
-            
-            <div className="flex-1">
-              <div className="flex justify-between items-start">
-                <h4 className="text-sm font-semibold text-gray-900">{log.action}</h4>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(log.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+      {/* Table Body */}
+      <div className="divide-y-2 divide-[#020617]">
+        {logs.map((log) => {
+          return (
+            <div key={log.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-6 hover:bg-slate-50 transition-colors group">
+              {/* Action */}
+              <div className="col-span-3 flex flex-col justify-center">
+                <span className="font-heading text-2xl md:text-3xl text-[#020617] tracking-tight group-hover:translate-x-1 transition-transform">
+                  {log.action}
                 </span>
               </div>
-              <p className="text-xs text-gray-600 mt-1">
-                {log.entityType === "record" && `Medical record operation`}
-                {log.entityType === "access" && `Access control event`}
-                {log.entityType === "user" && `User profile update`}
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-[10px] font-mono bg-gray-100 px-2 py-1 rounded text-gray-500 border border-gray-200">
-                  TX: {log.transactionHash?.substring(0, 16) || "N/A"}...
+              
+              {/* Timestamp */}
+              <div className="col-span-2 flex flex-col justify-center">
+                <span className="font-mono text-xs text-[#020617] font-bold">
+                  {new Date(log.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                  {new Date(log.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}
                 </span>
               </div>
+
+              {/* Details */}
+              <div className="col-span-4 flex flex-col justify-center">
+                <span className="font-mono text-xs text-[#020617]">
+                  {log.entityType === "record" && `MEDICAL RECORD OPERATION`}
+                  {log.entityType === "access" && `ACCESS CONTROL EVENT`}
+                  {log.entityType === "user" && `USER PROFILE UPDATE`}
+                </span>
+              </div>
+
+              {/* Transaction Hash */}
+              <div className="col-span-3 flex flex-col justify-center">
+                <div className="inline-block border border-[#020617] bg-[#fafafa] px-3 py-2 w-fit">
+                  <span className="font-mono text-[10px] text-[#020617] tracking-wider">
+                    {log.transactionHash ? log.transactionHash.substring(0, 16) + '...' : 'PENDING'}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
