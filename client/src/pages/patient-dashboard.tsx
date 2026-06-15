@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Share2, FileText, Activity, Blocks, Download, Loader2, ArrowLeft, LogIn, Lock, Unlock, RefreshCw, BarChart3, Brain, Clock, ShieldAlert, Pill, AlertTriangle, Fingerprint } from "lucide-react";
+import { Share2, FileText, Activity, Blocks, Download, Loader2, ArrowLeft, LogIn, Lock, Unlock, RefreshCw, BarChart3, Brain, Clock, ShieldAlert, Pill, AlertTriangle, Fingerprint, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { getPatientRecords, getAuditLogs, getUserByWallet } from "@/lib/api";
@@ -35,45 +35,6 @@ import { RecordsSkeleton } from "@/components/records-skeleton";
 import { CipherText } from "@/components/ui/cipher-text";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 
-// [NEW] Magnetic Card Wrapper for breathable cards
-function MagneticCard({ children }: { children: React.ReactNode }) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseX = useSpring(x, { stiffness: 150, damping: 15 });
-  const mouseY = useSpring(y, { stiffness: 150, damping: 15 });
-
-  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
-    const { left, top, width, height } = currentTarget.getBoundingClientRect();
-    const xPct = clientX - left - width / 2;
-    const yPct = clientY - top - height / 2;
-    x.set(xPct / 25); // Reduced intensity for subtle effect
-    y.set(yPct / 25);
-  }
-
-  function handleMouseLeave() {
-    x.set(0);
-    y.set(0);
-  }
-
-  const rotateX = useTransform(mouseY, (value) => value * -1);
-  const rotateY = useTransform(mouseX, (value) => value);
-
-  return (
-    <motion.div
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        rotateX,
-        rotateY,
-        transformStyle: "preserve-3d",
-      }}
-      className="perspective-1000 h-full"
-    >
-      {children}
-    </motion.div>
-  );
-}
 
 export default function PatientDashboard() {
   const { user, loginWithSignature, isLoading: authLoading, disconnect: authDisconnect } = useAuth();
@@ -85,10 +46,7 @@ export default function PatientDashboard() {
   const { disconnect } = useDisconnect();
   const { toast } = useToast();
 
-  const [isChecking, setIsChecking] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
-  const [loginRequired, setLoginRequired] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // --- Auth Logic (Keep intact, only UI changes below) ---
   const handleDisconnect = async () => {
@@ -100,7 +58,6 @@ export default function PatientDashboard() {
     }
     clearWalletConnectStorage();
     setShowRegistration(false);
-    setLoginRequired(false);
     window.location.href = "/";
   };
 
@@ -108,47 +65,9 @@ export default function PatientDashboard() {
     if (user && user.role !== "patient") setLocation("/doctor");
   }, [user, setLocation]);
 
-  const [walletError, setWalletError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const checkWallet = async () => {
-      if (user) return;
-      if (isConnected && address && !isChecking && !showRegistration && !loginRequired) {
-        setIsChecking(true);
-        setWalletError(null);
-        try {
-          const { user: existingUser } = await getUserByWallet(address);
-          if (existingUser) {
-            if (existingUser.role === "patient") {
-              setLoginRequired(true);
-            } else {
-              // User exists but is not a patient. Redirect to doctor.
-              toast({ title: "Redirecting", description: "You are registered as a doctor." });
-              window.location.href = "/doctor";
-            }
-          }
-        } catch (error: any) {
-          console.error("checkWallet error:", error);
-          if (error.status === 404 || error.message?.includes("User not found")) {
-            setShowRegistration(true);
-          } else {
-            setWalletError(`Failed to fetch user data: ${error.message}`);
-          }
-        } finally {
-          setIsChecking(false);
-        }
-      }
-    };
-    checkWallet();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, address, user]);
-
   useEffect(() => {
     if (!isConnected) {
       setShowRegistration(false);
-      setLoginRequired(false);
-      setIsChecking(false);
-      setWalletError(null);
     } else {
       // Force cleanup Web3Auth modal if it gets stuck
       setTimeout(() => {
@@ -178,36 +97,11 @@ export default function PatientDashboard() {
     queryFn: () => (user ? getAuditLogs(user.id) : Promise.reject()),
   });
 
-  const handleLogin = async () => {
-    if (Number(chainId) !== 11155111) {
-      toast({ title: "Wrong Network", description: "Switching to Ethereum Sepolia...", duration: 3000 });
-      try { switchChain({ chainId: 11155111 }); } catch (e) { }
-      return;
-    }
-    if (!signer || !address) return;
-    setIsLoggingIn(true);
-    try {
-      const message = `Login to SEHATI Patient Portal\nWallet: ${address}\nTimestamp: ${Date.now()}`;
-      const signature = await signer.signMessage(message);
-      const result = await loginWithSignature(address, signature, message);
-      if (result.success) {
-        toast({ title: "Welcome back!", description: "Access granted." });
-        setLoginRequired(false);
-      } else {
-        toast({ title: "Login Failed", variant: "destructive" });
-      }
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
   // Debug logging to understand the blank screen issue
-  console.log("Dashboard Render State:", { isConnected, address, user: !!user, isChecking, loginRequired, showRegistration, walletError });
+  console.log("Dashboard Render State:", { isConnected, address, user: !!user, showRegistration });
 
-  // 1. Loading (including waiting for Wagmi to resolve address after connecting)
-  if (authLoading || (isConnected && isChecking) || (isConnected && !address && !user)) {
+  // 1. Loading
+  if (authLoading || (isConnected && !address && !user)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-transparent text-cyan-600 space-y-4">
         <Loader2 className="w-10 h-10 animate-spin" />
@@ -218,100 +112,100 @@ export default function PatientDashboard() {
     );
   }
 
-  // 1.5 Error State
-  if (walletError) {
+  // 2. Connect Wallet View (Brutalist Luxury)
+  if (!user && !showRegistration) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-        <div className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 border border-red-100 text-center">
-          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6 text-red-500">
-            <AlertTriangle className="w-8 h-8" />
+      <div className="min-h-screen flex bg-[#fafafa] text-[#020617] font-sans selection:bg-[#020617] selection:text-white">
+        
+        {/* Left Column - Stark Dark */}
+        <div className="hidden lg:flex w-1/2 bg-[#020617] text-white p-12 md:p-20 flex-col justify-between relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`, backgroundSize: '100px 100px' }} />
+          <div className="relative z-10">
+             <div className="w-12 h-12 bg-white flex items-center justify-center mb-12">
+               <Activity className="w-6 h-6 text-[#020617]" />
+             </div>
+             <h1 className="font-heading text-6xl lg:text-[5rem] font-medium tracking-tighter leading-[1] mb-8">
+               Patient <br/><span className="text-slate-500">Portal.</span>
+             </h1>
+             <p className="text-2xl text-slate-400 font-light max-w-md leading-relaxed">
+               Cryptographically authenticate to retrieve your sovereign health records. Zero intermediaries.
+             </p>
           </div>
-          <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Connection Error</h1>
-          <p className="text-slate-500 mb-8 font-light">{walletError}</p>
-          <Button onClick={handleDisconnect} variant="outline" className="w-full">
-            Disconnect & Try Again
+          <div className="relative z-10 text-[10px] font-mono tracking-[0.3em] uppercase font-bold text-slate-600">
+             End-to-end encrypted architecture
+          </div>
+        </div>
+
+        {/* Right Column - Stark Light */}
+        <div className="w-full lg:w-1/2 p-12 md:p-20 flex flex-col justify-center relative shadow-[-30px_0_100px_rgba(0,0,0,0.1)] z-10 bg-[#fafafa]">
+          
+          <Button variant="ghost" className="absolute top-12 right-12 text-[#020617] hover:bg-transparent hover:opacity-50 uppercase tracking-[0.2em] font-bold text-[10px] rounded-none" onClick={() => setLocation("/")}>
+            <ArrowLeft className="w-4 h-4 mr-3" /> Exit
           </Button>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-md w-full mx-auto"
+          >
+            <div className="mb-12 border-b border-[#020617]/10 pb-12">
+              <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-6">Authentication Required</span>
+              <h2 className="font-heading text-4xl font-medium tracking-tight mb-4 text-[#020617]">Wallet Access</h2>
+              <p className="text-slate-500 text-lg font-light leading-relaxed">Initialize a secure connection to decrypt your clinical vault.</p>
+            </div>
+            
+            <div className="flex flex-col gap-8">
+               <div className="scale-105 origin-left">
+                 <WalletConnect onRequireRegistration={() => setShowRegistration(true)} />
+               </div>
+               
+               <div className="p-8 border border-[#020617]/10 bg-white mt-4">
+                 <div className="flex items-start gap-5">
+                   <Lock className="w-5 h-5 text-slate-400 shrink-0 mt-1" />
+                   <div>
+                     <h4 className="font-bold text-xs uppercase tracking-[0.2em] text-[#020617] mb-2">Zero-Knowledge Proof</h4>
+                     <p className="text-slate-500 text-sm leading-relaxed">Your private keys never leave your device. Signatures are computed locally.</p>
+                   </div>
+                 </div>
+               </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     );
   }
 
-  // 2. Connect Wallet View (Clean Medical Theme)
-  if (!isConnected && !user) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Subtle Background Effects */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-50 via-slate-50 to-slate-50" />
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 border border-slate-100 relative z-10 text-center"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center mx-auto mb-6 text-cyan-600 border border-cyan-100 shadow-sm">
-            <Activity className="w-8 h-8" />
-          </div>
-          <h1 className="text-3xl font-serif font-bold text-slate-800 mb-2">Patient Portal</h1>
-          <p className="text-slate-500 mb-8 font-light">
-            Connect your wallet to retrieve your encrypted health identity.
-          </p>
-          <div className="flex justify-center mb-6 scale-110">
-            <WalletConnect />
-          </div>
-          <Button variant="ghost" className="w-full text-slate-400 hover:text-cyan-600 hover:bg-cyan-50" onClick={() => setLocation("/")}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // 3. Signature Login (Clean Medical Theme)
-  if (loginRequired && address) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 border border-slate-100 relative z-10 text-center"
-        >
-          <div className="w-16 h-16 rounded-full bg-cyan-50 flex items-center justify-center mx-auto mb-6 text-cyan-600 animate-pulse">
-            <Lock className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Security Verification</h1>
-          <p className="text-slate-500 mb-8 font-light">
-            Your data is encrypted. Sign the message to prove ownership.
-          </p>
-
-          <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-12 mb-4 rounded-xl shadow-md" onClick={handleLogin} disabled={isLoggingIn}>
-            {isLoggingIn ? <Loader2 className="animate-spin w-5 h-5" /> : "Verify Identity"}
-          </Button>
-
-          <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600 hover:bg-slate-50" onClick={handleDisconnect}>
-            Cancel
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // 4. Registration View
+  // 4. Registration View (Brutalist)
   if (showRegistration && address) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-xl bg-white shadow-xl rounded-3xl border border-slate-100 overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-            <h2 className="font-serif text-slate-800 font-bold text-xl">Initialize Identity</h2>
-            <Button variant="ghost" onClick={handleDisconnect} className="text-red-500 hover:bg-red-50">Abort</Button>
-          </div>
-          <div className="p-8">
-            <PatientRegistration
+      <div className="min-h-screen flex bg-[#fafafa] text-[#020617] font-sans selection:bg-[#020617] selection:text-white">
+        {/* Left Column */}
+        <div className="hidden lg:flex w-1/3 bg-[#020617] text-white p-12 flex-col justify-between relative overflow-hidden">
+           <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`, backgroundSize: '100px 100px' }} />
+           <div className="relative z-10">
+             <h1 className="font-heading text-5xl font-medium tracking-tighter leading-[1] mb-6">
+               Initialize <br/><span className="text-slate-500">Identity.</span>
+             </h1>
+             <p className="text-lg text-slate-400 font-light leading-relaxed">
+               Configure your cryptographic master password. This PIN will secure your AES keys locally.
+             </p>
+           </div>
+           <Button variant="outline" onClick={handleDisconnect} className="w-fit border-white/20 text-white hover:bg-white hover:text-black rounded-none uppercase tracking-[0.2em] text-[10px] font-bold">
+             Abort Registration
+           </Button>
+        </div>
+
+        {/* Right Column */}
+        <div className="w-full lg:w-2/3 p-8 md:p-16 flex items-center justify-center overflow-y-auto">
+          <div className="max-w-xl w-full border border-[#020617]/10 bg-white p-12 shadow-[0_30px_100px_rgba(0,0,0,0.05)] relative">
+             <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-10 border-b border-[#020617]/10 pb-4">Onboarding Pipeline</span>
+             <PatientRegistration
               walletAddress={address}
               onSuccess={() => { setShowRegistration(false); toast({ title: "Identity Created" }); }}
               onDisconnect={handleDisconnect}
               isWalletConnect={true}
-            />
+             />
           </div>
         </div>
       </div>
@@ -337,6 +231,7 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
   const [recovering, setRecovering] = useState(false);
   const { toast } = useToast();
 
+  const [activeTab, setActiveTab] = useState("Dashboard");
   const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
 
   // Decryption Logic
@@ -390,62 +285,69 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
     }
   };
 
-  // Find latest VITALS record
-  const latestVitals = decryptedRecords.find(r => r.recordType === 'VITALS');
-  const vitalsData = latestVitals?.decryptedContent ? JSON.parse(latestVitals.decryptedContent) : null;
+  const activeGrantsCount = auditData?.logs ? auditData.logs.filter((l: any) => l.action.includes('GRANT')).length : 0;
 
-  // Extract dynamic Active Regimens from all records
-  const activeRegimens = decryptedRecords.reduce((acc: any[], r) => {
-    try {
-      if (r.decryptedContent) {
-        const payload = JSON.parse(r.decryptedContent);
-        if (payload.prescription && payload.prescription !== "None" && payload.prescription.trim() !== "") {
-           // Basic parser: split string to extract name and dose
-           const words = payload.prescription.split(' ');
-           const name = words[0];
-           const dose = words.slice(1).join(' ') || "Prescribed by Doctor";
-           acc.push({
-             name: name.length > 20 ? name.substring(0, 20) + '...' : name,
-             dose: dose.length > 30 ? dose.substring(0, 30) + '...' : dose,
-             count: "-- CAPS", // Dynamic inventory not yet supported by smart contract
-             progress: 100, 
-             color: acc.length % 2 === 0 ? "from-blue-400 to-indigo-600" : "from-purple-400 to-fuchsia-600",
-             shadow: acc.length % 2 === 0 ? "shadow-blue-500/20" : "shadow-purple-500/20"
-           });
-        }
-      }
-    } catch (e) {}
-    return acc;
-  }, []);
+  // Recent Medical Records real mapping from decrypted records
+  const recentRecords = decryptedRecords.map(r => {
+    let parsed = {} as any;
+    try { if (r.decryptedContent) parsed = JSON.parse(r.decryptedContent); } catch(e){}
+    const doctorName = (r as any).doctorName || parsed.doctorName;
+    return {
+      id: r.id,
+      type: r.recordType || 'Diagnosis',
+      hospital: r.hospitalName || parsed.hospital || 'Unknown Hospital',
+      doctor: doctorName ? (doctorName.startsWith('Dr.') ? doctorName : 'Dr. ' + doctorName) : 'Dr. Attending',
+      date: new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      status: r.blockchainHash ? 'On-chain' : 'Local'
+    }
+  }).slice(0, 4);
+
+  // Extract latest doctor, vitals, and meds
+  let activeDoctor = null;
+  let activeDate = null;
+  let latestHeartRate = "72 bpm";
+  let latestBP = "120/80 mmHg";
+  let currentMeds = "None active";
+  
+  for (const r of decryptedRecords) {
+     let parsed = {} as any;
+     try { if (r.decryptedContent) parsed = JSON.parse(r.decryptedContent); } catch(e){}
+     
+     if (parsed.doctorName && !activeDoctor) {
+         activeDoctor = parsed.doctorName;
+         activeDate = new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+     }
+     
+     if (parsed.vitals?.heartRate && latestHeartRate === "72 bpm") latestHeartRate = parsed.vitals.heartRate;
+     if (parsed.vitals?.bloodPressure && latestBP === "120/80 mmHg") latestBP = parsed.vitals.bloodPressure;
+     if (parsed.prescription && currentMeds === "None active") currentMeds = parsed.prescription.length > 20 ? parsed.prescription.substring(0, 20) + '...' : parsed.prescription;
+     if (parsed.medications && currentMeds === "None active") currentMeds = parsed.medications.length > 20 ? parsed.medications.substring(0, 20) + '...' : parsed.medications;
+  }
+
+  const navItems = [
+    { icon: Activity, label: "Dashboard" },
+    { icon: FileText, label: "My Records" },
+    { icon: Lock, label: "Access Control" },
+    { icon: Blocks, label: "Family Vault" },
+    { icon: Clock, label: "Audit Log" },
+    { icon: SettingsIcon, label: "Settings" }
+  ];
 
   return (
-    <Layout>
-      <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#FAFCFF]">
-         <motion.div 
-           animate={{ scale: [1, 1.2, 1], x: [0, 100, 0], y: [0, 50, 0] }}
-           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-           className="absolute -top-40 -right-20 w-[800px] h-[800px] bg-cyan-200/20 rounded-full blur-[120px] mix-blend-multiply opacity-60" 
-         />
-         <motion.div 
-           animate={{ scale: [1.1, 1, 1.1], x: [0, -80, 0], y: [0, -40, 0] }}
-           transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-           className="absolute top-1/2 -left-40 w-[600px] h-[600px] bg-indigo-200/20 rounded-full blur-[150px] mix-blend-multiply opacity-50" 
-         />
-      </div>
-
+    <div className="w-full min-h-screen bg-slate-50 text-slate-900 font-sans flex">
+      {/* Recovery Dialog */}
       <Dialog open={showRecovery} onOpenChange={setShowRecovery}>
-        <DialogContent className="sm:max-w-md border-none bg-white/80 backdrop-blur-2xl shadow-2xl">
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-2xl rounded-3xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl font-serif font-bold text-slate-800">
-              <ShieldAlert className="w-6 h-6 text-orange-500" />
-              Keystore Recovery Required
+            <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-slate-900">
+              <Lock className="w-5 h-5 text-cyan-600" />
+              Keystore Recovery
             </DialogTitle>
-            <DialogDescription className="text-slate-500">
-              We noticed your encryption keys are missing.
-              Please enter your 6-digit Health PIN to recover your secure vault.
+            <DialogDescription className="text-slate-500 text-sm mt-1">
+              Please enter your 6-digit Health PIN to unlock your secure clinical records.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-8 flex justify-center">
+          <div className="py-6 flex justify-center">
             <Input
               type="password"
               inputMode="numeric"
@@ -454,308 +356,283 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
               placeholder="••••••"
               value={recoveryPin}
               onChange={(e) => setRecoveryPin(e.target.value.replace(/[^0-9]/g, ''))}
-              className="text-center font-mono tracking-[1em] text-3xl h-16 bg-white/50 border-slate-100 rounded-2xl"
+              className="text-center font-mono tracking-[1em] text-3xl h-16 bg-slate-50 border-slate-200 text-slate-900 rounded-xl focus:ring-cyan-600 focus:border-cyan-600 transition-all"
             />
           </div>
           <DialogFooter>
-            <Button onClick={handleRecover} disabled={recovering || recoveryPin.length !== 6} className="w-full bg-slate-900 hover:bg-slate-800 h-14 rounded-2xl text-lg font-bold shadow-xl">
+            <Button onClick={handleRecover} disabled={recovering || recoveryPin.length !== 6} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white h-12 rounded-xl text-base font-medium shadow-md transition-all">
               {recovering ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Unlock className="w-5 h-5 mr-2" />}
-              Unlock clinical Records
+              Unlock Records
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* --- HUD PROVIDER WRAPPER --- */}
-      <Tabs defaultValue="overview" className="h-[calc(100vh-8rem)] max-h-[900px] min-h-[650px] flex flex-col gap-6 animate-in fade-in duration-1000">
-        
-        {/* TOP: SMART HUD HEADER */}
-        <div className="flex justify-between items-end px-2">
-          <div>
-            <h1 className="text-4xl font-serif font-bold text-slate-800 tracking-tight flex items-center gap-3">
-              Medical Operating System
-            </h1>
-            <p className="text-sm text-slate-600 font-medium tracking-wide">Secure Patient Portal • Data sovereignty active</p>
+      {/* ULTRA SIDEBAR */}
+      <aside className="w-[280px] h-screen bg-white border-r border-slate-200 flex flex-col relative z-20 shrink-0">
+        <div className="p-8 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center shadow-md">
+            <Activity className="w-4 h-4 text-white" />
           </div>
-          
-          <TabsList className="bg-white/40 backdrop-blur-2xl p-1.5 rounded-full border border-white/60 shadow-xl flex h-auto">
-            <TabsTrigger value="overview" className="rounded-full px-8 py-2.5 data-[state=active]:bg-white data-[state=active]:text-cyan-700 font-bold text-xs transition-all shadow-sm">Overview</TabsTrigger>
-            <TabsTrigger value="timeline" className="rounded-full px-8 py-2.5 data-[state=active]:bg-white data-[state=active]:text-cyan-700 font-bold text-xs transition-all">Clinical History</TabsTrigger>
-          </TabsList>
+          <span className="text-xl font-bold text-slate-800 tracking-wider">SEHATI</span>
         </div>
 
-        <div className="grid grid-cols-12 gap-6 flex-1 overflow-hidden">
+        <nav className="flex-1 px-4 space-y-1">
+          {navItems.map((item, idx) => (
+            <button key={idx} onClick={() => setActiveTab(item.label)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${activeTab === item.label ? 'bg-cyan-50 text-cyan-700 shadow-sm border border-cyan-100' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}>
+              <item.icon className={`w-5 h-5 ${activeTab === item.label ? 'text-cyan-600' : 'group-hover:text-cyan-500'}`} />
+              <span className="font-medium text-sm">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-6 mt-auto">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-3 hover:bg-slate-100 transition-colors cursor-pointer group">
+            <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center border border-cyan-200">
+              <Fingerprint className="w-4 h-4 text-cyan-600" />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-xs font-mono text-slate-600 truncate">{user.walletAddress}</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Connected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 h-screen overflow-y-auto relative bg-slate-50">
+        <div className="p-8 md:p-12 max-w-6xl mx-auto space-y-10 relative z-10">
           
-          {/* LEFT: IDENTITY (3/12) — stagger 0ms */}
-          <motion.div
-            initial={{ opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.55, ease: "easeOut", delay: 0 }}
-            className="col-span-3 flex flex-col gap-6 overflow-hidden"
-          >
-             <motion.div whileHover={{ y: -5 }} className="diamond-card p-6 rounded-[2.5rem] flex flex-col items-center">
-                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-cyan-50 to-white flex items-center justify-center border-4 border-white shadow-2xl mb-5 relative group">
-                   <img src={`https://api.dicebear.com/7.x/shapes/svg?seed=${user.walletAddress}`} className="w-16 h-16 mix-blend-multiply opacity-80 group-hover:scale-110 transition-transform" />
-                   <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} className="absolute bottom-1 right-1 w-6 h-6 bg-emerald-400 rounded-full border-4 border-white shadow-md" />
+          {activeTab === "My Records" ? (
+             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col gap-2 mb-8">
+                  <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+                    Clinical Archive
+                  </h1>
+                  <p className="text-slate-500 font-medium">Your complete medical history</p>
                 </div>
-                <h2 className="text-2xl font-serif font-bold text-slate-800 text-center leading-tight mb-2">{user.name}</h2>
-                <div className="flex gap-2 w-full mt-4">
-                   <div className="flex-1 bg-white/50 p-3 rounded-[1.5rem] border border-white/80 text-center shadow-sm">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Patient Age</p>
-                      <p className="text-lg font-bold text-slate-700">{user.age}</p>
-                   </div>
-                   <div className="flex-1 bg-white/50 p-3 rounded-[1.5rem] border border-white/80 text-center shadow-sm">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Blood Unit</p>
-                      <p className="text-lg font-bold text-cyan-600">{user.bloodType}</p>
-                   </div>
-                </div>
-             </motion.div>
-
-             <div className="diamond-card rounded-[2.5rem] flex-1 overflow-hidden relative group">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/20 pointer-events-none" />
-                <QRShare patientId={user.id} walletAddress={user.walletAddress} />
+                {/* @ts-ignore */}
+                <HealthTimeline records={decryptedRecords} />
              </div>
-          </motion.div>
-
-          {/* CENTER: BENTO HUB (6/12) — stagger 150ms */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: "easeOut", delay: 0.15 }}
-            className="col-span-6 flex flex-col gap-6 overflow-hidden"
-          >
-             <TabsContent value="overview" className="m-0 flex flex-col gap-6 h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* COMPACT BENTO VITALS GRID */}
-                <div className="grid grid-cols-2 gap-6">
-                   <MagneticCard>
-                      <div className="diamond-card p-8 rounded-[2.5rem] bg-white/40 h-[240px] relative overflow-hidden group border-cyan-100/50 shadow-cyan-900/5 shadow-2xl">
-                         <div className="flex justify-between items-center mb-8 relative z-10">
-                            <span className="text-xs font-black text-rose-500 uppercase tracking-widest bg-rose-50/80 px-4 py-1.5 rounded-full border border-rose-100/50 flex items-center gap-2">
-                               <Activity className={`w-4 h-4 ${vitalsData ? 'animate-pulse' : ''}`} /> Cardiac Rhythm
-                            </span>
-                            <div className={`text-[10px] font-bold px-2 py-1 rounded-md shadow-sm ${
-                              vitalsData
-                                ? 'text-emerald-700 bg-emerald-50/90'
-                                : 'text-slate-500 bg-slate-50'
-                            }`}>
-                              {vitalsData
-                                ? `RECORDED ${new Date(latestVitals!.createdAt).toLocaleDateString('id-ID', { day:'numeric', month:'short' })}`
-                                : 'NO DATA YET'}
-                            </div>
-                         </div>
-                         {vitalsData ? (
-                           <div className="flex items-baseline gap-3 relative z-10">
-                              <motion.span initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} className="text-8xl font-black text-slate-800 tracking-tighter drop-shadow-sm">{vitalsData.heartRate}</motion.span>
-                              <span className="text-2xl font-bold text-slate-600">bpm</span>
-                           </div>
-                         ) : (
-                           <div className="flex flex-col items-center justify-center h-28 gap-2 relative z-10">
-                             <Activity className="w-10 h-10 text-slate-200" />
-                             <p className="text-xs text-slate-400 font-medium text-center">Vitals recorded during<br/>doctor visits</p>
-                           </div>
-                         )}
-                         
-                         {/* Dynamic Waveform Visualizer — only when data exists */}
-                         {vitalsData && (
-                           <div className="absolute bottom-0 left-0 w-full h-12 flex items-end opacity-20 overflow-hidden pointer-events-none px-1 gap-[1px]">
-                              {Array.from({length: 40}).map((_, i) => (
-                                 <motion.div 
-                                   key={i} 
-                                   animate={{ height: [10, Math.random() * 40 + 10, 10] }} 
-                                   transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.05 }} 
-                                   className="w-full bg-rose-400 rounded-t-sm" 
-                                 />
-                              ))}
-                           </div>
-                         )}
-                      </div>
-                   </MagneticCard>
-
-                   <div className="flex flex-col gap-4">
-                      <motion.div whileHover={{ x: 5 }} className="diamond-card p-6 rounded-[2rem] flex flex-col justify-between flex-1 bg-white/60 border-indigo-100/50 shadow-2xl shadow-indigo-900/5">
-                         <span className="text-[11px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                            <Fingerprint className="w-4 h-4" /> Vascular Pressure
-                         </span>
-                         <div className="flex items-baseline gap-2">
-                            <span className={`text-5xl font-black tracking-tighter ${vitalsData ? 'text-slate-800' : 'text-slate-300'}`}>
-                              {vitalsData?.bloodPressure || "--/--"}
-                            </span>
-                            <span className="text-xs font-bold text-slate-600 uppercase">mmHg</span>
-                         </div>
-                      </motion.div>
-                      <motion.div whileHover={{ x: 5 }} className="diamond-card p-6 rounded-[2rem] flex flex-col justify-between flex-1 bg-fuchsia-50/20 border-fuchsia-100/50 shadow-2xl shadow-fuchsia-900/5">
-                         <span className="text-[11px] font-black text-fuchsia-600 uppercase tracking-widest">Thermic Index</span>
-                         <div className="flex items-baseline gap-2">
-                            <span className={`text-5xl font-black tracking-tighter ${vitalsData ? 'text-slate-800' : 'text-slate-300'}`}>
-                              {vitalsData?.temperature || "--"}
-                            </span>
-                            <span className="text-2xl font-bold text-fuchsia-400">°C</span>
-                         </div>
-                      </motion.div>
-                   </div>
+          ) : activeTab === "Audit Log" ? (
+             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex flex-col gap-2 mb-8">
+                  <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+                    Audit Log
+                  </h1>
+                  <p className="text-slate-500 font-medium">Track who accessed your data</p>
                 </div>
+                <AuditLog logs={auditData?.logs || []} />
+             </div>
+          ) : activeTab === "Dashboard" ? (
+            <>
+              {/* HEADER ROW */}
+              <div className="flex flex-col gap-2">
+                <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
+                  Good Morning, {user.name.split(' ')[0]}
+                </h1>
+                <p className="text-slate-500 font-medium">Your data is encrypted and sovereign</p>
+              </div>
 
-                {/* PROMAX MEDICATION HUD (INTERNAL SCROLL) */}
-                <div className="diamond-card p-8 rounded-[3rem] flex-1 overflow-hidden flex flex-col border-white/60 shadow-2xl shadow-slate-900/5">
-                   <div className="flex items-center justify-between mb-8">
-                      <h3 className="font-serif font-bold text-2xl text-slate-800 flex items-center gap-4">
-                         <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
-                            <Pill className="w-6 h-6" />
-                         </div>
-                         Active Regimen
-                      </h3>
-                      <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Active</span>
-                      </div>
-                   </div>
-                   <div className="grid grid-cols-2 gap-6 overflow-y-auto pr-2 scrollbar-hide">
-                      {activeRegimens.length > 0 ? (
-                        activeRegimens.map((m: any, i: number) => (
-                         <motion.div key={i} whileHover={{ scale: 1.02 }} className="bg-white/40 p-6 rounded-[2rem] border border-white hover:border-cyan-100 transition-all group shadow-sm hover:shadow-xl flex flex-col justify-center min-h-[120px]">
-                            <div className="flex justify-between items-center">
-                               <div>
-                                  <h4 className="font-bold text-slate-800 text-lg group-hover:text-cyan-700 transition-colors break-words max-w-[140px]">{m.name}</h4>
-                                  <p className="text-[11px] font-medium text-slate-600 mt-1 uppercase tracking-tight break-words max-w-[140px]">{m.dose}</p>
-                               </div>
-                               <div className="bg-white/80 p-2.5 rounded-xl border border-slate-50 shadow-sm shrink-0">
-                                  <Pill className="w-5 h-5 text-cyan-600" />
-                               </div>
-                            </div>
-                         </motion.div>
-                        ))
-                      ) : (
-                        <div className="col-span-2 flex flex-col items-center justify-center py-10 bg-white/30 rounded-[2rem] border border-white/50 border-dashed">
-                          <Pill className="w-8 h-8 text-slate-300 mb-3" />
-                          <p className="text-slate-600 font-medium text-sm">No active protocols or prescriptions</p>
-                        </div>
-                      )}
-                   </div>
-                </div>
-             </TabsContent>
+              {/* TOP STATS ROW */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatsCard 
+                  label="Heart Rate" 
+                  value={latestHeartRate} 
+                  icon={Activity} 
+                  iconColor="text-rose-500" 
+                  gradient="bg-gradient-to-br from-rose-50/80 to-white"
+                  isEcg={true}
+                />
+                <StatsCard 
+                  label="Current Medications" 
+                  value={currentMeds} 
+                  subtext="" 
+                  icon={Pill} 
+                  iconColor="text-cyan-500" 
+                  gradient="bg-gradient-to-br from-cyan-50/80 to-white"
+                />
+                <StatsCard 
+                  label="Blood Pressure" 
+                  value={latestBP} 
+                  icon={Heart} 
+                  iconColor="text-indigo-500" 
+                  gradient="bg-gradient-to-br from-indigo-50/80 to-white"
+                />
+              </div>
+
+              {/* MIDDLE ROW SECTION */}
+              <div className="space-y-4 mt-10">
              
-             <TabsContent value="timeline" className="m-0 h-full overflow-hidden">
-                <div className="diamond-card rounded-[3rem] p-8 h-full overflow-hidden flex flex-col">
-                  <div className="flex items-center justify-between mb-8">
-                     <h3 className="font-serif font-bold text-2xl text-slate-800 flex items-center gap-3">
-                        <FileText className="w-7 h-7 text-cyan-500" />
-                        Clinical Archive
-                     </h3>
-                     <span className="text-[10px] font-black bg-slate-900 text-white px-5 py-2 rounded-full tracking-widest">{records.length} ENTRIES</span>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-y-auto pr-2 scrollbar-hide">
-                    <HealthTimeline records={decryptedRecords as MedicalRecord[]} />
-                  </div>
-                </div>
-             </TabsContent>
-          </motion.div>
-
-          {/* RIGHT: SECURITY & PROTOCOLS (3/12) — stagger 300ms */}
-          <motion.div
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.55, ease: "easeOut", delay: 0.3 }}
-            className="col-span-3 flex flex-col h-full overflow-hidden"
-          >
-             <div className="diamond-card p-8 rounded-[2.5rem] flex flex-col h-full bg-white/60 border-slate-100 shadow-2xl shadow-slate-900/5">
-                <div className="flex items-center gap-4 mb-8">
-                   <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
-                      <ShieldAlert className="w-5 h-5" />
+             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {/* Recent Records Table */}
+                <div className="xl:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm relative overflow-hidden">
+                   <h2 className="text-xl font-bold text-slate-900 mb-6 relative z-10">Recent Medical Records</h2>
+                   
+                   <div className="overflow-x-auto relative z-10">
+                     <table className="w-full text-sm text-left">
+                       <thead className="text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                         <tr>
+                           <th className="pb-4 font-semibold px-2">Record type</th>
+                           <th className="pb-4 font-semibold px-2">Hospital</th>
+                           <th className="pb-4 font-semibold px-2">Attending Doctor</th>
+                           <th className="pb-4 font-semibold px-2">Date</th>
+                           <th className="pb-4 font-semibold px-2 text-center">Verification</th>
+                           <th className="pb-4 font-semibold px-2"></th>
+                         </tr>
+                       </thead>
+                       <tbody className="divide-y divide-slate-50">
+                         {recentRecords.length > 0 ? (
+                           recentRecords.map((rec, i) => (
+                             <tr key={i} className="hover:bg-slate-50 transition-colors group">
+                               <td className="py-4 px-2">
+                                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                                   rec.type.toLowerCase().includes('diagnosis') ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                                   rec.type.toLowerCase().includes('lab') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                   'bg-amber-50 text-amber-700 border-amber-100'
+                                 }`}>
+                                   {rec.type}
+                                 </span>
+                               </td>
+                               <td className="py-4 px-2 font-medium text-slate-800">{rec.hospital}</td>
+                               <td className="py-4 px-2 text-slate-600">{rec.doctor}</td>
+                               <td className="py-4 px-2 text-slate-600 font-mono text-xs">{rec.date}</td>
+                               <td className="py-4 px-2">
+                                 <div className="flex items-center justify-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100 w-fit mx-auto">
+                                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                   <span className="text-[10px] font-bold uppercase tracking-wider">{rec.status}</span>
+                                 </div>
+                               </td>
+                               <td className="py-4 px-2 text-right">
+                                 <button 
+                                   onClick={() => {
+                                      setActiveTab("My Records");
+                                      setTimeout(() => {
+                                         const el = document.getElementById(`record-${rec.id}`);
+                                         if (el) {
+                                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            el.click(); // Expand the record
+                                         }
+                                      }, 300);
+                                   }}
+                                   className="px-4 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-600 font-medium text-xs border border-slate-200 transition-all shadow-sm">
+                                   View
+                                 </button>
+                               </td>
+                             </tr>
+                           ))
+                         ) : (
+                           <tr>
+                             <td colSpan={6} className="py-10 text-center text-slate-500 text-sm">
+                               No medical records found. Let a doctor scan your QR to add records.
+                             </td>
+                           </tr>
+                         )}
+                       </tbody>
+                     </table>
                    </div>
-                   <h3 className="font-serif font-bold text-xl text-slate-800">Security Node</h3>
                 </div>
-                <div className="flex-1 overflow-y-auto pr-1 scrollbar-hide transform-gpu">
-                   <MedicalTimeline logs={auditData?.logs ? auditData.logs.slice(0,10) : []} />
-                </div>
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                   <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <div>
-                         <p className="text-[10px] font-black text-emerald-800 uppercase">Encryption Engine</p>
-                         <p className="text-xs font-bold text-emerald-600">AES-256 ACTIVE</p>
-                      </div>
+
+                {/* Active Access Panel */}
+                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col relative overflow-hidden">
+                   <h2 className="text-xl font-bold text-slate-900 mb-6 relative z-10">Data Sovereignty</h2>
+                   
+                   {activeDoctor ? (
+                     <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6 relative z-10">
+                       <div className="flex items-center gap-4 mb-5">
+                         <div className="w-12 h-12 rounded-full bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shadow-inner">
+                           <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeDoctor}`} alt="Doctor" className="w-10 h-10 object-cover" />
+                         </div>
+                         <div>
+                           <h3 className="font-bold text-slate-800 text-lg">{activeDoctor.startsWith('Dr.') ? activeDoctor : `Dr. ${activeDoctor}`}</h3>
+                           <p className="text-xs text-cyan-700 font-medium">Attending Physician</p>
+                         </div>
+                       </div>
+                       <div className="space-y-4">
+                         <div>
+                           <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1">Date</p>
+                           <p className="font-medium text-slate-700">{activeDate}</p>
+                         </div>
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 mb-6 relative z-10 text-center flex flex-col items-center justify-center h-full">
+                       <ShieldAlert className="w-10 h-10 text-cyan-500 mb-4 opacity-80" />
+                       <h3 className="text-slate-800 font-bold mb-1">No Active Doctor Sessions</h3>
+                       <p className="text-slate-500 text-xs font-medium">Grant secure temporary access to a verified doctor below.</p>
+                     </div>
+                   )}
+
+                   <div className="mt-auto relative z-10">
+                     <QRShare patientId={user.id} walletAddress={user.walletAddress} />
                    </div>
                 </div>
              </div>
-          </motion.div>
+          </div>
+          </>
+          ) : (
+             <div className="py-20 text-center text-slate-500">
+               <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
+               <p>This section is under construction.</p>
+             </div>
+          )}
 
         </div>
-      </Tabs>
-    </Layout>
+      </main>
+    </div>
   );
 }
 
-// --- SUB-COMPONENTS ---
-
-function VitalStat({ label, value, unit, highlight }: { label: string, value: string, unit: string, highlight?: boolean }) {
-  const isNoData = value === "--" || value === "--/--";
-  const applyHighlight = highlight && !isNoData;
+function SettingsIcon(props: any) {
   return (
-    <div className={`p-4 rounded-2xl border transition-all duration-300 ${applyHighlight ? 'bg-cyan-50 border-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.1)]' : 'bg-white border-slate-100 hover:border-cyan-100'} flex flex-col justify-between h-[104px] shadow-sm`}>
-      <span className={`text-[10px] font-bold uppercase tracking-widest ${applyHighlight ? 'text-cyan-600' : 'text-slate-600'}`}>{label}</span>
-      <div className="flex items-baseline gap-1 mt-auto">
-        <span className={`text-3xl font-serif font-bold tracking-tight ${isNoData ? 'text-slate-200' : applyHighlight ? 'text-cyan-900' : 'text-slate-800'}`}>{value}</span>
-        {!isNoData && <span className={`text-xs font-medium mb-1 ${applyHighlight ? 'text-cyan-600' : 'text-slate-600'}`}>{unit}</span>}
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+  )
+}
+
+function StatsCard({ label, value, icon: Icon, iconColor, gradient, subtext, subtextColor, badge, showPulse, isEcg }: any) {
+  return (
+    <div className={`border border-slate-200 rounded-3xl p-6 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-500 ${gradient || 'bg-white'}`}>
+      <div className="relative z-10">
+        <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">{label}</p>
+        <div className="flex items-baseline gap-3">
+          <h3 className="text-3xl font-bold text-slate-900 tracking-tight">{value}</h3>
+          {subtext && <span className={`text-xs font-semibold ${subtextColor}`}>{subtext}</span>}
+        </div>
       </div>
-    </div>
-  )
-}
-
-function MedicalTimeline({ logs }: { logs: any[] }) {
-  if (logs.length === 0) return <div className="text-slate-600 text-center py-4 text-sm font-medium">No system events logged.</div>;
-
-  return (
-    <div className="relative border-l-2 border-slate-100 ml-3 space-y-4">
-      {logs.map((log, i) => (
-        <Dialog key={i}>
-          <DialogTrigger asChild>
-            <div className="relative pl-8 group cursor-pointer hover:bg-slate-50/50 p-2 rounded-xl transition-all -ml-2">
-              <div className="absolute left-[7px] top-3.5 w-4 h-4 rounded-full border-4 border-white bg-slate-200 group-hover:bg-cyan-500 transition-colors shadow-sm" />
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="font-black text-cyan-700 uppercase tracking-tighter group-hover:underline underline-offset-4 decoration-cyan-300 transition-all">{log.action}</span>
-                  <span className="font-mono text-slate-600 group-hover:text-cyan-600 transition-colors">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed truncate">
-                  <span className="font-mono bg-white px-1.5 py-0.5 rounded text-slate-600 border border-slate-200/60 shadow-sm">{(log.actorWallet || "System").substring(0, 8)}...</span>
-                  <span className="mx-2 text-slate-200">/</span>
-                  {log.metadata ? JSON.parse(log.metadata).recordType || log.entityType : "Request Authorized"}
-                </p>
+      
+      {Icon && (
+        <div className="relative shrink-0 flex items-center justify-center p-2 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+          {isEcg ? (
+            <>
+              <style dangerouslySetInnerHTML={{__html: `
+                @keyframes scanline { 0% { width: 0%; } 100% { width: 100%; } }
+              `}} />
+              <div className="relative w-10 h-10 group-hover:scale-110 transition-transform duration-500">
+                 {/* Background faded icon */}
+                 <Icon className={`absolute inset-0 w-10 h-10 ${iconColor} opacity-20`} strokeWidth={1.5} />
+                 {/* Foreground revealing icon */}
+                 <div className="absolute left-0 top-0 bottom-0 overflow-hidden" style={{ animation: 'scanline 1.5s linear infinite' }}>
+                    <Icon className={`absolute left-0 top-0 w-10 h-10 ${iconColor} drop-shadow-[0_0_6px_rgba(244,63,94,0.6)] max-w-none`} strokeWidth={1.5} />
+                 </div>
               </div>
-            </div>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md bg-white/80 backdrop-blur-2xl border-white/60 shadow-2xl rounded-3xl">
-             <DialogHeader>
-               <DialogTitle className="flex items-center gap-2 font-serif text-2xl text-slate-800">
-                  <ShieldAlert className="w-6 h-6 text-cyan-600" /> Audit Log Detail
-               </DialogTitle>
-               <DialogDescription className="text-slate-500">
-                  Cryptographic trail of this system event.
-               </DialogDescription>
-             </DialogHeader>
-             <div className="space-y-4 py-4">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
-                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Event Type</span>
-                      <span className="text-xs font-bold text-cyan-700 uppercase">{log.action}</span>
-                   </div>
-                   <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Timestamp</span>
-                      <span className="text-xs font-mono text-slate-700">{new Date(log.createdAt).toLocaleString()}</span>
-                   </div>
-                   <div className="flex flex-col gap-1 border-b border-slate-100 pb-2">
-                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Actor ID (Wallet)</span>
-                      <span className="text-xs font-mono text-slate-700 bg-white p-1.5 rounded border border-slate-100 shadow-sm break-all">{log.actorWallet || "System Automaton"}</span>
-                   </div>
-                   <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Transaction Hash</span>
-                      <span className="text-xs font-mono text-emerald-600 bg-emerald-50 p-1.5 rounded border border-emerald-100 shadow-sm break-all">{log.transactionHash || "Pending Confirmation..."}</span>
-                   </div>
-                </div>
-             </div>
-          </DialogContent>
-        </Dialog>
-      ))}
+            </>
+          ) : (
+            <>
+              {showPulse && <span className="absolute w-8 h-8 rounded-full bg-rose-200/60 animate-ping duration-1000" />}
+              <Icon className={`w-10 h-10 relative z-10 ${iconColor} drop-shadow-sm group-hover:scale-110 transition-transform duration-500 ${showPulse ? 'animate-pulse' : ''}`} strokeWidth={1.5} />
+            </>
+          )}
+        </div>
+      )}
+      {badge && (
+        <div className="px-3 py-1.5 rounded-lg bg-cyan-50 border border-cyan-100 text-cyan-700 text-xs font-bold shrink-0 relative z-10">
+          {badge}
+        </div>
+      )}
     </div>
-  )
+  );
 }
+
