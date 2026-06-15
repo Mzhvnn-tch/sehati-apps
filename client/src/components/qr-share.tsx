@@ -175,20 +175,17 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <div className="bg-white/60 backdrop-blur-xl h-full p-8 flex flex-col items-center justify-center w-full relative overflow-hidden">
-        <div className="text-center mb-6 relative z-10">
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Data Sovereignty</h3>
-          <p className="text-sm text-slate-500 font-medium">
+      <div className="w-full flex flex-col relative">
+        <div className="mb-8 relative z-10">
+          <h3 className="font-heading text-2xl text-[#020617] mb-2 tracking-tighter">Data Sovereignty.</h3>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">
             Grant secure temporary access to a verified doctor.
           </p>
         </div>
         
         <DialogTrigger asChild>
-          <button className="w-full relative group rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative px-6 py-3.5 flex items-center justify-center gap-2">
-               <span className="text-slate-900 font-extrabold tracking-wide text-sm">Generate QR Access</span>
-            </div>
+          <button className="w-full border border-[#020617] bg-[#020617] text-white hover:bg-transparent hover:text-[#020617] transition-all duration-300 px-6 py-4 flex items-center justify-center group">
+             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em]">Generate QR Access →</span>
           </button>
         </DialogTrigger>
       </div>

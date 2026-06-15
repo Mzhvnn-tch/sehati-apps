@@ -7,9 +7,9 @@ import { Web3AuthConnector } from "@web3auth/web3auth-wagmi-connector"
 import { getDefaultExternalAdapters } from "@web3auth/default-evm-adapter"
 import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-abstraction-provider"
 
-const clientId = "BJI1ggIxFGa8hmqGQxEYXHGjKNkQjWNwMxcpjyXLO7OEFNzon8UC6P1_HDPuM47uikNNUFSZs-PWnYDK4bLB5_c";
+const clientId = import.meta.env.VITE_WEB3AUTH_CLIENT_ID;
 
-const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+const SEPOLIA_RPC = "https://1rpc.io/sepolia";
 
 export const sepolia = defineChain({
     id: 11155111,
@@ -62,7 +62,6 @@ export const web3AuthInstance = new Web3Auth({
     chainConfig,
     web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
     privateKeyProvider,
-    accountAbstractionProvider,
 })
 
 import { injected } from 'wagmi/connectors'

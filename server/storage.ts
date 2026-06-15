@@ -13,7 +13,7 @@ import {
   type InsertAuditLog,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, gt, or, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, gt, or, inArray, ilike } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -55,7 +55,7 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.walletAddress, walletAddress));
+      .where(ilike(users.walletAddress, walletAddress));
     return user || undefined;
   }
 

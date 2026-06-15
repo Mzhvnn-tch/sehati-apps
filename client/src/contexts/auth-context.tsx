@@ -130,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ walletAddress, message, signature }),
+        credentials: "include",
       });
 
       if (!response.ok) {

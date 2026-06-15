@@ -128,11 +128,11 @@ export default function PatientDashboard() {
                Patient <br/><span className="text-slate-500">Portal.</span>
              </h1>
              <p className="text-2xl text-slate-400 font-light max-w-md leading-relaxed">
-               Cryptographically authenticate to retrieve your sovereign health records. Zero intermediaries.
+               Access your medical records securely. You have full, absolute control over who sees your health data.
              </p>
           </div>
           <div className="relative z-10 text-[10px] font-mono tracking-[0.3em] uppercase font-bold text-slate-600">
-             End-to-end encrypted architecture
+             100% Private & Secure
           </div>
         </div>
 
@@ -151,8 +151,8 @@ export default function PatientDashboard() {
           >
             <div className="mb-12 border-b border-[#020617]/10 pb-12">
               <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-6">Authentication Required</span>
-              <h2 className="font-heading text-4xl font-medium tracking-tight mb-4 text-[#020617]">Wallet Access</h2>
-              <p className="text-slate-500 text-lg font-light leading-relaxed">Initialize a secure connection to decrypt your clinical vault.</p>
+              <h2 className="font-heading text-4xl font-medium tracking-tight mb-4 text-[#020617]">Secure Login</h2>
+              <p className="text-slate-500 text-lg font-light leading-relaxed">Log in safely to view your health profile and test results.</p>
             </div>
             
             <div className="flex flex-col gap-8">
@@ -164,8 +164,8 @@ export default function PatientDashboard() {
                  <div className="flex items-start gap-5">
                    <Lock className="w-5 h-5 text-slate-400 shrink-0 mt-1" />
                    <div>
-                     <h4 className="font-bold text-xs uppercase tracking-[0.2em] text-[#020617] mb-2">Zero-Knowledge Proof</h4>
-                     <p className="text-slate-500 text-sm leading-relaxed">Your private keys never leave your device. Signatures are computed locally.</p>
+                     <h4 className="font-bold text-xs uppercase tracking-[0.2em] text-[#020617] mb-2">Absolute Privacy</h4>
+                     <p className="text-slate-500 text-sm leading-relaxed">Your medical information never leaves your device without your explicit permission.</p>
                    </div>
                  </div>
                </div>
@@ -188,7 +188,7 @@ export default function PatientDashboard() {
                Initialize <br/><span className="text-slate-500">Identity.</span>
              </h1>
              <p className="text-lg text-slate-400 font-light leading-relaxed">
-               Configure your cryptographic master password. This PIN will secure your AES keys locally.
+               Set up a secure 6-digit PIN. This acts as the master key to lock your medical records locally.
              </p>
            </div>
            <Button variant="outline" onClick={handleDisconnect} className="w-fit border-white/20 text-white hover:bg-white hover:text-black rounded-none uppercase tracking-[0.2em] text-[10px] font-bold">
@@ -222,6 +222,7 @@ export default function PatientDashboard() {
 // 3. DIAMOND DASHBOARD CONTENT (LoggedIn) - TRUE HUD PROMAX
 // ----------------------------------------------------------------------
 function PatientDashboardContent({ user, records, recordsLoading, auditData }: { user: any, records: any[], recordsLoading: boolean, auditData: any }) {
+  const { disconnect: authDisconnect } = useAuth();
   const [decryptedRecords, setDecryptedRecords] = useState<(MedicalRecord & { decryptedContent?: string })[]>([]);
   const [decryptTrigger, setDecryptTrigger] = useState(0);
 
@@ -334,16 +335,16 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
   ];
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-900 font-sans flex">
+    <div className="w-full h-screen bg-[#fafafa] text-[#020617] font-sans flex flex-col overflow-hidden selection:bg-[#020617] selection:text-white">
       {/* Recovery Dialog */}
       <Dialog open={showRecovery} onOpenChange={setShowRecovery}>
-        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-2xl rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-slate-900">
-              <Lock className="w-5 h-5 text-cyan-600" />
+        <DialogContent className="sm:max-w-md bg-[#fafafa] border-none shadow-[0_30px_100px_rgba(0,0,0,0.2)] rounded-none p-10">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="flex items-center gap-3 font-heading text-2xl tracking-tight text-[#020617]">
+              <Lock className="w-6 h-6 text-[#020617]" />
               Keystore Recovery
             </DialogTitle>
-            <DialogDescription className="text-slate-500 text-sm mt-1">
+            <DialogDescription className="text-slate-500 leading-relaxed mt-4">
               Please enter your 6-digit Health PIN to unlock your secure clinical records.
             </DialogDescription>
           </DialogHeader>
@@ -356,232 +357,183 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
               placeholder="••••••"
               value={recoveryPin}
               onChange={(e) => setRecoveryPin(e.target.value.replace(/[^0-9]/g, ''))}
-              className="text-center font-mono tracking-[1em] text-3xl h-16 bg-slate-50 border-slate-200 text-slate-900 rounded-xl focus:ring-cyan-600 focus:border-cyan-600 transition-all"
+              className="text-center font-mono tracking-[1em] text-3xl h-16 bg-white border-[#020617]/10 text-[#020617] rounded-none focus-visible:ring-0 focus-visible:border-[#020617] transition-all"
             />
           </div>
-          <DialogFooter>
-            <Button onClick={handleRecover} disabled={recovering || recoveryPin.length !== 6} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white h-12 rounded-xl text-base font-medium shadow-md transition-all">
-              {recovering ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Unlock className="w-5 h-5 mr-2" />}
-              Unlock Records
+          <DialogFooter className="mt-4 border-t border-[#020617]/10 pt-6">
+            <Button onClick={handleRecover} disabled={recovering || recoveryPin.length !== 6} className="w-full bg-[#020617] hover:bg-transparent hover:text-[#020617] border border-[#020617] text-white h-14 rounded-none uppercase tracking-[0.2em] text-[10px] font-bold transition-all duration-500">
+          {recovering ? <Loader2 className="w-4 h-4 animate-spin mr-3" /> : <Unlock className="w-4 h-4 mr-3" />}
+              {recovering ? "UNLOCKING..." : "UNLOCK RECORDS"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* ULTRA SIDEBAR */}
-      <aside className="w-[280px] h-screen bg-white border-r border-slate-200 flex flex-col relative z-20 shrink-0">
-        <div className="p-8 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center shadow-md">
-            <Activity className="w-4 h-4 text-white" />
+           {/* TOP NAVIGATION TAPE */}
+      <header className="h-16 border-b border-[#020617] flex items-center justify-between px-8 shrink-0 bg-[#fafafa] relative z-20">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 bg-[#020617] text-white flex items-center justify-center">
+            <Activity className="w-4 h-4" />
           </div>
-          <span className="text-xl font-bold text-slate-800 tracking-wider">SEHATI</span>
+          <span className="font-heading text-xl tracking-tighter">AURAMED</span>
         </div>
-
-        <nav className="flex-1 px-4 space-y-1">
-          {navItems.map((item, idx) => (
-            <button key={idx} onClick={() => setActiveTab(item.label)} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${activeTab === item.label ? 'bg-cyan-50 text-cyan-700 shadow-sm border border-cyan-100' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}>
-              <item.icon className={`w-5 h-5 ${activeTab === item.label ? 'text-cyan-600' : 'group-hover:text-cyan-500'}`} />
-              <span className="font-medium text-sm">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="p-6 mt-auto">
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-3 hover:bg-slate-100 transition-colors cursor-pointer group">
-            <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center border border-cyan-200">
-              <Fingerprint className="w-4 h-4 text-cyan-600" />
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="text-xs font-mono text-slate-600 truncate">{user.walletAddress}</p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Connected</span>
-              </div>
-            </div>
+        <div className="flex items-center gap-12 font-mono text-[10px] uppercase tracking-[0.2em] font-bold">
+          <button onClick={() => setActiveTab("Dashboard")} className={activeTab === "Dashboard" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Overview</button>
+          <button onClick={() => setActiveTab("My Records")} className={activeTab === "My Records" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Archive</button>
+          <button onClick={() => setActiveTab("Audit Log")} className={activeTab === "Audit Log" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Audit</button>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-[#020617] rounded-none"></span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-[#020617]">Vault Secured</span>
           </div>
+          <button onClick={authDisconnect} className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold border-l border-[#020617] pl-6 ml-2 hover:text-slate-400">Sign Out</button>
         </div>
-      </aside>
+      </header>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 h-screen overflow-y-auto relative bg-slate-50">
-        <div className="p-8 md:p-12 max-w-6xl mx-auto space-y-10 relative z-10">
+      {/* MAIN CONTENT GRID */}
+      {activeTab === "Dashboard" ? (
+        <main className="flex-1 flex overflow-hidden">
           
-          {activeTab === "My Records" ? (
-             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex flex-col gap-2 mb-8">
-                  <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-                    Clinical Archive
-                  </h1>
-                  <p className="text-slate-500 font-medium">Your complete medical history</p>
+          {/* LEFT COLUMN: IDENTITY & QR (30%) */}
+          <div className="hidden lg:flex w-[30%] border-r border-[#020617] flex-col relative bg-[#fafafa]">
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`, backgroundSize: '50px 50px' }} />
+            
+            <div className="p-12 pb-0 relative z-10 flex-1">
+              <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-8">Patient Identity</span>
+              <h1 className="font-heading text-6xl xl:text-[5rem] font-medium tracking-tighter leading-[0.9] mb-8">
+                {user.name.split(' ')[0]}<br/>
+                <span className="text-slate-400">Profile.</span>
+              </h1>
+              
+              <div className="space-y-6 mt-12">
+                <div className="border-l-2 border-[#020617] pl-4">
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500 mb-1">Blood Type</p>
+                  <p className="font-mono text-sm font-bold">{user.bloodType || 'Unknown'}</p>
                 </div>
-                {/* @ts-ignore */}
-                <HealthTimeline records={decryptedRecords} />
-             </div>
-          ) : activeTab === "Audit Log" ? (
-             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex flex-col gap-2 mb-8">
-                  <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-                    Audit Log
-                  </h1>
-                  <p className="text-slate-500 font-medium">Track who accessed your data</p>
+                <div className="border-l-2 border-[#020617] pl-4">
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500 mb-1">Age</p>
+                  <p className="font-mono text-sm font-bold">{user.age} Years</p>
                 </div>
-                <AuditLog logs={auditData?.logs || []} />
-             </div>
-          ) : activeTab === "Dashboard" ? (
-            <>
-              {/* HEADER ROW */}
-              <div className="flex flex-col gap-2">
-                <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
-                  Good Morning, {user.name.split(' ')[0]}
-                </h1>
-                <p className="text-slate-500 font-medium">Your data is encrypted and sovereign</p>
               </div>
+            </div>
 
-              {/* TOP STATS ROW */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatsCard 
-                  label="Heart Rate" 
-                  value={latestHeartRate} 
-                  icon={Activity} 
-                  iconColor="text-rose-500" 
-                  gradient="bg-gradient-to-br from-rose-50/80 to-white"
-                  isEcg={true}
-                />
-                <StatsCard 
-                  label="Current Medications" 
-                  value={currentMeds} 
-                  subtext="" 
-                  icon={Pill} 
-                  iconColor="text-cyan-500" 
-                  gradient="bg-gradient-to-br from-cyan-50/80 to-white"
-                />
-                <StatsCard 
-                  label="Blood Pressure" 
-                  value={latestBP} 
-                  icon={Heart} 
-                  iconColor="text-indigo-500" 
-                  gradient="bg-gradient-to-br from-indigo-50/80 to-white"
-                />
-              </div>
-
-              {/* MIDDLE ROW SECTION */}
-              <div className="space-y-4 mt-10">
-             
-             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* Recent Records Table */}
-                <div className="xl:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm relative overflow-hidden">
-                   <h2 className="text-xl font-bold text-slate-900 mb-6 relative z-10">Recent Medical Records</h2>
-                   
-                   <div className="overflow-x-auto relative z-10">
-                     <table className="w-full text-sm text-left">
-                       <thead className="text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                         <tr>
-                           <th className="pb-4 font-semibold px-2">Record type</th>
-                           <th className="pb-4 font-semibold px-2">Hospital</th>
-                           <th className="pb-4 font-semibold px-2">Attending Doctor</th>
-                           <th className="pb-4 font-semibold px-2">Date</th>
-                           <th className="pb-4 font-semibold px-2 text-center">Verification</th>
-                           <th className="pb-4 font-semibold px-2"></th>
-                         </tr>
-                       </thead>
-                       <tbody className="divide-y divide-slate-50">
-                         {recentRecords.length > 0 ? (
-                           recentRecords.map((rec, i) => (
-                             <tr key={i} className="hover:bg-slate-50 transition-colors group">
-                               <td className="py-4 px-2">
-                                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                                   rec.type.toLowerCase().includes('diagnosis') ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
-                                   rec.type.toLowerCase().includes('lab') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                   'bg-amber-50 text-amber-700 border-amber-100'
-                                 }`}>
-                                   {rec.type}
-                                 </span>
-                               </td>
-                               <td className="py-4 px-2 font-medium text-slate-800">{rec.hospital}</td>
-                               <td className="py-4 px-2 text-slate-600">{rec.doctor}</td>
-                               <td className="py-4 px-2 text-slate-600 font-mono text-xs">{rec.date}</td>
-                               <td className="py-4 px-2">
-                                 <div className="flex items-center justify-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100 w-fit mx-auto">
-                                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                   <span className="text-[10px] font-bold uppercase tracking-wider">{rec.status}</span>
-                                 </div>
-                               </td>
-                               <td className="py-4 px-2 text-right">
-                                 <button 
-                                   onClick={() => {
-                                      setActiveTab("My Records");
-                                      setTimeout(() => {
-                                         const el = document.getElementById(`record-${rec.id}`);
-                                         if (el) {
-                                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                            el.click(); // Expand the record
-                                         }
-                                      }, 300);
-                                   }}
-                                   className="px-4 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-600 font-medium text-xs border border-slate-200 transition-all shadow-sm">
-                                   View
-                                 </button>
-                               </td>
-                             </tr>
-                           ))
-                         ) : (
-                           <tr>
-                             <td colSpan={6} className="py-10 text-center text-slate-500 text-sm">
-                               No medical records found. Let a doctor scan your QR to add records.
-                             </td>
-                           </tr>
-                         )}
-                       </tbody>
-                     </table>
-                   </div>
-                </div>
-
-                {/* Active Access Panel */}
-                <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col relative overflow-hidden">
-                   <h2 className="text-xl font-bold text-slate-900 mb-6 relative z-10">Data Sovereignty</h2>
-                   
-                   {activeDoctor ? (
-                     <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6 relative z-10">
-                       <div className="flex items-center gap-4 mb-5">
-                         <div className="w-12 h-12 rounded-full bg-slate-200 border border-slate-300 overflow-hidden flex items-center justify-center shadow-inner">
-                           <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeDoctor}`} alt="Doctor" className="w-10 h-10 object-cover" />
-                         </div>
-                         <div>
-                           <h3 className="font-bold text-slate-800 text-lg">{activeDoctor.startsWith('Dr.') ? activeDoctor : `Dr. ${activeDoctor}`}</h3>
-                           <p className="text-xs text-cyan-700 font-medium">Attending Physician</p>
-                         </div>
-                       </div>
-                       <div className="space-y-4">
-                         <div>
-                           <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-1">Date</p>
-                           <p className="font-medium text-slate-700">{activeDate}</p>
-                         </div>
-                       </div>
-                     </div>
-                   ) : (
-                     <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 mb-6 relative z-10 text-center flex flex-col items-center justify-center h-full">
-                       <ShieldAlert className="w-10 h-10 text-cyan-500 mb-4 opacity-80" />
-                       <h3 className="text-slate-800 font-bold mb-1">No Active Doctor Sessions</h3>
-                       <p className="text-slate-500 text-xs font-medium">Grant secure temporary access to a verified doctor below.</p>
-                     </div>
-                   )}
-
-                   <div className="mt-auto relative z-10">
-                     <QRShare patientId={user.id} walletAddress={user.walletAddress} />
-                   </div>
-                </div>
-             </div>
+            <div className="mt-auto border-t border-[#020617] p-8 relative z-10 shrink-0">
+              <QRShare patientId={user.id} walletAddress={user.walletAddress} />
+            </div>
           </div>
-          </>
-          ) : (
-             <div className="py-20 text-center text-slate-500">
-               <h2 className="text-2xl font-bold mb-2">Coming Soon</h2>
-               <p>This section is under construction.</p>
-             </div>
-          )}
 
-        </div>
-      </main>
+          {/* MIDDLE COLUMN: RECORDS (45%) */}
+          <div className="w-full lg:w-[45%] border-r border-[#020617] flex flex-col bg-white relative">
+            <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`, backgroundSize: '100px 100px' }} />
+            <div className="p-8 md:p-12 border-b border-[#020617] flex justify-between items-end bg-[#fafafa] relative z-10">
+              <div>
+                 <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-2">Chronology</span>
+                 <h2 className="font-heading text-4xl">Clinical Archive</h2>
+              </div>
+              <button onClick={() => setActiveTab("My Records")} className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold hover:opacity-50">View All →</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto relative z-10">
+              {recentRecords.length > 0 ? (
+                <div className="divide-y divide-[#020617]/10">
+                  {recentRecords.map((rec, i) => (
+                    <div key={i} className="p-8 hover:bg-[#fafafa] transition-colors group cursor-pointer" onClick={() => setActiveTab("My Records")}>
+                      <div className="flex justify-between items-start mb-6">
+                         <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1 border border-[#020617]">
+                           {rec.type}
+                         </span>
+                         <span className="font-mono text-xs font-bold text-slate-500 uppercase tracking-widest">{rec.date}</span>
+                      </div>
+                      <h3 className="font-heading text-2xl mb-2">{rec.hospital}</h3>
+                      <p className="text-sm text-slate-600 mb-6 font-medium">{rec.doctor}</p>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 ${rec.status === 'On-chain' ? 'bg-[#020617]' : 'bg-slate-400'}`} />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{rec.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-full flex items-center justify-center p-12 text-center">
+                   <p className="font-mono text-xs uppercase tracking-[0.2em] text-slate-400">No medical records indexed.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: VITALS (25%) */}
+          <div className="hidden xl:flex w-[25%] flex-col bg-[#fafafa]">
+            
+            <div className="h-1/3 border-b border-[#020617] p-8 flex flex-col justify-between group hover:bg-white transition-colors">
+               <div className="flex justify-between items-start">
+                 <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Heart Rate</span>
+                 <Activity className="w-5 h-5 opacity-20 group-hover:opacity-100 transition-opacity" />
+               </div>
+               <div>
+                 <span className="font-heading text-6xl tracking-tighter block mb-2">{latestHeartRate.split(' ')[0]}</span>
+                 <span className="font-mono text-xs uppercase tracking-[0.2em] font-bold text-slate-500">{latestHeartRate.split(' ')[1] || 'BPM'}</span>
+               </div>
+            </div>
+
+            <div className="h-1/3 border-b border-[#020617] p-8 flex flex-col justify-between group hover:bg-white transition-colors">
+               <div className="flex justify-between items-start">
+                 <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Blood Pressure</span>
+                 <Heart className="w-5 h-5 opacity-20 group-hover:opacity-100 transition-opacity" />
+               </div>
+               <div>
+                 <span className="font-heading text-5xl xl:text-6xl tracking-tighter block mb-2">{latestBP.split(' ')[0]}</span>
+                 <span className="font-mono text-xs uppercase tracking-[0.2em] font-bold text-slate-500">{latestBP.split(' ')[1] || 'MMHG'}</span>
+               </div>
+            </div>
+
+            <div className="h-1/3 p-8 flex flex-col justify-between group hover:bg-white transition-colors">
+               <div className="flex justify-between items-start">
+                 <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Medications</span>
+                 <Pill className="w-5 h-5 opacity-20 group-hover:opacity-100 transition-opacity" />
+               </div>
+               <div>
+                 <span className="font-heading text-3xl xl:text-4xl tracking-tighter block leading-tight">{currentMeds}</span>
+               </div>
+            </div>
+
+          </div>
+
+        </main>
+      ) : (
+        <main className="flex-1 overflow-y-auto bg-[#fafafa] relative">
+           <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`, backgroundSize: '100px 100px' }} />
+           
+           <div className="max-w-5xl mx-auto p-12 md:p-24 relative z-10">
+              {activeTab === "My Records" ? (
+                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex justify-between items-end border-b border-[#020617] pb-12 mb-16">
+                      <div>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-4">Encrypted Repository</span>
+                        <h1 className="font-heading text-5xl md:text-7xl font-medium tracking-tighter text-[#020617]">Clinical Archive.</h1>
+                      </div>
+                    </div>
+                    {/* @ts-ignore */}
+                    <HealthTimeline records={decryptedRecords} />
+                 </div>
+              ) : activeTab === "Audit Log" ? (
+                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex justify-between items-end border-b border-[#020617] pb-12 mb-16">
+                      <div>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-4">On-Chain Activity</span>
+                        <h1 className="font-heading text-5xl md:text-7xl font-medium tracking-tighter text-[#020617]">Audit Log.</h1>
+                      </div>
+                    </div>
+                    <AuditLog logs={auditData?.logs || []} />
+                 </div>
+              ) : (
+                 <div className="py-32 text-center border border-[#020617]/10 bg-white p-12 shadow-[0_30px_100px_rgba(0,0,0,0.05)]">
+                   <h2 className="font-heading text-4xl font-medium text-[#020617] mb-4">Under Construction</h2>
+                   <p className="text-slate-500 font-mono text-xs uppercase tracking-[0.2em] font-bold">This section is currently being architected.</p>
+                 </div>
+              )}
+           </div>
+        </main>
+      )}
     </div>
   );
 }
@@ -592,46 +544,14 @@ function SettingsIcon(props: any) {
   )
 }
 
-function StatsCard({ label, value, icon: Icon, iconColor, gradient, subtext, subtextColor, badge, showPulse, isEcg }: any) {
+function StatsCard({ label, value, icon: Icon }: any) {
   return (
-    <div className={`border border-slate-200 rounded-3xl p-6 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-slate-300 hover:shadow-lg hover:-translate-y-1 transition-all duration-500 ${gradient || 'bg-white'}`}>
-      <div className="relative z-10">
-        <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">{label}</p>
-        <div className="flex items-baseline gap-3">
-          <h3 className="text-3xl font-bold text-slate-900 tracking-tight">{value}</h3>
-          {subtext && <span className={`text-xs font-semibold ${subtextColor}`}>{subtext}</span>}
-        </div>
+    <div className="bg-white p-10 flex flex-col justify-between group hover:bg-slate-50 transition-colors duration-500">
+      <div className="flex items-start justify-between mb-8">
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">{label}</p>
+        {Icon && <Icon className="w-5 h-5 text-[#020617] opacity-40" />}
       </div>
-      
-      {Icon && (
-        <div className="relative shrink-0 flex items-center justify-center p-2 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
-          {isEcg ? (
-            <>
-              <style dangerouslySetInnerHTML={{__html: `
-                @keyframes scanline { 0% { width: 0%; } 100% { width: 100%; } }
-              `}} />
-              <div className="relative w-10 h-10 group-hover:scale-110 transition-transform duration-500">
-                 {/* Background faded icon */}
-                 <Icon className={`absolute inset-0 w-10 h-10 ${iconColor} opacity-20`} strokeWidth={1.5} />
-                 {/* Foreground revealing icon */}
-                 <div className="absolute left-0 top-0 bottom-0 overflow-hidden" style={{ animation: 'scanline 1.5s linear infinite' }}>
-                    <Icon className={`absolute left-0 top-0 w-10 h-10 ${iconColor} drop-shadow-[0_0_6px_rgba(244,63,94,0.6)] max-w-none`} strokeWidth={1.5} />
-                 </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {showPulse && <span className="absolute w-8 h-8 rounded-full bg-rose-200/60 animate-ping duration-1000" />}
-              <Icon className={`w-10 h-10 relative z-10 ${iconColor} drop-shadow-sm group-hover:scale-110 transition-transform duration-500 ${showPulse ? 'animate-pulse' : ''}`} strokeWidth={1.5} />
-            </>
-          )}
-        </div>
-      )}
-      {badge && (
-        <div className="px-3 py-1.5 rounded-lg bg-cyan-50 border border-cyan-100 text-cyan-700 text-xs font-bold shrink-0 relative z-10">
-          {badge}
-        </div>
-      )}
+      <h3 className="font-heading text-4xl font-medium text-[#020617] tracking-tight">{value}</h3>
     </div>
   );
 }

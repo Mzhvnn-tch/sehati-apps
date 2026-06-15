@@ -38,10 +38,7 @@ export default function DoctorDashboard() {
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
 
-  const [isChecking, setIsChecking] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
-  const [loginRequired, setLoginRequired] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // --- Auth Logic ---
   const handleDisconnect = async () => {
@@ -51,7 +48,6 @@ export default function DoctorDashboard() {
     } catch (e) { console.error(e); }
     clearWalletConnectStorage();
     setShowRegistration(false);
-    setLoginRequired(false);
     window.location.href = "/";
   };
 
@@ -60,33 +56,8 @@ export default function DoctorDashboard() {
   }, [user, setLocation]);
 
   useEffect(() => {
-    const checkWallet = async () => {
-      if (user) return;
-      if (isConnected && address && !isChecking && !showRegistration && !loginRequired) {
-        setIsChecking(true);
-        try {
-          const { user: existingUser } = await getUserByWallet(address);
-          if (existingUser) {
-            if (existingUser.role === "doctor") {
-              setLoginRequired(true);
-            } else {
-              toast({ title: "Redirecting", description: "You are registered as a patient." });
-              window.location.href = "/patient";
-            }
-          }
-        } catch (error: any) {
-          if (error.status === 404 || error.message?.includes("User not found")) setShowRegistration(true);
-        } finally { setIsChecking(false); }
-      }
-    };
-    checkWallet();
-  }, [isConnected, address, user]);
-
-  useEffect(() => {
     if (!isConnected) {
       setShowRegistration(false);
-      setLoginRequired(false);
-      setIsChecking(false);
     } else {
       setTimeout(() => {
         const w3aModal = document.getElementById("w3a-modal");
@@ -105,35 +76,10 @@ export default function DoctorDashboard() {
     window.location.reload();
   };
 
-  const handleLogin = async () => {
-    if (Number(chainId) !== 11155111) {
-      toast({ title: "Wrong Network", description: "Switching to Ethereum Sepolia...", duration: 3000 });
-      try { switchChain({ chainId: 11155111 }); } catch (e) { }
-      return;
-    }
-    if (!signer || !address) return;
-    setIsLoggingIn(true);
-    try {
-      const message = `Login to SEHATI Doctor Portal\nWallet: ${address}\nTimestamp: ${Date.now()}`;
-      const signature = await signer.signMessage(message);
-      const result = await loginWithSignature(address, signature, message);
-      if (result.success) {
-        toast({ title: "Welcome back!", description: "Access granted." });
-        setLoginRequired(false);
-      } else {
-        toast({ title: "Login Failed", variant: "destructive" });
-      }
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
   // --- RENDERING VIEWS ---
 
   // 1. Loading
-  if (authLoading || (isConnected && isChecking)) {
+  if (authLoading || (isConnected && !address && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white text-cyan-600">
         <Loader2 className="w-10 h-10 animate-spin" />
@@ -142,7 +88,7 @@ export default function DoctorDashboard() {
   }
 
   // 2. Connect Wallet View (Diamond Theme)
-  if (!isConnected && !user) {
+  if (!user && !showRegistration) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-100/40 via-white to-white" />
@@ -158,7 +104,7 @@ export default function DoctorDashboard() {
           <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">Doctor Console</h1>
           <p className="text-slate-500 mb-8 font-medium">Licensed Access Only</p>
           <div className="flex justify-center mb-8 scale-110">
-            <WalletConnect />
+            <WalletConnect onRequireRegistration={() => setShowRegistration(true)} />
           </div>
           <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600" onClick={() => setLocation("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
@@ -168,34 +114,7 @@ export default function DoctorDashboard() {
     );
   }
 
-  // 3. Signature Login
-  if (loginRequired && address) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 border border-slate-100 relative z-10 text-center"
-        >
-          <div className="w-16 h-16 rounded-full bg-cyan-50 flex items-center justify-center mx-auto mb-6 text-cyan-600 animate-pulse">
-            <ShieldCheck className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Security Verification</h1>
-          <p className="text-slate-500 mb-8 font-light">
-            Your data is encrypted. Sign the message to prove ownership.
-          </p>
 
-          <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-12 mb-4 rounded-xl shadow-md" onClick={handleLogin} disabled={isLoggingIn}>
-            {isLoggingIn ? <Loader2 className="animate-spin w-5 h-5" /> : "Verify Identity"}
-          </Button>
-
-          <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600 hover:bg-slate-50" onClick={handleDisconnect}>
-            Cancel
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
 
   // 4. Registration
   if (showRegistration && address) {
@@ -317,18 +236,31 @@ function DoctorDashboardContent({ user }: { user: User }) {
       const effectiveToken = capturedToken || localStorage.getItem("doctor_captured_token") || "";
       if (!effectiveToken) throw new Error("Missing access token");
 
-      const tx = await createRecordOnChain(signer, currentPatient.walletAddress, ipfsCid, contentHash, vars.recordType, effectiveToken);
+      let txHash = "";
+      try {
+          const tx = await createRecordOnChain(signer, currentPatient.walletAddress, ipfsCid, contentHash, vars.recordType, effectiveToken);
+          txHash = tx.hash;
+          await tx.wait(); // Wait for confirmation
+      } catch (e: any) {
+          console.error("Blockchain error:", e);
+          const errMsg = e.reason || e.message || "Unknown error";
+          if (errMsg.includes("AccessControl")) {
+              throw new Error("Not authorized! Ask Admin to approve your Doctor account.");
+          }
+          throw new Error("Blockchain transaction failed: " + errMsg);
+      }
 
       // 4. DB
       return createMedicalRecord({
         patientId: currentPatient.id,
         doctorId: user.id,
-        hospitalName: "Sehati Medical Center",
+        hospitalName: "AuraMed Medical Center",
         recordType: vars.recordType,
         title: vars.title,
         content: encryptedPayload,
-        blockchainHash: tx.hash,
-        ipfsHash: ipfsCid
+        blockchainHash: txHash,
+        ipfsHash: ipfsCid,
+        token: effectiveToken
       } as any);
     },
     onSuccess: (data, vars) => {

@@ -27,11 +27,9 @@ export default function PharmacistDashboard() {
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
 
-  const [isChecking, setIsChecking] = useState(false);
   const [showRegistration, setShowRegistration] = useState(false);
-  const [loginRequired, setLoginRequired] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // --- Auth Logic ---
   const handleDisconnect = async () => {
     try {
       await authDisconnect();
@@ -39,70 +37,65 @@ export default function PharmacistDashboard() {
     } catch (e) { console.error(e); }
     clearWalletConnectStorage();
     setShowRegistration(false);
-    setLoginRequired(false);
     window.location.href = "/";
   };
 
   useEffect(() => {
-    if (user && user.role !== "pharmacist") setLocation("/");
+    if (user && user.role !== "pharmacist") setLocation("/patient");
   }, [user, setLocation]);
 
   useEffect(() => {
-    const checkWallet = async () => {
-      if (user) return;
-      if (isConnected && address && !isChecking && !showRegistration && !loginRequired) {
-        setIsChecking(true);
-        try {
-          const { user: existingUser } = await getUserByWallet(address);
-          if (existingUser) {
-            if (existingUser.role === "pharmacist") {
-              setLoginRequired(true);
-            } else {
-              toast({ title: "Redirecting", description: "Invalid role for this portal." });
-              window.location.href = "/";
-            }
-          }
-        } catch (error: any) {
-          if (error.status === 404 || error.message?.includes("User not found")) setShowRegistration(true);
-        } finally { setIsChecking(false); }
-      }
-    };
-    checkWallet();
-  }, [isConnected, address, user]);
-
-  const handleLogin = async () => {
-    if (Number(chainId) !== 11155111) {
-      toast({ title: "Wrong Network", description: "Switching to Sepolia...", duration: 3000 });
-      try { switchChain({ chainId: 11155111 }); } catch (e) { }
-      return;
+    if (!isConnected) {
+      setShowRegistration(false);
+    } else {
+      setTimeout(() => {
+        const w3aModal = document.getElementById("w3a-modal");
+        if (w3aModal) w3aModal.style.display = "none";
+        const overlay = document.querySelector(".w3a-modal__overlay");
+        if (overlay) (overlay as HTMLElement).style.display = "none";
+      }, 500);
     }
-    if (!signer || !address) return;
-    setIsLoggingIn(true);
-    try {
-      const message = `Login to SEHATI Pharmacy Portal\nWallet: ${address}\nTimestamp: ${Date.now()}`;
-      const signature = await signer.signMessage(message);
-      const result = await loginWithSignature(address, signature, message);
-      if (result.success) setLoginRequired(false);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally { setIsLoggingIn(false); }
+  }, [isConnected]);
+
+  useEffect(() => { if (!isConnected && user) handleDisconnect(); }, [isConnected, user]);
+
+  const handleRegistrationSuccess = () => {
+    setShowRegistration(false);
+    toast({ title: "Registration Complete", description: "Welcome to Pharmacist Portal" });
+    window.location.reload();
   };
 
-  if (authLoading || (isConnected && isChecking)) {
-    return <div className="min-h-screen flex items-center justify-center text-cyan-600"><Loader2 className="w-10 h-10 animate-spin" /></div>;
+  // --- RENDERING VIEWS ---
+
+  // 1. Loading
+  if (authLoading || (isConnected && !address && !user)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white text-emerald-600">
+        <Loader2 className="w-10 h-10 animate-spin" />
+      </div>
+    );
   }
 
-  if (!isConnected && !user) {
+  // 2. Connect Wallet View (Diamond Theme)
+  if (!user && !showRegistration) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="diamond-card max-w-md w-full p-10 rounded-3xl relative z-10 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-cyan-50 flex items-center justify-center mx-auto mb-6 text-cyan-600 border border-cyan-100 shadow-sm">
-            <Hexagon className="w-10 h-10" />
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-100/40 via-white to-white" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="diamond-card max-w-md w-full p-10 rounded-3xl relative z-10 text-center border-t-4 border-t-emerald-400"
+        >
+          <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mx-auto mb-6 text-emerald-600 border border-emerald-100 shadow-sm">
+            <Pill className="w-10 h-10" />
           </div>
           <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">Pharmacy Console</h1>
-          <p className="text-slate-500 mb-8 font-medium">Licensed Pharmacists Only</p>
-          <div className="flex justify-center mb-8 scale-110"><WalletConnect /></div>
-          <Button variant="ghost" className="w-full text-slate-400" onClick={() => setLocation("/")}>
+          <p className="text-slate-500 mb-8 font-medium">Verified Dispensary Access</p>
+          <div className="flex justify-center mb-8 scale-110">
+            <WalletConnect onRequireRegistration={() => setShowRegistration(true)} />
+          </div>
+          <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600" onClick={() => setLocation("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
           </Button>
         </motion.div>
@@ -110,19 +103,7 @@ export default function PharmacistDashboard() {
     );
   }
 
-  if (loginRequired && address) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 text-center">
-          <h1 className="text-2xl font-serif font-bold mb-4">Security Verification</h1>
-          <Button className="w-full bg-cyan-600 mb-4 h-12 rounded-xl" onClick={handleLogin} disabled={isLoggingIn}>
-            {isLoggingIn ? <Loader2 className="animate-spin" /> : "Verify Identity"}
-          </Button>
-          <Button variant="ghost" className="w-full" onClick={handleDisconnect}>Cancel</Button>
-        </motion.div>
-      </div>
-    );
-  }
+
 
   if (showRegistration && address) {
     return (
@@ -176,7 +157,7 @@ function PharmacistDashboardContent({ user }: { user: User }) {
       const res = await fetch(`/api/records/${recordId}/fulfill`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blockchainHash: tx.hash })
+        body: JSON.stringify({ blockchainHash: tx.hash, token: activePatient?.token })
       });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
@@ -194,7 +175,7 @@ function PharmacistDashboardContent({ user }: { user: User }) {
     setLoadingRecords(true);
     try {
       // Get records via API
-      const res = await fetch(`/api/records/prescriptions?patientId=${patientId}`);
+      const res = await fetch(`/api/records/prescriptions?patientId=${patientId}&token=${accessToken}`);
       if (!res.ok) throw new Error("Failed to load records");
       const { records } = await res.json();
       

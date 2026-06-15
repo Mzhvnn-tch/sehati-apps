@@ -72,8 +72,7 @@ export function useEthersSigner({ chainId }: { chainId?: number } = {}) {
     );
 }
 
-export const SEHATI_REGISTRY_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "0xa913A07bD88C94E5230d1521Ac25aDD9a1AA7067"; // Ethereum Sepolia Testnet
-
+export const SEHATI_REGISTRY_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "0x7d8762646954b45d6fBcA7938435cB8F1B57A3f8"; // Ethereum Sepolia Testnet
 export const SEHATI_REGISTRY_ABI = [
     "function registerAsPatient() external",
     "function registerDoctor(address _doctor) external",
@@ -131,15 +130,48 @@ export async function createRecordOnChain(
     const contentHashBytes = contentHash.startsWith("0x") ? contentHash : ethers.keccak256(ethers.toUtf8Bytes(contentHash));
     const formattedToken = formatTokenForChain(accessToken);
 
-    const tx = await contract.createRecord(
+    const signerAddr = await signer.getAddress();
+    console.log("SENDING FROM SIGNER:", signerAddr);
+    console.log("patientAddress:", patientAddress);
+    console.log("ipfsCID:", ipfsCID);
+    console.log("contentHashBytes:", contentHashBytes);
+    console.log("recordType:", recordType);
+    console.log("formattedToken:", formattedToken);
+    
+    // Use raw transaction to completely bypass ethers.Contract error coalescing bugs!
+    const data = contract.interface.encodeFunctionData("createRecord", [
         patientAddress,
         ipfsCID,
         contentHashBytes,
         recordType,
         formattedToken
-    );
+    ]);
 
-    return tx;
+    const to = await contract.getAddress();
+    
+    console.log("Raw TX Data:", data);
+    console.log("Sending Raw Transaction via Signer to:", to);
+
+    // EXTREME BYPASS: Use BrowserProvider.send directly to bypass Ethers formatters!
+    const browserProvider = signer.provider as ethers.BrowserProvider;
+    const txHash = await browserProvider.send("eth_sendTransaction", [{
+        from: signerAddr,
+        to: to,
+        data: data,
+        gas: "0x7a120", // 500000 in hex
+        value: "0x0", // Explicitly passed as "0x0" string
+        chainId: "0xaa36a7" // 11155111 in hex
+    }]);
+
+    console.log("Raw TX Hash:", txHash);
+    
+    // We must return a transaction response object that Wagmi/App expects
+    return {
+        hash: txHash,
+        wait: async () => {
+            return await signer.provider?.waitForTransaction(txHash);
+        }
+    } as any;
 }
 
 export async function registerDoctorOnChain(signer: ethers.Signer, doctorAddress: string) {

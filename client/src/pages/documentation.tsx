@@ -44,7 +44,7 @@ const DOC_SECTIONS = [
         <FadeIn>
           <span className="font-mono text-xs uppercase tracking-[0.2em] font-bold text-slate-500 block mb-6">System Overview 2.0</span>
           <h1 className="font-heading text-6xl md:text-[5rem] font-medium tracking-tighter leading-[1] text-white mb-8">
-            The SEHATI <br/>
+            The AuraMed <br/>
             <span className="text-slate-500">Protocol.</span>
           </h1>
           <p className="text-2xl text-slate-400 font-light leading-relaxed max-w-3xl">
@@ -79,7 +79,7 @@ const DOC_SECTIONS = [
             <span className="text-slate-500">Schema.</span>
           </h1>
           <p className="text-2xl text-slate-400 font-light leading-relaxed max-w-3xl">
-            SEHATI relies on Drizzle ORM to map relational data while maintaining strict types. All sensitive payload data remains encrypted at rest.
+            AuraMed relies on Drizzle ORM to map relational data while maintaining strict types. All sensitive payload data remains encrypted at rest.
           </p>
         </FadeIn>
 
@@ -131,7 +131,7 @@ const DOC_SECTIONS = [
             <span className="text-slate-500">Registry.</span>
           </h1>
           <p className="text-2xl text-slate-400 font-light leading-relaxed max-w-3xl">
-            Deployed on Ethereum Sepolia. The SEHATI Registry acts as the immutable source of truth for access control and record verification.
+            Deployed on Ethereum Sepolia. The AuraMed Registry acts as the immutable source of truth for access control and record verification.
           </p>
         </FadeIn>
 
@@ -151,7 +151,7 @@ const DOC_SECTIONS = [
         <FadeIn delay={0.2}>
           <div className="border-t border-slate-800 pt-12 mt-12">
             <span className="font-mono text-xs uppercase tracking-[0.2em] font-bold text-slate-500 block mb-4">Core Functions</span>
-            <CodeBlock title="SEHATIRegistry.sol - Interface" code={`interface ISehatiRegistry {
+            <CodeBlock title="AuraMedRegistry.sol - Interface" code={`interface IAuraMedRegistry {
   // Medical Record Creation
   function createRecord(
       address _patient,

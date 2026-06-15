@@ -179,7 +179,7 @@ export function WalletConnect({ className, initialRole, autoOpen, onRequireRegis
         className="w-full h-14 bg-[#020617] hover:bg-transparent hover:text-[#020617] border border-[#020617] text-white rounded-none uppercase tracking-[0.2em] text-[10px] font-bold transition-all duration-500 flex items-center justify-center gap-4 group shadow-xl"
       >
         <Wallet className="w-4 h-4 transition-transform duration-500 group-hover:scale-110" />
-        WEB3AUTH (EMAIL / GOOGLE)
+        CONTINUE WITH EMAIL / GOOGLE
       </Button>
 
       {error && (

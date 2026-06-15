@@ -4,28 +4,15 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { metaImagesPlugin } from "./vite-plugin-meta-images";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
   plugins: [
     react(),
-    runtimeErrorOverlay(),
     tailwindcss(),
     metaImagesPlugin(),
     nodePolyfills(),
-    ...(process.env.NODE_ENV !== "production" &&
-      process.env.REPL_ID !== undefined
-      ? [
-        await import("@replit/vite-plugin-cartographer").then((m) =>
-          m.cartographer(),
-        ),
-        await import("@replit/vite-plugin-dev-banner").then((m) =>
-          m.devBanner(),
-        ),
-      ]
-      : []),
   ],
   resolve: {
     alias: {
@@ -58,6 +45,14 @@ export default defineConfig({
     sourcemap: true,
     // Minification
     minify: 'esbuild',
+  },
+  optimizeDeps: {
+    include: [
+      'react', 'react-dom', 'react-dom/client', 
+      'wagmi', 'viem', 'ethers', 
+      '@web3auth/modal', '@web3auth/base', 
+      'lucide-react', 'framer-motion', 'recharts'
+    ]
   },
   server: {
     host: "0.0.0.0",

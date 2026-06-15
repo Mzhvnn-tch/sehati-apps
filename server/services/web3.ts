@@ -46,11 +46,6 @@ class Web3Service {
     signature: string
   ): Promise<boolean> {
     try {
-      // Account Abstraction (Smart Contract) signatures are much longer than standard EOA 65-byte signatures
-      if (signature.length > 132) {
-        console.warn('Long signature detected. Bypassing EOA verification for Smart Account:', walletAddress);
-        return true; // Bypass for prototype, ideally implement EIP-1271 verify logic here
-      }
       const recoveredAddress = ethers.verifyMessage(message, signature);
       return recoveredAddress.toLowerCase() === walletAddress.toLowerCase();
     } catch (error) {

@@ -103,10 +103,6 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
           console.log("🔑 Generated Public Key:", publicKeyStr); // DEBUG LOG
           console.log("🔑 Public Key Length:", publicKeyStr.length); // DEBUG LOG
 
-          // DEBUG: Show user the key format directly
-          const isRSA = publicKeyStr.startsWith("MIG") || publicKeyStr.startsWith("MII");
-          alert(`DEBUG: Key Generated!\n\nType: ${isRSA ? "✅ VALID (RSA)" : "❌ INVALID (Hex)"}\n\nKey Start: ${publicKeyStr.substring(0, 20)}...`);
-
           localStorage.setItem(`sehati_priv_${walletAddress}`, privateKeyStr);
 
           // Step 1.5: Register on Blockchain (CRITICAL FIX)
@@ -131,21 +127,19 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
 
             const tx = await registerAsPatientOnChain(signer);
             console.log("🔗 Blockchain Registration Tx:", tx.hash);
-            // We don't necessarily need to wait for confirmation for UI responsiveness, 
-            // but strictly speaking we should. For now, let's fire and forget or wait 1 block if we want to be safe.
-            // But to keep it fast, we assume success or let backend handle eventual consistency if needed.
-            // Ideally: await tx.wait(); 
             toast({ title: "Blockchain Tx Sent", description: "Identity is being minted on Ethereum Sepolia." });
           } catch (e: any) {
             console.error("Blockchain registration failed:", e);
-            if (e.message.includes("already registered")) {
-              toast({ title: "Info", description: "Wallet already registered on-chain." });
+            const errMsg = (e.reason || e.message || "").toLowerCase();
+            if (errMsg.includes("already registered")) {
+              toast({ title: "Info", description: "Wallet already registered on-chain. Syncing with backend..." });
+            } else if (errMsg.includes("undefined to a bigint") || errMsg.includes("insufficient funds")) {
+              toast({ title: "Warning", description: "No Sepolia ETH for Blockchain. Proceeding with Database sync only...", duration: 5000 });
             } else {
-              // If this fails, we should probably stop? Or let them continue to DB?
-              // For now, let's STOP because otherwise doctor can't write records.
-              // UNLESS it's a gas error or network error, in which case they can try again.
-              throw new Error("Blockchain registration failed: " + (e.reason || e.message));
+              toast({ title: "Warning", description: "Blockchain sync failed. Proceeding with Database only...", duration: 5000 });
             }
+            // By NOT throwing here, we allow the app to fallback to the off-chain database 
+            // so the user can still test the UI without needing real testnet ETH.
           }
 
           // Step 2: Generate nonce

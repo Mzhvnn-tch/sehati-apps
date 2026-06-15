@@ -22,7 +22,8 @@ export const userRegistrationSchema = z.object({
   // Optional fields for WalletConnect flow
   signature: z.string().optional(),
   message: z.string().optional(),
-}).passthrough(); // Allow additional fields to pass through
+  publicKey: z.string().optional(),
+}); // Removed passthrough() to prevent mass assignment vulnerability
 
 export const userUpdateSchema = z.object({
   bloodType: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']).nullable().optional(),
@@ -74,8 +75,6 @@ export const decryptRecordSchema = z.object({
 export const validate = <T extends z.ZodType>(schema: T) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Store original body to preserve additional fields
-      const originalBody = req.body;
       const result = schema.safeParse(req.body);
 
       if (!result.success) {
@@ -90,8 +89,8 @@ export const validate = <T extends z.ZodType>(schema: T) => {
         });
       }
 
-      // Merge validated data with original body to preserve additional fields (like signature, message)
-      req.body = { ...originalBody, ...result.data };
+      // Secure: Only pass strictly validated data. Drops unknown fields.
+      req.body = result.data;
       next();
     } catch (error) {
       return res.status(400).json({ error: 'Invalid request data' });

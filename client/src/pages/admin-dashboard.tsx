@@ -5,47 +5,49 @@ import { registerDoctorOnChain, registerPharmacistOnChain, useEthersSigner } fro
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, ShieldAlert, Wallet, LogOut, AlertTriangle } from "lucide-react";
+import { Loader2, CheckCircle, ShieldAlert, ShieldCheck, Wallet, LogOut, AlertTriangle, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
-import { AppKitButton } from "@reown/appkit/react"; // Use AppKit connect button
 import { ethers } from "ethers";
-import { useAccount, useSwitchChain } from "wagmi"; // Added imports
+import { WalletConnect } from "@/components/wallet-connect";
+import { motion } from "framer-motion";
+import { useAccount } from "wagmi";
 
 export default function AdminDashboard() {
-    const { user, isLoading: authLoading, disconnect } = useAuth();
+    const { user, loginWithSignature, isLoading: authLoading, disconnect: appDisconnect } = useAuth();
     const [, navigate] = useLocation();
     const { toast } = useToast();
     const signer = useEthersSigner();
-    const { isConnected, chainId } = useAccount(); // Added hooks
-    const { switchChain } = useSwitchChain(); // Added hook
+    const { address, isConnected } = useAccount();
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
-    // Hardcoded admin check for client-side redirection
-    // Ideally this comes from a "role" in the user object or a specific capability
-    useEffect(() => {
-        if (!authLoading && !user) {
-            navigate("/");
-        }
-    }, [user, authLoading, navigate]);
+    const loginRequired = isConnected && !user;
 
-    // Network Check Effect
-    useEffect(() => {
-        const chainIdNumber = Number(chainId);
-        if (isConnected && chainIdNumber && chainIdNumber !== 11155111) {
-            toast({ title: "Wrong Network", description: "Switching to Ethereum Sepolia...", duration: 3000 });
-            try {
-                switchChain({ chainId: 11155111 });
-            } catch (e) {
-                console.error("Auto-switch failed:", e);
+    const handleLogin = async () => {
+        if (!signer || !address) return;
+        setIsLoggingIn(true);
+        try {
+            const message = `Welcome to AuraMed Health Identity System!\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address: ${address}\nTimestamp: ${new Date().toISOString()}`;
+            const signature = await signer.signMessage(message);
+            const result = await loginWithSignature(address, signature, message);
+            if (result.success) {
+                toast({ title: "Admin Access Granted", description: "Welcome back." });
+                // We'll let the query auto-fetch based on `user` state
+            } else {
+                toast({ title: "Login Failed", variant: "destructive", description: "Are you sure this is the admin wallet?" });
             }
+        } catch (e: any) {
+            toast({ title: "Error", description: e.message, variant: "destructive" });
+        } finally {
+            setIsLoggingIn(false);
         }
-    }, [isConnected, chainId, switchChain]);
+    };
 
     const { data, isLoading, refetch, error } = useQuery({
         queryKey: ["pendingDoctors"],
         queryFn: getPendingDoctors,
-        enabled: !!user, // Only fetch if user is logged in
+        enabled: !!user,
         retry: false, // Don't retry if 403 Forbidden
     });
 
@@ -136,6 +138,62 @@ export default function AdminDashboard() {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
     }
 
+    if (!isConnected && !user) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-200/40 via-white to-white" />
+                
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="diamond-card max-w-md w-full p-10 rounded-3xl relative z-10 text-center"
+                >
+                    <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mx-auto mb-6 text-slate-600 border border-slate-200 shadow-sm">
+                        <ShieldAlert className="w-10 h-10" />
+                    </div>
+                    <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">Admin Portal</h1>
+                    <p className="text-slate-500 mb-8 font-medium">Authorized Personnel Only</p>
+                    
+                    <div className="flex justify-center mb-8 scale-110">
+                        <WalletConnect />
+                    </div>
+
+                    <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600" onClick={() => navigate("/")}>
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+                    </Button>
+                </motion.div>
+            </div>
+        );
+    }
+
+    if (loginRequired && address) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white shadow-xl rounded-3xl max-w-md w-full p-8 border border-slate-100 relative z-10 text-center"
+                >
+                    <div className="w-16 h-16 rounded-full bg-cyan-50 flex items-center justify-center mx-auto mb-6 text-cyan-600 animate-pulse">
+                        <ShieldCheck className="w-8 h-8" />
+                    </div>
+                    <h1 className="text-2xl font-serif font-bold text-slate-800 mb-2">Security Verification</h1>
+                    <p className="text-slate-500 mb-8 font-light">
+                        Sign the message to prove admin ownership.
+                    </p>
+
+                    <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-12 mb-4 rounded-xl shadow-md" onClick={handleLogin} disabled={isLoggingIn}>
+                        {isLoggingIn ? <Loader2 className="animate-spin w-5 h-5" /> : "Verify Identity"}
+                    </Button>
+
+                    <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600 hover:bg-slate-50" onClick={appDisconnect}>
+                        Cancel
+                    </Button>
+                </motion.div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-slate-50 p-6">
             <div className="max-w-6xl mx-auto space-y-8">
@@ -150,7 +208,7 @@ export default function AdminDashboard() {
                             <Wallet className="h-4 w-4 text-slate-400" />
                             <span className="text-sm font-medium">{user?.walletAddress.slice(0, 6)}...{user?.walletAddress.slice(-4)}</span>
                         </div>
-                        <Button variant="outline" size="sm" onClick={handleDisconnect} className="text-slate-600 border-slate-200">
+                        <Button variant="outline" size="sm" onClick={appDisconnect} className="text-slate-600 border-slate-200">
                             <LogOut className="h-4 w-4 mr-2" />
                             Disconnect
                         </Button>

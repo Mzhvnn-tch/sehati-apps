@@ -1,1254 +1,190 @@
-# SEHATI - Decentralized Health Identity System
+# SEHATI: SYSTEM WORKFLOW AND OPERATIONAL ARCHITECTURE
 
-<p align="center">
-  <img src="client/public/logo.png" alt="SEHATI Logo" width="200" />
-</p>
+## 1. INTRODUCTION AND OPERATING PRINCIPLES
 
-<p align="center">
-  <strong>Self-Sovereign Health Identity on Blockchain</strong><br/>
-  <em>Solving Indonesia's Fragmented Healthcare Data Crisis</em>
-</p>
+SEHATI is designed to revolutionize health information management by returning data sovereignty to the patient while ensuring seamless interoperability for healthcare providers. This document outlines the operational workflows, interaction models, and emergency protocols that govern how SEHATI functions in real-world clinical and emergency environments.
 
-<p align="center">
-  <a href="#the-problem">Problem</a> •
-  <a href="#our-solution">Solution</a> •
-  <a href="#features">Features</a> •
-  <a href="#tech-stack">Tech Stack</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#architecture">Architecture</a> •
-  <a href="#roadmap">Roadmap</a>
-</p>
+The architecture is built on the principle of Zero-Knowledge Data Management, meaning the central infrastructure routes and stores data but cannot decipher it without cryptographic authorization from the data owner (the patient) or a legitimate emergency quorum.
+
+### 1.1 Paradigm Shift: Traditional vs. SEHATI Operations
+
+| Feature/Domain | Traditional Hospital System | SEHATI System Architecture |
+| :--- | :--- | :--- |
+| **Data Custody** | Siloed within individual hospital servers | Patient holds the master cryptographic key |
+| **Interoperability** | Low; requires manual transfers or APIs | High; single global encrypted state |
+| **Emergency Access** | Dependent on hospital working hours / IT | Governed by the 3-Layer Emergency Protocol |
+| **Auditability** | Internal logs, vulnerable to tampering | Immutable cryptographic audit trails |
+| **Privacy Breach Risk** | Database dump exposes all plaintext records | Database dump exposes undecipherable ciphertext |
 
 ---
 
-## 🏥 The Problem
+## 2. SYSTEM COMPONENTS AND ACTOR ROLES
 
-### Critical Healthcare Challenges in Indonesia (and Globally)
+The SEHATI ecosystem functions through the interaction of distinct operational roles, each granted specific permissions and boundaries.
 
-#### **1. Data Fragmentation Crisis**
+### 2.1 Actor Roles and Capabilities
 
-**The Reality:**
-- **275 million Indonesians** have medical records scattered across **9,000+ hospitals and 10,000+ clinics**
-- Average patient visits **3-5 different healthcare facilities** in their lifetime
-- Each facility maintains **separate, incompatible** Electronic Health Record (EHR) systems
-- **Zero interoperability** between hospitals, even within the same city
-
-**Real-World Impact:**
-```
-PATIENT: "Pak Budi"
-├── RS Harapan Kita    → HIS System A (Oracle)
-├── RS Siloam          → HIS System B (Cerner)  
-├── Klinik Kimia Farma → Paper Records
-└── Puskesmas          → Excel Spreadsheets
-
-Result: CANNOT access ANY of his records when visiting a new doctor
-```
-
-**The Cost:**
-- 🔴 **$2.1 billion/year** wasted on duplicate medical tests in Indonesia
-- 🔴 **30% of medical errors** caused by incomplete patient history
-- 🔴 **Average 45 minutes** wasted per hospital visit on paperwork
-- 🔴 **23% of patients** re-diagnosed for conditions already treated elsewhere
-
-#### **2. Patient Data Ownership Paradox**
-
-**Current State:**
-```
-Who Owns Your Medical Data?
-❌ NOT You (the patient)
-✅ The Hospital (legally owns the physical/digital records)
-✅ Insurance Companies (can access without consent)
-✅ Government Health Agencies (via national programs)
-```
-
-**The Injustice:**
-- You **cannot access** your own records without hospital permission
-- You **cannot transfer** records between hospitals easily
-- You **cannot control** who sees your sensitive health data
-- You **cannot verify** if records have been tampered with
-
-**Real Case Study:**
-> "Ibu Sari needed her medical records from RS Jakarta for treatment in Bali. The hospital required:
-> - 3 days processing time
-> - Rp 500,000 admin fee
-> - Physical presence (impossible - she's in Bali!)
-> - No digital option available
->
-> She ended up redoing ALL tests at Rp 3,500,000 total cost." 💔
-
-#### **3. Security & Privacy Nightmares**
-
-**Healthcare Data Breach Statistics (2023-2024):**
-- **67% of Indonesian hospitals** experienced at least one data breach
-- **Average cost per breach:** $4.5 million USD
-- **Average time to detect breach:** 197 days (over 6 months!)
-- **Records compromised annually:** 45+ million patient records globally
-
-**Why Healthcare Data is Prime Target:**
-```
-Black Market Value:
-💰 Credit Card Number:    $5-$10
-💰 Social Security:       $15-$20
-💰 Medical Record:        $250-$1,000 ⚠️
-
-Why? Medical records contain:
-- Full name, address, DOB
-- Insurance numbers
-- Prescription history (blackmail potential)
-- Genetic information
-- Mental health records
-```
-
-**Centralized Database = Single Point of Failure:**
-```
-Traditional Hospital Database:
-┌─────────────────────────────┐
-│   ALL PATIENT RECORDS       │ ← ONE HACK = EVERYTHING LOST
-│   (Stored in one place)     │
-└─────────────────────────────┘
-        ↑ ↑ ↑ ↑ ↑
-    Hackers attacking
-```
-
-#### **4. Lack of Portability & Continuity of Care**
-
-**The Scenario:**
-1. **Medical Tourism:** 800,000+ Indonesians seek treatment abroad yearly
-   - Cannot bring verified medical history
-   - Doctors start diagnosis from scratch
-   - Risk of drug interaction from unknown prescriptions
-
-2. **Emergency Situations:**
-   - Unconscious patient arrives at ER
-   - No allergy information available
-   - No medication history accessible
-   - Critical time wasted, lives at risk
-
-3. **Chronic Disease Management:**
-   - Diabetes patient sees 4 specialists/year
-   - Each specialist has incomplete picture
-   - No unified treatment plan
-   - Conflicting medications prescribed
-
-**The "Lost History" Problem:**
-```
-Year 2020: Diagnosed with condition X at Hospital A
-Year 2022: Moved cities, Hospital A records LOST in system migration
-Year 2024: New doctor has ZERO history, starts over
-```
-
-#### **5. Insurance Fraud & Verification Chaos**
-
-**The Industry Crisis:**
-- **$68 billion** lost to healthcare fraud globally (FBI estimate)
-- **15-20% of insurance claims** fraudulent or contain errors
-- **Average claim verification:** 14-30 days processing time
-- **Dispute resolution:** 3-6 months average
-
-**Common Fraud Scenarios:**
-1. Fake medical certificates for leave
-2. Inflated hospital bills
-3. Services never rendered
-4. Identity theft for treatment
-5. Pre-existing condition concealment
-
-**Current Verification Process:**
-```
-Patient submits claim → Insurance company requests records 
-→ Hospital sends documents → Manual verification 
-→ Cross-check database → Fraud investigation 
-→ Approval/Denial
-
-Timeline: 14-30 DAYS
-Cost: $45-120 per claim
-Fraud rate: 18%
-```
-
-#### **6. Lack of Trust & Transparency**
-
-**Patient Perspective:**
-- ❓ "Did the hospital record my diagnosis correctly?"
-- ❓ "Has my medical history been altered?"
-- ❓ "Who has accessed my records?"
-- ❓ "Can I trust this doctor with my full history?"
-
-**No Audit Trail:**
-- Cannot see who viewed your records
-- Cannot verify record authenticity
-- Cannot prove medical malpractice
-- Cannot track data usage
+| Actor Role | Registration Method | Primary Capabilities | Cryptographic Authority |
+| :--- | :--- | :--- | :--- |
+| **Patient** | Self-registration via Web3 Wallet | View own records, grant temporary access to doctors, manage profile. | Holds primary Private Key. Has absolute read/authorization capability. |
+| **Doctor** | Verified by Institutional Administrator | Request patient records, append new diagnoses, create prescriptions. | Holds Professional Key. Can only read data explicitly authorized by the patient. |
+| **Pharmacist** | Verified by Institutional Administrator | View prescriptions, mark prescriptions as fulfilled. | Holds Professional Key. Read-only access limited strictly to prescription data types. |
+| **System Server** | Automated Infrastructure | Route encrypted payloads, manage session lifecycles, enforce Rate Limits. | Zero cryptographic authority. Cannot decrypt medical payloads. |
+| **Health Authority** | Pre-configured Institutional Node | Act as an automated guarantor during extreme medical emergencies. | Holds one SSS shard. Cannot unilaterally decrypt data. |
 
 ---
 
-## 💡 Why Existing Solutions Fail
+## 3. DATA LIFECYCLE AND CRYPTOGRAPHIC FLOW
 
-### ❌ **Traditional EHR Systems (Electronic Health Records)**
+To understand how SEHATI works, one must trace the lifecycle of a single medical record from creation to retrieval.
 
-**Examples:** Epic Systems, Cerner, Oracle Health
+### 3.1 Record Creation Phase (Write Operation)
 
-**Why They Don't Work:**
-1. **Proprietary & Expensive**
-   - Cost: $15M-$100M+ for large hospitals
-   - Lock-in: Cannot switch vendors easily
-   - Maintenance: 15-20% annual fees
+1. **Initiation:** A verified doctor authenticates into the SEHATI terminal and creates a new diagnosis record for an authorized patient.
+2. **Client-Side Processing:** The doctor's frontend application converts the diagnosis text into a structured JSON payload.
+3. **Application-Level Encryption:** The payload is encrypted using the AES-256-GCM symmetric algorithm. The encryption key is dynamically derived from the patient's public key or a temporary access grant key.
+4. **Transmission:** The encrypted ciphertext, alongside plaintext metadata (e.g., Hospital Name, Record Type, Timestamp), is transmitted to the SEHATI backend over TLS 1.3.
+5. **Persistence:** The backend stores the ciphertext in the PostgreSQL database. At this stage, the backend only knows *that* a record was created, not *what* it contains.
 
-2. **Zero Interoperability**
-   - Each system speaks different "language"
-   - Data export requires expensive integrations
-   - Healthcare standards (HL7, FHIR) poorly implemented
+### 3.2 Record Retrieval Phase (Read Operation)
 
-3. **Centralized Control**
-   - Hospital owns and controls ALL data
-   - Patient has no direct access
-   - Data silos remain
-
-### ❌ **Cloud-Based Health Records (e.g., Google Health, Apple Health)**
-
-**Why They're Not Enough:**
-1. **Corporate Data Ownership**
-   - Google/Apple owns your data legally
-   - Can change terms of service anytime
-   - Can monetize your health data
-   - Can shut down service (Google Health did in 2020!)
-
-2. **Privacy Concerns**
-   - Data mining for advertising
-   - Third-party sharing unclear
-   - Subject to government surveillance
-   - No true encryption (they have keys)
-
-3. **Requires Manual Entry**
-   - Not integrated with hospitals
-   - Patients must manually input data
-   - No verification of authenticity
-   - Incomplete records
-
-### ❌ **Government Health ID Systems**
-
-**Examples:** Indonesia's NIK Health Integration, Singapore's NEHR
-
-**Limitations:**
-1. **Centralized Government Database**
-   - Honeypot for hackers (one breach = millions affected)
-   - Government surveillance concerns
-   - Bureaucratic inefficiency
-   - Slow adoption due to politics
-
-2. **Limited Access**
-   - Only accessible within country
-   - Requires government permission
-   - Patient cannot export data
-   - No international portability
-
-3. **Technology Lag**
-   - Legacy systems (5-10 years behind)
-   - Poor UX/UI
-   - Not mobile-friendly
-   - Limited functionality
+1. **Request:** The patient logs into their dashboard and requests to view their medical history.
+2. **Data Fetching:** The backend queries the database for records matching the `patientId` and returns the encrypted ciphertext array.
+3. **Key Derivation:** The patient's client application prompts the Web3 wallet to sign a deterministic challenge. The signature is hashed via PBKDF2 to reconstruct the master decryption key locally in memory.
+4. **Decryption:** The client application uses the derived key to perform AES-256-GCM decryption on each ciphertext payload.
+5. **Rendering:** The plaintext data is rendered on the patient's screen. The master key is immediately purged from volatile memory upon session termination.
 
 ---
 
-## 🚀 Our Solution: SEHATI
+## 4. NORMAL OPERATIONS WORKFLOW
 
-### **The Vision**
+The following sections detail standard operational procedures within clinical settings.
 
-> "Every patient should OWN and CONTROL their medical data, with the ability to share it securely with ANY healthcare provider, ANYWHERE in the world, INSTANTLY."
+### 4.1 Patient Registration and Initialization
 
-### **How SEHATI Solves The Problems**
+- **Step 1:** The user connects their Web3 wallet (e.g., MetaMask, Trust Wallet) or utilizes a Web3Auth social login integration.
+- **Step 2:** The system registers the unique wallet address.
+- **Step 3:** The user establishes a secondary recovery mechanism (Biometrics or PIN).
+- **Step 4:** The frontend generates an asymmetrical keypair. The public key is stored on the server; the private key is encrypted and stored locally or synced via a secure enclave.
 
-#### ✅ **1. Self-Sovereign Identity (YOU Own Your Data)**
+### 4.2 Medical Consultation and Access Granting
 
-**SEHATI Approach:**
-```
-Traditional:
-Hospital → Owns Records → Patient Requests Access
+When a patient visits a new clinic, the doctor requires access to their historical records.
 
-SEHATI:
-Patient → Owns Records → Grants Hospital Access
-```
+| Phase | Action Description | Technical Mechanism |
+| :--- | :--- | :--- |
+| **Request** | Doctor requests access via patient's SEHATI ID. | Server generates a temporary challenge. |
+| **Authorization** | Patient scans a QR code generated on the doctor's screen or approves via their mobile app. | Patient's app generates a temporary symmetric key, encrypts it with the doctor's public key, and transmits the Access Grant. |
+| **Review** | Doctor views historical records on their terminal. | Doctor's terminal decrypts the temporary key, fetches encrypted records, and decrypts them locally. |
+| **Append** | Doctor inputs new diagnosis and lab results. | New data is encrypted using the Access Grant key and appended to the patient's ledger. |
+| **Revocation** | Consultation ends; patient leaves. | Access Grant expires automatically based on the Time-To-Live (TTL) configuration, terminating the doctor's access. |
 
-**Implementation:**
-- **Wallet-Based Authentication:** Your crypto wallet = your health identity
-- **Private Key Control:** Only YOU have the encryption keys
-- **Decentralized Storage:** Records stored encrypted, YOU control access
+### 4.3 Pharmacy Prescription Fulfillment
 
-**Real Impact:**
-- ✅ Access your records INSTANTLY from anywhere
-- ✅ Share with ANY doctor WITHOUT hospital permission
-- ✅ Revoke access anytime with one click
-- ✅ TRUE ownership, legally and technically
-
-#### ✅ **2. Blockchain Verification & Immutability**
-
-**Why Blockchain?**
-
-Traditional database:
-```
-Hospital Admin → Can modify/delete records → Patient has no proof
-```
-
-SEHATI (Blockchain):
-```
-Medical Record Created 
-→ Hash stored on Ethereum Sepolia 
-→ PERMANENT & TAMPER-PROOF 
-→ Anyone can verify authenticity
-```
-
-**Benefits:**
-- 🔒 **Immutable:** Once recorded, cannot be altered or deleted
-- ✅ **Verifiable:** Anyone can verify record authenticity via blockchain
-- 📜 **Audit Trail:** Every access logged permanently
-- ⚖️ **Legal Proof:** Court-admissible evidence of medical history
-
-**Technical Implementation:**
-1. Doctor creates medical record
-2. Content encrypted with patient's public key
-3. Content hash (SHA-256) submitted to Ethereum Sepolia blockchain
-4. Transaction hash stored as permanent proof
-5. Anyone can verify: `hash(record) == blockchain_hash`
-
-#### ✅ **3. End-to-End Encryption (Zero-Knowledge)**
-
-**The Principle:** "We Cannot Read Your Data, Even If We Wanted To"
-
-**Encryption Flow:**
-```
-1. Patient generates key pair (ECDSA)
-   - Private Key: Stored only on patient's device (never uploaded)
-   - Public Key: Shared with doctors for encryption
-
-2. Doctor writes medical record
-   - Plaintext: "Patient has diabetes type 2..."
-   - Encrypted with patient's public key (AES-256-GCM)
-   - Result: "x7f9a2b... [unreadable gibberish]"
-
-3. Record stored in database
-   - SEHATI servers only see encrypted data
-   - Even database admin cannot decrypt
-
-4. Patient retrieves record
-   - Downloads encrypted data
-   - Decrypts locally with private key
-   - Reads plaintext on their device
-
-5. Sharing with doctor
-   - Patient generates temporary access token (QR code)
-   - Doctor scans QR → gets temporary decryption access
-   - Access revocable anytime
-```
-
-**Security Strength:**
-- **AES-256-GCM:** Military-grade encryption (NSA approved for TOP SECRET)
-- **PBKDF2 Key Derivation:** 100,000 iterations (protects against brute force)
-- **Unique IV per record:** Each record has different encryption parameters
-
-**Zero-Knowledge Guarantee:**
-```
-What SEHATI Servers Know:
-✅ User ID (wallet address): 0x7a3f...
-✅ Number of records: 5
-✅ Record dates: 2024-01-15, 2024-02-20...
-✅ Encrypted blobs: [unreadable data]
-
-What SEHATI CANNOT Know:
-❌ Medical conditions
-❌ Prescriptions
-❌ Lab results
-❌ ANY health information
-```
-
-#### ✅ **4. QR Code Sharing (User-Friendly Access Control)**
-
-**The Problem:** Blockchain UX is too technical for doctors/patients
-
-**SEHATI's Solution:** QR Code Access Tokens
-
-**How It Works:**
-```
-PATIENT SIDE:
-1. "I want to share my records with Dr. Smith"
-2. Click "Generate Access QR"
-3. Set duration: 1 hour, 1 day, 1 week
-4. QR code generated containing:
-   - Patient ID
-   - Access token
-   - Expiration time
-   - Encryption key (temporary)
-
-DOCTOR SIDE:
-1. Opens SEHATI app
-2. Clicks "Scan Patient QR"
-3. Scans code with phone camera
-4. INSTANTLY sees all medical records (decrypted)
-5. Can add new records
-6. Access auto-expires after set time
-
-PATIENT REVOCATION:
-- One click "Revoke Access" button
-- Doctor's access immediately terminated
-- Real-time update via blockchain
-```
-
-**Benefits:**
-- ⚡ **Instant:** Share records in <5 seconds
-- 🔐 **Secure:** Time-limited, revocable access
-- 📱 **Mobile-First:** Works on any smartphone
-- 🚫 **No Passwords:** No credentials to remember
-- 👴 **Accessible:** Even elderly patients can use QR codes
-
-#### ✅ **5. Comprehensive Audit Logging**
-
-**Every Action Tracked:**
-
-```
-Audit Log Example:
-┌──────────────────────────────────────────────────────────┐
-│ 2024-03-15 10:30:15                                      │
-│ ACTION: RecordViewed                                      │
-│ ACTOR: Dr. John Smith (0x8f2a...)                        │
-│ TARGET: Blood Test Results                                │
-│ BLOCKCHAIN TX: 0xa7f3...                                 │
-│ IP ADDRESS: 192.168.1.10                                 │
-│ DEVICE: Chrome/Mobile                                     │
-└──────────────────────────────────────────────────────────┘
-```
-
-**Patient Can See:**
-- WHO accessed their records
-- WHEN they accessed
-- WHAT records were viewed
-- FROM WHERE (IP, device)
-- Blockchain proof (transaction hash)
-
-**Compliance Benefits:**
-- GDPR Article 15: Right to access logs
-- HIPAA Audit Controls: Complete trail
-- Legal disputes: Court-admissible evidence
-- Accountability: Deters unauthorized access
-
-#### ✅ **6. Cross-Border Portability**
-
-**The Use Case:**
-- Indonesian patient seeks treatment in Singapore
-- Doctor in Singapore needs complete medical history
-- Language barriers, different systems
-
-**SEHATI Solution:**
-```
-Patient → Shares QR Code → Singapore Doctor
-        → Scans Code → INSTANT ACCESS
-        → Sees records in English (auto-translate)
-        → Blockchain verified authenticity
-        → Treatment proceeds safely
-```
-
-**Future Integration:**
-- Automatic translation (Indonesian ↔ English ↔ etc.)
-- International doctor verification
-- Cross-border insurance claim settlement
-- Medical tourism facilitation
+- **Step 1:** Patient visits a pharmacy and presents a digital prescription QR code.
+- **Step 2:** The pharmacist scans the QR code, which contains a narrow-scoped, read-only decryption token.
+- **Step 3:** The system strictly filters the query, returning only records with `recordType: "prescription"`.
+- **Step 4:** Pharmacist dispenses the medication and clicks "Mark as Fulfilled".
+- **Step 5:** The system updates the `isFulfilled` metadata flag to true and logs the action in the audit trail. The prescription ciphertext cannot be altered.
 
 ---
 
-## ✨ Features
+## 5. THE 3-LAYER EMERGENCY PROTOCOL (ZERO-FAILURE ARCHITECTURE)
 
-### **For Patients**
+The core challenge of Zero-Knowledge architecture is emergency access: if a patient is unconscious, they cannot provide their cryptographic signature. SEHATI resolves this via an escalating 3-Layer Emergency Protocol.
 
-| Feature | Description | Impact |
-|---------|-------------|--------|
-| 🔐 **Wallet Authentication** | Login with MetaMask, WalletConnect | No passwords to remember |
-| 📊 **Health Dashboard** | View all records with interactive charts | Complete health overview |
-| 🎯 **AI Health Insights** | Wellness score & personalized recommendations | Proactive health management |
-| 📅 **Interactive Timeline** | Searchable, filterable medical history | Easy record navigation |
-| 📈 **Data Analytics** | Visualize health trends over time | Understand your health |
-| 🔗 **QR Code Sharing** | Generate time-limited access tokens | Share records instantly |
-| 🔍 **Audit Trail** | See who accessed your data | Full transparency |
-| 🔑 **Key Management** | Export/import encryption keys | Backup & recovery |
-| 🚫 **Access Revocation** | Revoke doctor access anytime | Complete control |
-| ⛓️ **Blockchain Proof** | Verify record authenticity | Trust & verification |
+### 5.1 Layer 1: Standard Cryptographic Access
 
-### **For Doctors**
+**Condition:** Patient is conscious and capable of interaction.
+**Workflow:**
+1. Patient arrives at the Emergency Department (ED).
+2. Triage nurse requests medical history.
+3. Patient authenticates via their mobile device using their Web3 wallet or PIN.
+4. Access is granted instantly; standard decryption procedures apply.
 
-| Feature | Description | Impact |
-|---------|-------------|--------|
-| 📱 **QR Scanner** | Scan patient QR for instant access | No manual data entry |
-| ✍️ **Create Records** | Add diagnosis, prescriptions, lab results | Efficient documentation |
-| 🏥 **Patient View** | Complete medical history in one place | Better diagnosis |
-| ✅ **Blockchain Verification** | Verify record authenticity | Prevent fraud |
-| 📝 **Digital Signatures** | Sign records cryptographically | Legal validity |
-| 🔔 **Access Notifications** | Notify when patients share records | Real-time updates |
-| 📊 **Analytics Dashboard** | Track patient engagement | Insights |
+### 5.2 Layer 2: Biometric Break-Glass Protocol
 
-### **For Healthcare Administrators**
+**Condition:** Patient is incapacitated (unconscious, severe pain), but physiological biometrics (face, fingerprints) remain intact. Device is lost or secured.
+**Workflow:**
+1. The attending ED physician activates the "Break-Glass" mode on the hospital's SEHATI terminal.
+2. The physician scans the patient's fingerprint or face.
+3. The system captures the biometric feature vectors.
+4. Utilizing a Fuzzy Commitment scheme, the system maps the noisy biometric scan to the original cryptographic seed established during registration.
+5. The master key is regenerated purely from mathematics and biology, completely bypassing the need for the physical mobile device.
+6. Localized decryption occurs within the hospital terminal, revealing critical allergy and medication history.
 
-| Feature | Description | Impact |
-|---------|-------------|--------|
-| 👥 **Doctor Verification** | Approve/manage doctor registrations | Quality control |
-| 📈 **Usage Analytics** | Track platform activity | Business insights |
-| 🔐 **Security Monitoring** | Audit logs & anomaly detection | Compliance |
-| 💾 **Data Export** | Export for compliance/reporting | Flexibility |
+### 5.3 Layer 3: Hybrid Shamir's Secret Sharing (Extreme Trauma Protocol)
 
----
+**Condition:** Patient suffers severe physical trauma rendering biometric identification impossible (e.g., severe burns, facial trauma). Device is destroyed.
+**Workflow:**
+This layer utilizes Shamir's Secret Sharing (SSS) structured as a Hybrid 2-of-3 threshold mechanism to mathematically reconstruct the master key without patient involvement, while preventing unauthorized unilateral access.
 
-## 🛠️ Tech Stack
+| SSS Shard Allocation | Entity Type | Role in Emergency Scenario |
+| :--- | :--- | :--- |
+| **Shard 1 (Alpha)** | Central Health Authority Server | Automated guarantor. Evaluates the legitimacy of the physician's request based on SIP verification and GPS fencing. |
+| **Shard 2 (Beta)** | Cryptographically Verified Physician | Provides professional authorization. The physician must sign the request using their institutional private key. |
+| **Shard 3 (Gamma)** | Designated Next of Kin | Human guardian. Receives SMS/Push notification to approve the emergency override. |
 
-### **Frontend**
-```
-React 19           - Latest UI framework with Server Components support
-TypeScript         - Type safety & developer experience
-Vite              - Lightning-fast build tool with HMR
-Tailwind CSS v4    - Utility-first styling with v4 optimizations
-Shadcn UI          - Beautiful, accessible component library
-Radix UI           - Unstyled, accessible primitives
-Framer Motion      - Smooth animations & transitions
-Recharts           - Interactive data visualization
-TanStack Query     - Server state management & caching
-Wouter             - Lightweight client-side routing
-```
-
-### **Backend**
-```
-Node.js 20+        - JavaScript runtime
-Express.js         - Web framework
-TypeScript         - Type-safe backend
-Drizzle ORM        - Type-safe SQL ORM
-PostgreSQL         - Relational database
-Passport.js        - Authentication middleware
-Express Session    - Secure session management
-```
-
-### **Blockchain & Web3**
-```
-Solidity           - Smart contract language
-Hardhat            - Development framework
-Ethereum Sepolia   - Ethereum testnet network
-ethers.js          - Web3 library for Ethereum
-Wagmi              - React Hooks for Ethereum
-Reown AppKit       - Wallet connection UI
-```
-
-### **Security & Encryption**
-```
-AES-256-GCM        - Symmetric encryption for data
-ECDSA              - Public/private key pairs
-PBKDF2             - Key derivation function
-SHA-256            - Cryptographic hashing
-Web Crypto API     - Browser-native cryptography
-```
-
-### **Performance Optimizations**
-```
-Code Splitting     - Lazy loading routes & components
-Vendor Chunking    - Separate chunks for libraries
-Compression        - Gzip/Brotli compression
-Source Maps        - Production debugging
-Tree Shaking       - Remove unused code
-```
+**Execution Sequence:**
+1. Physician invokes the "Extreme Emergency Override".
+2. Physician inputs Shard 2 (Beta) by cryptographically signing the request.
+3. The Central Health Authority evaluates the signature. If the physician is verified and located within a recognized trauma center, it automatically releases Shard 1 (Alpha) to prevent fatal delays.
+4. Simultaneously, an alert is sent to the Next of Kin (holding Shard 3).
+5. With Shard 1 and Shard 2 present, the mathematical threshold (2 out of 3) is immediately satisfied.
+6. The system reconstructs the master key via polynomial interpolation.
+7. Decryption is achieved, saving the patient's life despite total physical and device incapacitation.
+8. An immutable, high-priority audit log is permanently inscribed on the blockchain network detailing this override event.
 
 ---
 
-## 🚀 Quick Start
+## 6. AUDIT AND COMPLIANCE OPERATIONS
 
-### **Prerequisites**
-- Node.js 20+ ([Download](https://nodejs.org))
-- PostgreSQL database ([Download](https://www.postgresql.org/download/))
-- MetaMask or compatible Web3 wallet ([Download](https://metamask.io))
-- (Optional) Ethereum Sepolia testnet tokens
+Medical systems require rigorous oversight to comply with regulations such as HIPAA and local data protection laws (PDP). SEHATI enforces this through comprehensive, unalterable logging.
 
-### **1. Clone & Install**
+### 6.1 Event Logging Mechanism
 
-```bash
-# Clone the repository
-git clone https://github.com/Mzhvnn-tch/sehati
-cd sehati
+Every state-altering action or sensitive data access triggers an asynchronous write operation to the `audit_logs` table.
 
-# Install dependencies
-npm install
-```
+| Trigger Event | Logged Information | Example Scenario |
+| :--- | :--- | :--- |
+| **Record Creation** | Actor ID, Patient ID, Timestamp, Record Type | Dr. A adds a lab result for Patient B. |
+| **Access Grant** | Patient ID, Target Doctor ID, TTL, IP Address | Patient B allows Dr. C to view history for 24 hours. |
+| **Data Retrieval** | Viewer ID, Target Patient ID, Endpoint, Status | Dr. C views the medical history of Patient B. |
+| **Emergency Override** | Physician ID, Override Layer (1/2/3), Location | Dr. D triggers Layer 3 SSS override for Patient E. |
 
-### **2. Environment Setup**
+### 6.2 Blockchain Verification (Simulated/On-Chain)
 
-Copy `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Configure your `.env`:
-
-```env
-# Database (Required)
-DATABASE_URL=postgresql://user:password@localhost:5432/sehati
-
-# Blockchain (Optional - app works without these in simulation mode)
-DEPLOYER_PRIVATE_KEY=your_wallet_private_key
-CONTRACT_ADDRESS=0x...deployed_contract_address
-
-# Session Secret (Auto-generated if not set)
-SESSION_SECRET=your_random_secret_here
-```
-
-> **Note:** If blockchain variables are not set, the app runs in **simulation mode** with mock blockchain interactions.
-
-### **3. Database Setup**
-
-```bash
-# Initialize database schema
-npm run db:push
-
-# (Optional) Seed demo data
-curl -X POST http://localhost:5000/api/seed
-```
-
-### **4. Run Development Server**
-
-```bash
-# Start both frontend and backend
-npm run dev
-
-# Or run separately:
-npm run dev:client  # Frontend only (port 5000)
-npm run dev         # Backend only
-```
-
-Open browser: `http://localhost:5000`
-
-### **5. (Optional) Deploy Smart Contract**
-
-```bash
-# Compile contract
-npx hardhat compile
-
-# Deploy to Ethereum Sepolia
-npx hardhat run script/deploy.cjs --network sepolia
-
-# Copy deployed address to .env CONTRACT_ADDRESS
-```
+To prevent internal database tampering (e.g., a rogue database administrator deleting an unauthorized access log), critical events calculate a SHA-256 hash of the audit payload and emit an event to a smart contract. This provides mathematical proof that the audit trail has not been retroactively altered.
 
 ---
 
-## 🔑 Demo Admin Wallet for Testing & Research
+## 7. SECURITY AND ACCESS GOVERNANCE
 
-### ⚠️ IMPORTANT: FOR TESTNET USE ONLY
+The SEHATI operational workflow is protected by defense-in-depth security measures at the network and application boundaries.
 
----
+### 7.1 Session Management Workflow
 
-### 📋 **Why This Section Exists**
+- **Authentication State:** Managed via `express-session` operating entirely on the backend.
+- **Token Delivery:** Session tokens are delivered via `Set-Cookie` headers.
+- **Security Flags:**
+  - `HttpOnly`: Prevents client-side scripts from reading the token, neutralizing Cross-Site Scripting (XSS) extraction.
+  - `SameSite: strict`: Instructs the browser to never append the cookie to cross-origin requests, completely mitigating Cross-Site Request Forgery (CSRF).
+  - `Secure`: Ensures the token is only transmitted over encrypted HTTPS channels.
 
-This project includes **publicly shared admin credentials** to facilitate immediate **testing and demonstration**. This decision enables full system verification without requiring manual approval from the repository owner.
+### 7.2 Endpoint Governance Workflow
 
-#### **1. Blockchain Verification**
-Doctor approval requires a transaction on the `registerDoctor()` smart contract function, which is restricted to the admin role. By sharing testnet admin credentials, we allow any developer to verify this on-chain interaction independently.
+Access to specific API endpoints is governed by Role-Based Access Control (RBAC) middleware executed sequentially:
+1. **Authentication Check:** Validates session existence.
+2. **Role Verification:** Extracts user role from the session payload.
+3. **Verification Gate:** For medical professionals, the system checks the `isVerified` flag. Unverified accounts cannot access patient data endpoints.
+4. **Execution:** The business logic controller is invoked.
 
-#### **2. Accessible Testing**
-Without these credentials, cloning the repository would result in a "stuck" state for doctor registration. Providing the demo wallet ensures a smooth, end-to-end testing experience for researchers and developers.
+### 7.3 Threat Mitigation Execution
 
-#### **3. Standard Practice**
-Sharing demo credentials for non-production environments is a common practice in open-source projects to lower the barrier to entry for testing and review.
-
-**Note:** These credentials are widely distributed and strictly for **Ethereum Sepolia Testnet** usage.
-
----
-
-### 🔐 **Demo Admin Wallet Credentials**
-
-Use these credentials to test the admin dashboard and approve doctor registrations.
-
-**Demo Admin Wallet (Ethereum Sepolia Testnet)**
-
-- **Wallet Address:** `0xc771b3c8c495875df90f39467b9aeeac992f18fc`
-- **Testnet Private Key (Public for Demo):** `0xd90f7d77717d3ad8cc725c9b8956e922b09ed63c1c0c445a183f0ebed678d69c`
-- **Chain ID:** 11155111
-
-> **Security Note:** This private key is public knowledge. It contains no real funds and grants access only to the testnet contract.
+If the system detects anomalous operational behavior (e.g., brute force attempts on an access grant token):
+- The **Rate Limiter** increments the strike count for the originating IP.
+- Upon exceeding the threshold, the **IP Blocker** silently drops the connection, returning generic `429 Too Many Requests` responses to exhaust attacker resources without revealing system internals.
+- Input vectors are automatically sanitized to strip `<script>` and `onEvent` handlers before data routing.
 
 ---
-
-### 🧪 **How to Use**
-
-#### **Testing Doctor Approval Flow:**
-
-**Step 1: Register as a Doctor**
-- Connect any wallet and register.
-- Status will be **PENDING**.
-
-**Step 2: Import Demo Admin Wallet**
-- Import the **Testnet Private Key** above into MetaMask.
-- Switch to Ethereum Sepolia network.
-
-**Step 3: Approve Doctor**
-- Go to `http://localhost:5000/admin`.
-- Connect with the demo admin wallet.
-- Approve the pending doctor registration.
-
-**Step 4: Verify on Blockchain**
-- Check the transaction hash on the [Etherscan Sepolia Explorer](https://sepolia.etherscan.io/).
-
----
-
-### 🎯 **Production Deployment**
-
-> **⚠️ CRITICAL: DO NOT USE DEMO CREDENTIALS IN PRODUCTION**
-
-For a live deployment:
-
-1.  **Generate a New Wallet:** Create a secure admin wallet for mainnet.
-2.  **Secure Storage:** Store the private key in a secure environment variable or vault. Never commit it to version control.
-3.  **Update Environment:**
-    ```env
-    ADMIN_WALLET_ADDRESS=0x_YOUR_SECURE_PRODUCTION_WALLET
-    ADMIN_PRIVATE_KEY=0x_YOUR_SECURE_PRODUCTION_KEY
-    ```
-
----
-
-### 📚 **For Reviewers**
-
-This setup ensures that:
-- The system is fully verifiable on-chain.
-- The distinction between development (demo) and production security models is clear.
-- Testing is frictionless for technical reviewers.
-
-**Verification Steps:**
-1.  Clone repository.
-2.  Use demo admin wallet to approve a test doctor.
-3.  Verify the `DOCTOR_ROLE` assignment on the testnet explorer.
-
----
-
-## 🏗️ Architecture
-
-### **System Overview**
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    PATIENT (Browser)                         │
-│  ┌────────────┐    ┌──────────────┐    ┌──────────────┐    │
-│  │   Wallet   │    │  React App   │    │ Private Key  │    │
-│  │ (MetaMask) │────│  (Frontend)  │────│  (LocalOnly) │    │
-│  └────────────┘    └──────────────┘    └──────────────┘    │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ HTTPS (Encrypted)
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   SEHATI BACKEND (Node.js)                   │
-│  ┌────────────────┐    ┌──────────────┐   ┌─────────────┐  │
-│  │  Express API   │◄───│ Session      │   │   DrizzleORM│  │
-│  │  + Routes      │    │ Management   │───│   + Models  │  │
-│  └────────────────┘    └──────────────┘   └──────┬──────┘  │
-│         │                                          │          │
-│         ├──────────────────────────────────────────┘          │
-│         ▼                                                      │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │            PostgreSQL Database                           │ │
-│  │  ┌─────────┐  ┌──────────┐  ┌────────────┐  ┌────────┐│ │
-│  │  │  Users  │  │ Records  │  │ AccessGrants│  │ Audit │││ │
-│  │  │(Wallet) │  │(Encrypted)│  │   (Tokens) │  │  Logs ││ │ │
-│  │  └─────────┘  └──────────┘  └────────────┘  └────────┘│ │
-│  └─────────────────────────────────────────────────────────┘ │
-└──────────────────────────┬──────────────────────────────────┘
-                           │ Web3 RPC
-                           ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Ethereum Sepolia Blockchain                     │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │          SEHATI Smart Contract                        │   │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌────────────┐  │   │
-│  │  │  Register   │  │ Create Record│  │   Verify   │  │   │
-│  │  │   Users     │  │    Hashes    │  │   Access   │  │   │
-│  │  └─────────────┘  └──────────────┘  └────────────┘  │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### **Data Flow: Creating a Medical Record**
-
-```
-1. DOCTOR enters medical record in UI
-   ├─ Diagnosis: "Type 2 Diabetes"
-   ├─ Prescription: "Metformin 500mg"
-   └─ Notes: "Patient advised diet control"
-
-2. FRONTEND encrypts data
-   ├─ Fetch patient's public key from server
-   ├─ Generate random IV (Initialization Vector)
-   ├─ Encrypt with AES-256-GCM
-   └─ Result: "a7f9x3... [encrypted blob]"
-
-3. FRONTEND submits to blockchain (optional for demo)
-   ├─ Generate content hash: SHA-256(encrypted_data)
-   ├─ Call smart contract: createRecord()
-   ├─ Transaction broadcast to Ethereum Sepolia
-   └─ Receive transaction hash: 0x8f2a...
-
-4. FRONTEND sends to backend
-   ├─ POST /api/records
-   ├─ Payload: {
-       encryptedContent: "a7f9x3...",
-       blockchainHash: "0x8f2a...",
-       ipfsHash: "Qm...",  // optional
-       metadata: { type, date, hospital }
-     }
-
-5. BACKEND stores in database
-   ├─ Insert into medical_records table
-   ├─ Store encrypted blob (unreadable)
-   ├─ Save blockchain reference
-   └─ Create audit log entry
-
-6. PATIENT retrieves record
-   ├─ GET /api/records/patient/:id
-   ├─ Receives encrypted data
-   ├─ Decrypts locally with private key
-   └─ Displays plaintext in UI
-```
-
-### **Security Architecture**
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    THREAT MODEL                              │
-└─────────────────────────────────────────────────────────────┘
-
-Threat 1: Database Breach
-├─ Impact: Attacker accesses PostgreSQL
-├─ Mitigation: All data AES-256 encrypted
-└─ Result: Attacker sees only gibberish ✅
-
-Threat 2: Man-in-the-Middle Attack
-├─ Impact: Attacker intercepts network traffic
-├─ Mitigation: HTTPS/TLS + End-to-end encryption
-└─ Result: Traffic encrypted twice ✅
-
-Threat 3: Malicious Doctor
-├─ Impact: Doctor tries to access unauthorized records
-├─ Mitigation: QR token system + audit logs
-└─ Result: No access without patient permission ✅
-
-Threat 4: Lost Private Key
-├─ Impact: Patient loses access to own records
-├─ Mitigation: Key export/backup system
-└─ Result: Recoverable if backup exists ⚠️
-
-Threat 5: Smart Contract Exploit
-├─ Impact: Attacker manipulates blockchain data
-├─ Mitigation: Read-only verification (no fund risk)
-└─ Result: Only hashes stored, limited damage ✅
-```
-
----
-
-## 🌟 Use Cases & User Stories
-
-### **Use Case 1: Emergency Room Treatment**
-
-**Scenario:**
-- Pak Ahmad has a motorcycle accident
-- Brought unconscious to ER
-- Doctors need to know:
-  - Blood type
-  - Allergies
-  - Current medications
-  - Pre-existing conditions
-
-**Without SEHATI:**
-```
-1. Doctors have ZERO information
-2. Cannot contact family (phone locked)
-3. Run basic blood tests (30 min delay)
-4. Risky drug administration (allergy unknown)
-5. Potential complications
-```
-
-**With SEHATI:**
-```
-1. Hospital scans patient's wallet QR (on phone case)
-2. Emergency access granted automatically
-3. Instant view: Blood Type AB+, Allergic to Penicillin
-4. Sees current meds: Blood pressure medication
-5. Safe treatment proceeds immediately
-6. LIFE SAVED ✅
-```
-
-### **Use Case 2: Specialist Referral**
-
-**Scenario:**
-- Ibu Siti has diabetes
-- General practitioner refers to endocrinologist
-- Needs complete medical history for proper diagnosis
-
-**Without SEHATI:**
-```
-1. GP writes referral letter (summary only)
-2. Ibu Siti must request records from 3 previous hospitals
-3. Each hospital: 3-5 days processing, Rp 200K-500K fees
-4. Some records lost (hospital changed system)
-5. Specialist works with incomplete data
-6. Sub-optimal treatment plan
-```
-
-**With SEHATI:**
-```
-1. GP sends digital referral
-2. Ibu Siti generates QR code
-3. Specialist scans → INSTANT full history
-4. Sees: 5 years of glucose levels, all medications, complications
-5. Comprehensive treatment plan created
-6. Better health outcomes ✅
-```
-
-### **Use Case 3: Medical Tourism**
-
-**Scenario:**
-- Pak Rudi needs surgery in Singapore
-- Singapore hospital requires medical history
-- Language barriers, different systems
-
-**Without SEHATI:**
-```
-1. Pak Rudi requests records from Indonesian hospital
-2. Hospital provides paper records (Indonesian language)
-3. Must translate to English (expensive)
-4. Singapore hospital manually enters data
-5. Errors in translation/entry
-6. Delays in treatment
-```
-
-**With SEHATI:**
-```
-1. Pak Rudi shares QR code with Singapore hospital
-2. Records displayed in English (auto-translate)
-3. Blockchain verified authenticity
-4. Singapore doctor sees complete history
-5. Surgery scheduled immediately
-6. Smooth medical tourism experience ✅
-```
-
-### **Use Case 4: Insurance Claims**
-
-**Scenario:**
-- Ibu Dewi submits health insurance claim
-- Insurance company needs to verify:
-  - Treatment actually happened
-  - Costs are legitimate
-  - No pre-existing condition exclusion
-
-**Without SEHATI:**
-```
-1. Ibu Dewi submits claim + receipts
-2. Insurance requests hospital records
-3. Hospital sends records (2-3 weeks)
-4. Insurance fraud team verifies (manual)
-5. Claim processed in 30-45 days
-6. Frequent disputes & rejections
-```
-
-**With SEHATI:**
-```
-1. Ibu Dewi submits claim with blockchain hash
-2. Insurance verifies record on blockchain (instant)
-3. Authenticity confirmed cryptographically
-4. Smart contract validates treatment date
-5. Claim approved in 24-48 hours
-6. Payment auto-transferred ✅
-```
-
-### **Use Case 5: Clinical Research**
-
-**Scenario:**
-- University researching diabetes in Indonesia
-- Needs anonymized patient data
-- Must ensure data privacy & consent
-
-**Without SEHATI:**
-```
-1. Researchers request data from hospitals
-2. Hospitals manually anonymize (error-prone)
-3. Months of bureaucracy & ethics approval
-4. Limited dataset (single hospital)
-5. Research delayed or incomplete
-```
-
-**With SEHATI:**
-```
-1. Researchers create data request
-2. Patients opt-in via smart contract
-3. Data auto-anonymized (wallet address masked)
-4. Multi-hospital aggregated dataset
-5. Research proceeds with full consent
-6. Medical breakthroughs accelerated ✅
-```
-
----
-
-## 📊 Impact & Metrics
-
-### **Problem Quantification**
-
-| Problem | Current Cost | SEHATI Reduction |
-|---------|--------------|------------------|
-| Duplicate medical tests | $2.1B/year in Indonesia | **70% reduction** |
-| Administrative overhead | $850M/year | **60% reduction** |
-| Medical errors from incomplete data | 23% of cases | **80% reduction** |
-| Data breach costs | $4.5M per incident | **90% reduction** |
-| Insurance fraud | $340M/year | **50% reduction** |
-| Patient time wasted | 45 min/visit | **30 min saved** |
-
-### **Expected User Benefits**
-
-**For Patients:**
-- ⏱️ Save **30+ minutes** per hospital visit
-- 💰 Save **Rp 500K-2M/year** on duplicate tests
-- 🔐 **100% control** over medical data
-- 🌍 **Global portability** of health records
-- ⚡ **Instant sharing** with any doctor
-
-**For Doctors:**
-- 📊 **Complete patient history** at fingertips
-- ⏱️ Save **15 min/patient** on data collection
-- ✅ **Verified authenticity** of records
-- 📝 **Reduced liability** (better documentation)
-- 💼 **Streamlined workflow**
-
-**For Hospitals:**
-- 💾 **Reduced storage costs** (distributed model)
-- 🔒 **Enhanced security** (zero-knowledge)
-- 📉 **Lower liability** (patient-owned data)
-- ⚡ **Faster patient onboarding**
-- 🏆 **Competitive advantage** (tech-forward)
-
-**For Insurance:**
-- ✅ **Instant claim verification**
-- 🚫 **50% reduction** in fraud
-- ⏱️ **30-day → 2-day** processing time
-- 💰 **$45 → $5** per claim cost
-- 😊 **Higher customer satisfaction**
-
----
-
-## 🔐 Security & Privacy
-
-### **Encryption Details**
-
-**Algorithm:** AES-256-GCM (Galois/Counter Mode)
-- **Key Size:** 256 bits (2^256 combinations ≈ 3.14×10^77)
-- **IV Size:** 96 bits (unique per encryption)
-- **Tag Size:** 128 bits (authenticity verification)
-- **Security:** Approved for TOP SECRET data by NSA
-
-**Key Derivation:** PBKDF2
-- **Hash Function:** SHA-256
-- **Iterations:** 100,000 (protects against brute force)
-- **Salt:** Unique per user (wallet address-derived)
-
-**Key Management:**
-```
-Public Key:  Stored on server (for encryption)
-Private Key: NEVER leaves user's device
-             Stored in browser localStorage (encrypted with wallet)
-             User can export/backup encrypted
-```
-
-### **Threat Model Analysis**
-
-| Attack Vector | Likelihood | Impact | Mitigation |
-|---------------|------------|--------|------------|
-| Database breach | Medium | Low | Data encrypted, keys not in DB |
-| Man-in-the-middle | Low | Low | HTTPS/TLS + E2EE |
-| Phishing attack | Medium | Medium | Hardware wallet support, 2FA |
-| Smart contract exploit | Low | Low | Read-only verification, audited |
-| Lost private key | High | High | Backup system, key recovery |
-| Malicious doctor | Low | Medium | Audit logs, time-limited access |
-| Insider threat | Low | Low | Zero-knowledge, no admin access |
-
-### **Compliance**
-
-**GDPR (EU General Data Protection Regulation):**
-- ✅ Right to access (Article 15): Full audit logs
-- ✅ Right to portability (Article 20): Export functionality
-- ✅ Right to erasure (Article 17): Data deletion support
-- ✅ Data minimization (Article 5): Only necessary data collected
-- ✅ Encryption requirement (Article 32): AES-256 standard
-
-**HIPAA (US Health Insurance Portability and Accountability Act):**
-- ✅ Access Control (§164.312(a)(1)): Wallet-based auth
-- ✅ Audit Controls (§164.312(b)): Complete logs
-- ✅ Integrity (§164.312(c)(1)): Blockchain verification
-- ✅ Transmission Security (§164.312(e)(1)): TLS encryption
-
-**Indonesia UU PDP (Personal Data Protection Law):**
-- ✅ Explicit consent required: QR code system
-- ✅ Data security measures: Encryption + blockchain
-- ✅ Data subject rights: Full control via wallet
-- ✅ Cross-border transfer: Portability enabled
-
----
-
-## 🛣️ Roadmap
-
-We have moved our detailed development roadmap to a separate document.
-
-� **[View the Full Roadmap](./ROADMAP.md)**
-
-**Current Focus:** Phase 1 (MVP) Verification & Testing.
-**Next Milestone:** Phase 2 (Production Launch) - Q2 2026.
-
----
-
-## 📱 Screenshots
-
-> 🚧 **Coming Soon** - Professional screenshots and screen recordings will be added here
-
-**Planned Captures:**
-1. Landing page hero section
-2. Patient dashboard with analytics
-3. Interactive health timeline
-4. AI health insights
-5. QR code sharing flow
-6. Doctor dashboard
-7. Blockchain verification
-8. Mobile responsive views
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from the community! Whether you're a developer, designer, healthcare professional, or enthusiast, there's a place for you.
-
-### **How to Contribute**
-
-1. **Fork the repository**
-2. **Create feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Make your changes**
-4. **Commit with clear messages**
-   ```bash
-   git commit -m 'Add amazing feature: detailed description'
-   ```
-5. **Push to branch**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-6. **Open Pull Request**
-
-### **Contribution Ideas**
-
-**Code:**
-- Bug fixes
-- New features
-- Performance optimizations
-- Test coverage improvements
-
-**Design:**
-- UI/UX improvements
-- Accessibility enhancements
-- Icon design
-- Illustrations
-
-**Documentation:**
-- Tutorial videos
-- Translation (Bahasa Indonesia, etc.)
-- API documentation
-- Use case examples
-
-**Healthcare:**
-- Medical terminology accuracy
-- Workflow optimizations
-- Compliance guidance
-- Clinical trial support
-
-### **Development Guidelines**
-
-**Code Style:**
-- Use TypeScript for type safety
-- Follow ESLint rules
-- Write meaningful comments
-- Keep components small & focused
-
-**Testing:**
-- Write unit tests for utilities
-- Integration tests for API
-- E2E tests for critical flows
-
-**Commit Messages:**
-```
-feat: Add health timeline filtering
-fix: Resolve QR code generation bug
-docs: Update installation guide
-style: Format patient dashboard
-refactor: Extract encryption utils
-test: Add API route tests
-```
-
----
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-**Summary:**
-- ✅ Commercial use allowed
-- ✅ Modification allowed
-- ✅ Distribution allowed
-- ✅ Private use allowed
-- ⚠️ No warranty provided
-- ℹ️ License and copyright notice required
-
----
-
-## 🌟 Acknowledgments
-
-**Built With:**
-- [React](https://react.dev) - UI framework
-- [Vite](https://vitejs.dev) - Build tool
-- [Tailwind CSS](https://tailwindcss.com) - Styling
-- [Shadcn UI](https://ui.shadcn.com) - Component library
-- [Ethereum](https://ethereum.org) - Blockchain platform
-- [PostgreSQL](https://www.postgresql.org) - Database
-- [Hardhat](https://hardhat.org) - Smart contract development
-
-**Inspired By:**
-- [MedRec (MIT)](https://github.com/medrecproject) - Blockchain medical records research
-- [uPort](https://www.uport.me) - Self-sovereign identity concepts
-- [IPFS](https://ipfs.tech) - Decentralized storage vision
-
-**Special Thanks:**
-- Indonesian healthcare professionals for domain expertise
-- Blockchain community for technical guidance
-- Open-source contributors worldwide
-
----
-
-## 📞 Contact & Support
-
-**Project Maintainer:**
-- 📧 Email: sehatihealth.app@gmail.com
-- 🐦 Twitter: [@sehati_id](https://twitter.com/sehati_id)
-- 💬 Telegram: [t.me/sehati_community](https://t.me/sehati_community)
-- 🌐 Website: [https://sehati.id](https://sehati.id)
-
-**Report Issues:**
-- 🐛 [GitHub Issues](https://github.com/yourusername/sehati/issues)
-- 📝 [Feature Requests](https://github.com/yourusername/sehati/discussions)
-
-**Community:**
-- 💬 [Discord Server](https://discord.gg/sehati)
-- 📚 [Documentation](https://docs.sehati.id)
-- 🎓 [Tutorials](https://learn.sehati.id)
-
----
-
-<p align="center">
-  <strong>Building the Future of Healthcare, One Block at a Time</strong><br/>
-  Made with ❤️ for healthier, more transparent healthcare in Indonesia and beyond
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Healthcare-Blockchain-00d4aa?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Web3-Enabled-f39c12?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Privacy-First-e74c3c?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Open-Source-3498db?style=for-the-badge" />
-</p>
+*END OF OPERATIONAL ARCHITECTURE DOCUMENT*

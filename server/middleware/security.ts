@@ -15,15 +15,16 @@ export const sessionStore = new MemoryStoreSession({
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 
 export const sessionMiddleware = session({
+  name: 'sehati_token', // Obfuscate default connect.sid
   secret: SESSION_SECRET,
-  resave: true,
-  saveUninitialized: true,
+  resave: false, // Prevent race conditions
+  saveUninitialized: false, // Prevent session fixation and comply with privacy laws
   store: sessionStore,
   cookie: {
     secure: process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'lax',
+    sameSite: 'strict',
   },
 });
 
@@ -37,13 +38,56 @@ declare module 'express-session' {
     };
     authenticated: boolean;
     verifiedWallet?: string;
+    nonce?: string; // Used to prevent replay attacks during authentication
+    nonceExpires?: number; // TTL for nonce
   }
 }
+
+// CSRF Protection Middleware
+// Enforces that all state-changing API requests use application/json, preventing simple cross-site POSTs
+export const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.path.startsWith('/api')) {
+    const contentType = req.headers['content-type'] || '';
+    if (!contentType.includes('application/json')) {
+      return res.status(403).json({ error: 'CSRF Protection: Content-Type must be application/json' });
+    }
+  }
+  next();
+};
+
+const blockList = new Set<string>();
+const strikeList = new Map<string, number>();
+
+export const ipBlockerMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+  if (blockList.has(clientIp)) {
+    // Stealth ban: Returns a generic 429 so the attacker thinks they just need to wait longer
+    // They will waste their time waiting instead of immediately rotating their IP.
+    return res.status(429).json({ error: 'Too many requests, please try again later.' });
+  }
+  next();
+};
+
+const handleRateLimitExceeded = (req: Request, res: Response, next: NextFunction, options: any) => {
+  const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+  
+  const currentHits = (req as any).rateLimit?.current || 0;
+  const maxLimit = options?.max || 10;
+  
+  // If they send more than 3x the allowed limit in the same time window, permanently ban them
+  if (currentHits >= maxLimit * 3) {
+    blockList.add(clientIp);
+  }
+
+  // Stealth mode: same generic response
+  res.status(options?.statusCode || 429).json(options?.message || { error: 'Too many requests, please try again later.' });
+};
 
 export const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
   message: { error: 'Too many requests, please try again later.' },
+  handler: handleRateLimitExceeded,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => !req.path.startsWith('/api'),
@@ -54,6 +98,7 @@ export const strictLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   message: { error: 'Too many authentication attempts, please try again later.' },
+  handler: handleRateLimitExceeded,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },
@@ -63,6 +108,7 @@ export const walletAuthLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
   message: { error: 'Too many wallet connection attempts, please try again later.' },
+  handler: handleRateLimitExceeded,
   validate: { xForwardedForHeader: false },
 });
 
@@ -169,12 +215,15 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction) =
 };
 
 export const setupSecurity = (app: Express) => {
+  app.use(ipBlockerMiddleware);
   app.use(sessionMiddleware);
+  app.use(csrfProtection);
   
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
+        upgradeInsecureRequests: null,
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "https://*.hcaptcha.com", "https://hcaptcha.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://*.hcaptcha.com", "https://hcaptcha.com"],
         styleSrcElem: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://*.hcaptcha.com", "https://hcaptcha.com"],

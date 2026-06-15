@@ -46,10 +46,31 @@ export async function registerRoutes(
     validate(userRegistrationSchema),
     async (req, res) => {
       try {
-        const { walletAddress, name, role, gender, age, bloodType, allergies, hospital, signature, message, publicKey } = req.body; // Added publicKey
+        const { walletAddress, name, role, gender, age, bloodType, allergies, hospital, signature, message, publicKey } = req.body;
 
-        // ... validation logic ...
+        // AUTHENTICATION FIX: Prevent unauthenticated registration/login
+        if (!signature || !message) {
+          return res.status(401).json({ error: "Signature and message are required for registration" });
+        }
 
+        const sessionNonce = req.session.nonce;
+        const nonceExpires = req.session.nonceExpires;
+        
+        if (!sessionNonce || !nonceExpires || Date.now() > nonceExpires) {
+          req.session.nonce = undefined;
+          return res.status(401).json({ error: "Invalid or expired session nonce. Please request a new nonce." });
+        }
+
+        if (!message.includes(sessionNonce)) {
+          return res.status(401).json({ error: "Invalid message format or tampered message." });
+        }
+
+        const isValid = await web3Service.verifySignature(walletAddress, message, signature);
+        if (!isValid) {
+          return res.status(401).json({ error: "Invalid signature" });
+        }
+        
+        req.session.nonce = undefined; // Clear nonce to prevent reuse
 
         let user = await storage.getUserByWallet(walletAddress);
 
@@ -81,23 +102,20 @@ export async function registerRoutes(
           });
         }
 
-        req.session.user = {
+        const userObj = {
           id: user.id,
           walletAddress: user.walletAddress,
           role: user.role,
           isVerified: user.isVerified,
         };
-        req.session.authenticated = true;
 
-        // Save session before sending response
+        // Session Fixation Prevention
         await new Promise<void>((resolve, reject) => {
-          req.session.save((err) => {
-            if (err) {
-              console.error("Session save error:", err);
-              reject(err);
-            } else {
-              resolve();
-            }
+          req.session.regenerate((err) => {
+            if (err) return reject(err);
+            req.session.user = userObj;
+            req.session.authenticated = true;
+            resolve();
           });
         });
 
@@ -119,26 +137,40 @@ export async function registerRoutes(
           return res.status(400).json({ error: "Missing required fields" });
         }
 
+        // REPLAY ATTACK PREVENTION
+        const sessionNonce = req.session.nonce;
+        const nonceExpires = req.session.nonceExpires;
+        
+        if (!sessionNonce || !nonceExpires || Date.now() > nonceExpires) {
+          req.session.nonce = undefined;
+          return res.status(401).json({ error: "Nonce expired or invalid. Please try logging in again." });
+        }
+
+        if (!message.includes(sessionNonce)) {
+          return res.status(401).json({ error: "Invalid message format or tampered message." });
+        }
+
         const isValid = await web3Service.verifySignature(walletAddress, message, signature);
 
         if (!isValid) {
           return res.status(401).json({ error: "Invalid signature" });
         }
+        
+        req.session.nonce = undefined; // Clear nonce to prevent reuse
 
         const user = await storage.getUserByWallet(walletAddress);
 
         // Set verified wallet in session
         req.session.verifiedWallet = walletAddress;
 
-        if (user) {
-          req.session.user = {
-            id: user.id,
-            walletAddress: user.walletAddress,
-            role: user.role,
-            isVerified: user.isVerified,
-          };
-          req.session.authenticated = true;
+        const userObj = user ? {
+          id: user.id,
+          walletAddress: user.walletAddress,
+          role: user.role,
+          isVerified: user.isVerified,
+        } : undefined;
 
+        if (user) {
           // Audit Log
           await storage.createAuditLog({
             actorId: user.id,
@@ -150,15 +182,16 @@ export async function registerRoutes(
           });
         }
 
-        // Save session before sending response to ensure cookie is set
+        // Session Fixation Prevention
         await new Promise<void>((resolve, reject) => {
-          req.session.save((err) => {
-            if (err) {
-              console.error("Session save error:", err);
-              reject(err);
-            } else {
-              resolve();
+          req.session.regenerate((err) => {
+            if (err) return reject(err);
+            req.session.verifiedWallet = walletAddress;
+            if (userObj) {
+              req.session.user = userObj;
+              req.session.authenticated = true;
             }
+            resolve();
           });
         });
 
@@ -188,6 +221,17 @@ export async function registerRoutes(
 
         const nonce = web3Service.generateNonce();
         const message = web3Service.generateSignMessage(nonce, walletAddress);
+
+        // Save nonce to session to prevent replay attacks
+        req.session.nonce = nonce;
+        req.session.nonceExpires = Date.now() + 5 * 60 * 1000; // 5 minutes TTL
+        
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
 
         res.json({ nonce, message });
       } catch (error: any) {
@@ -256,6 +300,7 @@ export async function registerRoutes(
 
 
   app.get("/api/users/:walletAddress",
+    authMiddleware,
     async (req, res) => {
       try {
         const { walletAddress } = req.params;
@@ -268,6 +313,23 @@ export async function registerRoutes(
 
         if (!user) {
           return res.status(404).json({ error: "User not found" });
+        }
+
+        // DATA LEAK PREVENTION (IDOR FIX):
+        // If the requester is NOT the owner of the profile, return ONLY public fields.
+        if (req.user?.walletAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+          return res.json({
+            user: {
+              id: user.id,
+              walletAddress: user.walletAddress,
+              name: user.name,
+              role: user.role,
+              publicKey: user.publicKey,
+              isVerified: user.isVerified,
+              hospital: user.hospital,
+              // STRIPPED SENSITIVE FIELDS: encryptedPrivateKey, age, gender, bloodType, allergies
+            }
+          });
         }
 
         res.json({ user });
@@ -320,13 +382,26 @@ export async function registerRoutes(
       try {
         const { patientId } = req.params;
 
-        if (req.user?.id !== patientId && req.user?.role !== 'doctor') {
-          return res.status(403).json({ error: "Access denied" });
+        if (req.user?.id !== patientId) {
+          return res.status(403).json({ error: "Access denied: Only patients can fetch their own records directly. Doctors must use QR access." });
         }
 
         const records = await storage.getMedicalRecordsByPatient(patientId);
 
-        res.json({ records });
+        const enrichedRecords = await Promise.all(records.map(async (record) => {
+          try {
+            const doctor = await storage.getUser(record.doctorId);
+            return {
+              ...record,
+              doctorName: doctor?.name,
+              doctorWallet: doctor?.walletAddress
+            };
+          } catch (e) {
+            return record;
+          }
+        }));
+
+        res.json({ records: enrichedRecords });
       } catch (error: any) {
         console.error("Get records error:", error);
         res.status(500).json({ error: "Failed to retrieve records" });
@@ -340,10 +415,19 @@ export async function registerRoutes(
     validate(medicalRecordSchema),
     async (req, res) => {
       try {
-        const { patientId, doctorId, hospitalName, recordType, title, content } = req.body;
+        const { patientId, doctorId, hospitalName, recordType, title, content, token } = req.body;
 
         if (req.user?.id !== doctorId) {
           return res.status(403).json({ error: "Doctor ID mismatch" });
+        }
+
+        if (!token) {
+          return res.status(401).json({ error: "Missing patient access token." });
+        }
+
+        const grant = await storage.getAccessGrantByToken(token);
+        if (!grant || grant.patientId !== patientId) {
+          return res.status(403).json({ error: "Invalid or expired access token for this patient." });
         }
 
         const patient = await storage.getUser(patientId);
@@ -424,9 +508,18 @@ export async function registerRoutes(
     requirePharmacist,
     async (req, res) => {
       try {
-        const { patientId } = req.query;
+        const { patientId, token } = req.query;
         if (!patientId || typeof patientId !== 'string') {
           return res.status(400).json({ error: "Missing patientId" });
+        }
+
+        // IDOR FIX: Require valid Access Grant Token
+        if (!token || typeof token !== 'string') {
+          return res.status(401).json({ error: "Missing access token" });
+        }
+        const grant = await storage.getAccessGrantByToken(token);
+        if (!grant || grant.patientId !== patientId) {
+          return res.status(403).json({ error: "Invalid or expired access token for this patient." });
         }
         // Fetch all records for patient
         const allRecords = await storage.getMedicalRecordsByPatient(patientId);
@@ -447,11 +540,23 @@ export async function registerRoutes(
     async (req, res) => {
       try {
         const { id } = req.params;
+        const { token } = req.body;
+        
         const record = await storage.getMedicalRecord(id);
         
         if (!record || record.recordType !== "prescription") {
           return res.status(404).json({ error: "Prescription not found" });
         }
+
+        // IDOR FIX: Require valid Access Grant Token
+        if (!token) {
+          return res.status(401).json({ error: "Missing access token" });
+        }
+        const grant = await storage.getAccessGrantByToken(token);
+        if (!grant || grant.patientId !== record.patientId) {
+          return res.status(403).json({ error: "Invalid or expired access token for this patient." });
+        }
+
         if (record.isFulfilled) {
           return res.status(400).json({ error: "Prescription already fulfilled" });
         }
@@ -545,9 +650,19 @@ export async function registerRoutes(
         const records = await storage.getMedicalRecordsByPatient(grant.patientId);
 
         // Return encrypted records. Client must decrypt.
-        const returnedRecords = records.map((record) => {
-          return { ...record, decryptedContent: null }; // Legacy field nullified
-        });
+        const returnedRecords = await Promise.all(records.map(async (record) => {
+          try {
+            const doctor = await storage.getUser(record.doctorId);
+            return { 
+              ...record, 
+              decryptedContent: null,
+              doctorName: doctor?.name,
+              doctorWallet: doctor?.walletAddress
+            };
+          } catch (e) {
+            return { ...record, decryptedContent: null };
+          }
+        }));
 
         if (doctorId) {
           await storage.createAuditLog({

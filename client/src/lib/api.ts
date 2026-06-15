@@ -139,6 +139,7 @@ export async function createMedicalRecord(data: {
   title: string;
   content: string;
   blockchainHash?: string;
+  token?: string;
 }): Promise<{ record: MedicalRecord }> {
   return apiCall("/records", {
     method: "POST",
