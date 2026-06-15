@@ -7,7 +7,7 @@ import { QRShare } from "@/components/qr-share";
 import { AuditLog } from "@/components/audit-log";
 import { MedicalHistoryBlock } from "@/components/medical-history-block";
 import { HealthTimeline } from "@/components/health-timeline";
-import { AIHealthInsights } from "@/components/ai-health-insights";
+
 import { LoadingStates } from "@/components/loading-states";
 import { NoRecordsState } from "@/components/empty-states";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -379,14 +379,12 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
         <div className="flex items-center gap-12 font-mono text-[10px] uppercase tracking-[0.2em] font-bold">
           <button onClick={() => setActiveTab("Dashboard")} className={activeTab === "Dashboard" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Overview</button>
           <button onClick={() => setActiveTab("My Records")} className={activeTab === "My Records" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Archive</button>
+          <button onClick={() => setActiveTab("Lab Results")} className={activeTab === "Lab Results" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Lab Results</button>
+          <button onClick={() => setActiveTab("Appointments")} className={activeTab === "Appointments" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Appointments</button>
           <button onClick={() => setActiveTab("Audit Log")} className={activeTab === "Audit Log" ? "border-b border-[#020617] pb-1" : "opacity-50 hover:opacity-100"}>Audit</button>
         </div>
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-[#020617] rounded-none"></span>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-[#020617]">Vault Secured</span>
-          </div>
-          <button onClick={authDisconnect} className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold border-l border-[#020617] pl-6 ml-2 hover:text-slate-400">Sign Out</button>
+          <button onClick={authDisconnect} className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold hover:text-slate-400">Sign Out</button>
         </div>
       </header>
 
@@ -512,8 +510,79 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
                         <h1 className="font-heading text-5xl md:text-7xl font-medium tracking-tighter text-[#020617]">Clinical Archive.</h1>
                       </div>
                     </div>
-                    {/* @ts-ignore */}
-                    <HealthTimeline records={decryptedRecords} />
+                    
+                    <div className="w-full border border-[#020617] bg-white p-8 md:p-16 shadow-[12px_12px_0px_0px_rgba(2,6,23,1)] relative">
+                        {/* Decorative background grid for the timeline container */}
+                        <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
+                        
+                        <div className="relative z-10">
+                            {/* @ts-ignore */}
+                            <HealthTimeline records={decryptedRecords} />
+                        </div>
+                    </div>
+                 </div>
+              ) : activeTab === "Lab Results" ? (
+                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex justify-between items-end border-b border-[#020617] pb-12 mb-16">
+                      <div>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-4">Diagnostics & Metrics</span>
+                        <h1 className="font-heading text-5xl md:text-7xl font-medium tracking-tighter text-[#020617]">Lab Results.</h1>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="border border-[#020617] bg-white p-8 md:p-12 shadow-[8px_8px_0px_0px_rgba(2,6,23,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1 transition-all duration-300">
+                            <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500 block mb-6">Complete Blood Count (CBC)</span>
+                            <h3 className="font-heading text-4xl mb-8">Optimal Range</h3>
+                            <div className="space-y-6 font-mono text-sm">
+                                <div className="flex justify-between border-b border-[#020617]/10 pb-2"><span>Hemoglobin</span><span className="font-bold">14.5 g/dL</span></div>
+                                <div className="flex justify-between border-b border-[#020617]/10 pb-2"><span>Leukocytes</span><span className="font-bold">6.2 10^3/µL</span></div>
+                                <div className="flex justify-between border-b border-[#020617]/10 pb-2"><span>Platelets</span><span className="font-bold">250 10^3/µL</span></div>
+                            </div>
+                        </div>
+                        <div className="border border-[#020617] bg-white p-8 md:p-12 shadow-[8px_8px_0px_0px_rgba(2,6,23,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1 transition-all duration-300">
+                            <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500 block mb-6">Metabolic Panel</span>
+                            <h3 className="font-heading text-4xl mb-8 text-amber-600">Monitor</h3>
+                            <div className="space-y-6 font-mono text-sm">
+                                <div className="flex justify-between border-b border-[#020617]/10 pb-2"><span>Glucose (Fasting)</span><span className="font-bold text-amber-600">105 mg/dL</span></div>
+                                <div className="flex justify-between border-b border-[#020617]/10 pb-2"><span>Cholesterol</span><span className="font-bold">180 mg/dL</span></div>
+                                <div className="flex justify-between border-b border-[#020617]/10 pb-2"><span>Triglycerides</span><span className="font-bold">110 mg/dL</span></div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+              ) : activeTab === "Appointments" ? (
+                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex justify-between items-end border-b border-[#020617] pb-12 mb-16">
+                      <div>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-4">Scheduling & Visits</span>
+                        <h1 className="font-heading text-5xl md:text-7xl font-medium tracking-tighter text-[#020617]">Appointments.</h1>
+                      </div>
+                      <button className="bg-[#020617] text-white font-mono text-[10px] uppercase tracking-[0.2em] font-bold px-6 py-4 hover:bg-slate-800 transition-colors shadow-[4px_4px_0px_0px_rgba(100,116,139,1)] active:shadow-none active:translate-y-1 active:translate-x-1">Book New</button>
+                    </div>
+                    <div className="space-y-8">
+                        <div className="border border-[#020617] bg-white p-8 md:p-10 shadow-[8px_8px_0px_0px_rgba(2,6,23,1)] flex flex-col md:flex-row justify-between items-start md:items-center gap-8 hover:shadow-[12px_12px_0px_0px_rgba(2,6,23,1)] transition-shadow duration-300">
+                            <div>
+                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold px-3 py-1 bg-[#020617] text-white mb-6 inline-block">Upcoming</span>
+                                <h3 className="font-heading text-3xl md:text-4xl mb-3 text-[#020617]">Dr. Sarah Jenkins</h3>
+                                <p className="font-mono text-xs uppercase tracking-widest text-slate-500">Cardiology Specialist • Central Hospital</p>
+                            </div>
+                            <div className="text-left md:text-right">
+                                <div className="font-heading text-4xl mb-2">Oct 24</div>
+                                <div className="font-mono text-xs uppercase tracking-widest text-slate-500">09:00 AM EST</div>
+                            </div>
+                        </div>
+                        <div className="border border-[#020617] bg-white p-8 md:p-10 opacity-60 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 hover:opacity-100 transition-opacity duration-300">
+                            <div>
+                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold px-3 py-1 bg-slate-100 text-slate-600 mb-6 inline-block border border-slate-300">Completed</span>
+                                <h3 className="font-heading text-3xl md:text-4xl mb-3 text-[#020617]">Dr. Michael Chen</h3>
+                                <p className="font-mono text-xs uppercase tracking-widest text-slate-500">General Practice • AuraMed Clinic</p>
+                            </div>
+                            <div className="text-left md:text-right">
+                                <div className="font-heading text-4xl mb-2 text-slate-500">Sep 12</div>
+                                <div className="font-mono text-xs uppercase tracking-widest text-slate-500">14:30 PM EST</div>
+                            </div>
+                        </div>
+                    </div>
                  </div>
               ) : activeTab === "Audit Log" ? (
                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">

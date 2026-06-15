@@ -1,9 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Microscope, Pill, FileText, Search, Filter, ChevronDown, Lock, AlertTriangle } from "lucide-react";
+import { Calendar, Search, Filter, ChevronDown, Lock, ShieldAlert, Pill, FileText, ArrowUpRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { MedicalRecord } from "@shared/schema";
 import { format } from "date-fns";
 
@@ -12,32 +10,6 @@ interface HealthTimelineProps {
     onRecordClick?: (record: MedicalRecord) => void;
 }
 
-const getRecordIcon = (type: string) => {
-    switch (type) {
-        case 'lab_result':
-            return Microscope;
-        case 'prescription':
-            return Pill;
-        case 'diagnosis':
-            return FileText;
-        default:
-            return Calendar;
-    }
-};
-
-const getRecordColor = (type: string) => {
-    switch (type) {
-        case 'lab_result':
-            return 'blue';
-        case 'prescription':
-            return 'emerald';
-        case 'diagnosis':
-            return 'purple';
-        default:
-            return 'gray';
-    }
-};
-
 export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [filterType, setFilterType] = useState<string | null>(null);
@@ -45,249 +17,226 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
 
     const filteredRecords = useMemo(() => {
         let filtered = [...records];
-
-        // Filter by type
-        if (filterType) {
-            filtered = filtered.filter(r => r.recordType === filterType);
-        }
-
-        // Filter by search query
+        if (filterType) filtered = filtered.filter(r => r.recordType === filterType);
         if (searchQuery) {
             filtered = filtered.filter(r =>
                 r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 r.hospitalName.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-
-        // Sort by date (newest first)
-        return filtered.sort((a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [records, searchQuery, filterType]);
 
     const recordTypes = Array.from(new Set(records.map(r => r.recordType)));
 
     return (
-        <div className="space-y-6">
-            {/* Search and Filter Controls */}
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-white/50 backdrop-blur-sm p-2 rounded-2xl border border-slate-100/50 shadow-sm relative z-20">
-                <div className="w-full lg:w-96 relative group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-500 transition-colors" />
+        <div className="space-y-12 w-full font-sans text-[#020617]">
+            {/* Search and Filter Tape */}
+            <div className="flex flex-col lg:flex-row gap-0 items-stretch border border-[#020617] bg-[#fafafa]">
+                <div className="w-full lg:w-1/2 relative border-b lg:border-b-0 lg:border-r border-[#020617] group">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#020617] transition-colors" />
                     <Input
-                        placeholder="Search medical records..."
+                        placeholder="INDEX SEARCH..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-11 bg-white/80 border-slate-200 focus-visible:ring-cyan-500 rounded-xl h-11 shadow-sm transition-all"
+                        className="pl-14 bg-transparent border-none rounded-none h-16 font-mono text-xs uppercase tracking-widest focus-visible:ring-0 placeholder:text-slate-400 text-[#020617]"
                     />
                 </div>
-                <div className="flex flex-wrap gap-1.5 p-1.5 bg-slate-100/80 rounded-xl w-full lg:w-auto">
-                    <Button
-                        variant="ghost"
-                        size="sm"
+                <div className="flex flex-1 divide-x divide-[#020617] overflow-x-auto scrollbar-hide">
+                    <button
                         onClick={() => setFilterType(null)}
-                        className={`gap-2 rounded-lg px-4 font-semibold text-sm transition-all ${filterType === null ? 'bg-white text-cyan-800 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                        className={`px-8 h-16 font-mono text-[10px] uppercase tracking-[0.2em] font-bold shrink-0 transition-colors ${filterType === null ? 'bg-[#020617] text-white' : 'hover:bg-slate-100'}`}
                     >
-                        <Filter className="w-4 h-4" />
-                        All
-                    </Button>
+                        All Records
+                    </button>
                     {recordTypes.map(type => (
-                        <Button
+                        <button
                             key={type}
-                            variant="ghost"
-                            size="sm"
                             onClick={() => setFilterType(type === filterType ? null : type)}
-                            className={`capitalize rounded-lg px-4 font-semibold text-sm transition-all ${filterType === type ? 'bg-white text-cyan-800 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+                            className={`px-8 h-16 font-mono text-[10px] uppercase tracking-[0.2em] font-bold shrink-0 transition-colors ${filterType === type ? 'bg-[#020617] text-white' : 'hover:bg-slate-100'}`}
                         >
                             {type.replace('_', ' ')}
-                        </Button>
+                        </button>
                     ))}
                 </div>
             </div>
 
-            {/* Timeline */}
-            <div className="relative">
-                {/* Vertical Line */}
-                <div className="absolute left-[1.375rem] md:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-200 via-indigo-100 to-transparent" />
-
-                <div className="space-y-8">
+            {/* Timeline List */}
+            <div className="space-y-8 mt-8">
                         {filteredRecords.map((record, index) => {
-                            const Icon = getRecordIcon(record.recordType);
-                            const color = getRecordColor(record.recordType);
                             const isExpanded = expandedId === record.id;
+                            
+                            // Extract data robustly
+                            let parsed = {} as any;
+                            // @ts-ignore
+                            try { if (record.decryptedContent) parsed = JSON.parse(record.decryptedContent); } catch(e){}
+                            const doctorName = (record as any).doctorName || parsed.doctorName || "Unknown Provider";
+                            const hospitalName = record.hospitalName || parsed.hospital || "Unknown Hospital";
 
                             return (
                                 <div
                                     key={record.id}
-                                    className="relative pl-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
-                                    style={{ animationFillMode: 'both' }}
+                                    className="group relative border-2 border-[#020617] bg-white p-8 md:p-10 hover:shadow-[8px_8px_0px_0px_rgba(2,6,23,1)] transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                                    onClick={() => {
+                                        setExpandedId(isExpanded ? null : record.id);
+                                        onRecordClick?.(record);
+                                    }}
                                 >
-                                    {/* Timeline Node */}
-                                    <div
-                                        className={`absolute left-0 md:left-4 w-11 h-11 rounded-full border-[3px] border-white flex items-center justify-center z-10 shadow-sm ring-4 ring-offset-2 ${isExpanded ? 'ring-offset-cyan-50 ring-cyan-200 scale-110' : 'ring-offset-white ring-slate-100'} transition-all hover:scale-110`}
-                                        style={{
-                                            backgroundColor: color === 'blue' ? '#3b82f6' :
-                                                color === 'emerald' ? '#10b981' :
-                                                    color === 'purple' ? '#a855f7' : '#6b7280',
-                                            boxShadow: color === 'blue' ? '0 0 15px rgba(59,130,246,0.3)' :
-                                                color === 'emerald' ? '0 0 15px rgba(16,185,129,0.3)' :
-                                                    color === 'purple' ? '0 0 15px rgba(168,85,247,0.3)' : '0 0 15px rgba(107,114,128,0.3)',
-                                            borderColor: 'white'
-                                        }}
-                                    >
-                                        <Icon className="w-5 h-5 text-white" />
+                                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
+                                        <div className="flex-1">
+                                            <div className="flex flex-wrap items-center gap-4 mb-6">
+                                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold px-3 py-1 bg-[#020617] text-white">
+                                                    {record.recordType.replace('_', ' ')}
+                                                </span>
+                                                <span className="font-mono text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                                    {format(new Date(record.createdAt), 'dd MMM yyyy')}
+                                                </span>
+                                                <span className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-slate-600">
+                                                    <div className="w-1.5 h-1.5 bg-[#020617]" />
+                                                    {hospitalName}
+                                                </span>
+                                            </div>
+                                            
+                                            <h3 className="font-heading text-3xl md:text-4xl mb-4 text-[#020617]">
+                                                {record.title}
+                                            </h3>
+                                            
+                                            {/* Preview details so it reads more detailed without expanding */}
+                                            {(!isExpanded && parsed.diagnosis) && (
+                                                <p className="text-slate-600 mb-6 text-sm md:text-base border-l-[3px] border-[#020617] pl-4">{parsed.diagnosis}</p>
+                                            )}
+                                            
+                                            <div className="flex flex-wrap items-center gap-x-8 gap-y-2 font-mono text-xs uppercase tracking-widest text-slate-600">
+                                                <span className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 border border-[#020617]" />
+                                                    DR. {doctorName}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center justify-end shrink-0">
+                                            <div className={`w-12 h-12 border border-[#020617] flex items-center justify-center transition-transform duration-500 ${isExpanded ? 'rotate-180 bg-[#020617] text-white' : 'bg-white group-hover:bg-[#020617] group-hover:text-white'}`}>
+                                                <ChevronDown className="w-4 h-4" />
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {/* Record Card */}
-                                    <div
-                                        className={`bg-white border ${isExpanded ? 'border-cyan-200 shadow-lg' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-cyan-200/60 hover:-translate-y-0.5'} rounded-3xl p-6 cursor-pointer transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-600 focus-visible:ring-offset-2 relative overflow-hidden group`}
-                                        id={`record-${record.id}`}
-                                        tabIndex={0}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                e.preventDefault();
-                                                setExpandedId(isExpanded ? null : record.id);
-                                                onRecordClick?.(record);
-                                            }
-                                        }}
-                                        onClick={() => {
-                                            setExpandedId(isExpanded ? null : record.id);
-                                            onRecordClick?.(record);
-                                        }}
-                                    >
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <h3 className="font-bold text-lg text-slate-900">
-                                                        {record.title}
-                                                    </h3>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={`
-                              ${color === 'blue' ? 'text-blue-700 border-blue-200 bg-blue-50' :
-                                                                color === 'emerald' ? 'text-emerald-700 border-emerald-200 bg-emerald-50' :
-                                                                    color === 'purple' ? 'text-purple-700 border-purple-200 bg-purple-50' :
-                                                                        'text-slate-700 border-slate-200 bg-slate-50'}
-                              capitalize px-3 py-1 font-semibold text-xs rounded-full
-                            `}
-                                                    >
-                                                        {record.recordType.replace('_', ' ')}
-                                                    </Badge>
-                                                </div>
-                                                <div className="flex items-center gap-4 text-sm text-slate-500">
-                                                    <span className="flex items-center gap-1">
-                                                        <Calendar className="w-3 h-3" />
-                                                        {format(new Date(record.createdAt), 'PPP')}
-                                                    </span>
-                                                    <span>•</span>
-                                                    <span className="font-medium text-slate-600">{record.hospitalName}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-3">
-                                                    <div className="bg-slate-50/80 border border-slate-200/60 px-3 py-1.5 rounded-xl flex items-center gap-3 shadow-sm hover:shadow transition-all group">
-                                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-100 to-blue-50 border border-cyan-100/50 flex items-center justify-center group-hover:scale-105 transition-transform">
-                                                            <span className="text-cyan-700 font-black text-xs">{(record as any).doctorName?.charAt(0) || 'D'}</span>
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-bold text-slate-800 tracking-tight">Dr. {(record as any).doctorName || 'Authorized Provider'}</span>
-                                                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">DID: {(record as any).doctorWallet?.substring(0,8) || record.doctorId.substring(0,8)}...</span>
-                                                        </div>
+                                    {/* Expanded Content Drawer */}
+                                    <AnimatePresence>
+                                        {isExpanded && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                                                className="overflow-hidden px-6 md:px-0"
+                                            >
+                                                <div className="mt-8 border border-[#020617] bg-[#fafafa] p-8 md:p-12 relative">
+                                                    {/* Decorative corners */}
+                                                    <div className="absolute top-0 left-0 w-2 h-2 bg-[#020617]" />
+                                                    <div className="absolute top-0 right-0 w-2 h-2 bg-[#020617]" />
+                                                    <div className="absolute bottom-0 left-0 w-2 h-2 bg-[#020617]" />
+                                                    <div className="absolute bottom-0 right-0 w-2 h-2 bg-[#020617]" />
+
+                                                    <div className="mb-8 border-b border-[#020617]/10 pb-4">
+                                                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Decrypted Payload</span>
                                                     </div>
-                                                </div>
-                                            </div>
-                                            <ChevronDown
-                                                className={`w-6 h-6 text-slate-400 transition-transform ${isExpanded ? 'rotate-180 text-cyan-600' : ''
-                                                    }`}
-                                            />
-                                        </div>
 
-                                        {/* Expanded Content */}
-                                        <AnimatePresence>
-                                            {isExpanded && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <div className="pt-5 mt-5 border-t border-slate-100 space-y-4">
-                                                        <div className="bg-gradient-to-br from-slate-50/80 to-white backdrop-blur-md rounded-2xl p-6 border border-slate-100 shadow-inner">
-                                                            <div className="text-sm text-slate-700 leading-relaxed">
-                                                                {(() => {
-                                                                    // @ts-ignore
-                                                                    const contentToParse = record.decryptedContent;
-                                                                    if (!contentToParse) {
-                                                                        return <span className="font-mono text-slate-400 flex items-center gap-2"><Lock className="w-3 h-3" /> Encrypted Content (Please Unlock)</span>;
-                                                                    }
-                                                                    try {
-                                                                        const parsed = JSON.parse(contentToParse);
-                                                                        return (
-                                                                            <div className="space-y-3">
-                                                                                {parsed.diagnosis && (
-                                                                                    <div><span className="font-bold text-slate-800 block mb-1">Diagnosis</span> {parsed.diagnosis}</div>
-                                                                                )}
-                                                                                {parsed.prescription && (
-                                                                                    <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-100/50"><span className="font-bold text-blue-800 block mb-1 flex items-center gap-2"><Pill className="w-3 h-3"/> Prescription</span> <span className="font-mono text-blue-900">{parsed.prescription}</span></div>
-                                                                                )}
-                                                                                {parsed.allergies && (
-                                                                                    <div className="bg-red-50/50 p-3 rounded-lg border border-red-100/50"><span className="font-bold text-red-800 block mb-1 flex items-center gap-2"><AlertTriangle className="w-3 h-3"/> Allergies</span> <span className="font-medium text-red-900">{parsed.allergies}</span></div>
-                                                                                )}
+                                                    <div className="font-sans text-sm leading-relaxed text-[#020617] space-y-6">
+                                                        {(() => {
+                                                            // @ts-ignore
+                                                            const contentToParse = record.decryptedContent;
+                                                            if (!contentToParse) {
+                                                                return (
+                                                                    <div className="flex items-center gap-3 p-4 border border-dashed border-[#020617]/30 bg-slate-50">
+                                                                        <Lock className="w-4 h-4" /> 
+                                                                        <span className="font-mono text-xs uppercase tracking-widest font-bold">Encrypted Content (Awaiting Keystore Unlock)</span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            try {
+                                                                const parsed = JSON.parse(contentToParse);
+                                                                return (
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                                        {parsed.diagnosis && (
+                                                                            <div className="border-l-[3px] border-[#020617] pl-4">
+                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Diagnosis</span> 
+                                                                                <div className="text-lg">{parsed.diagnosis}</div>
                                                                             </div>
-                                                                        );
-                                                                    } catch {
-                                                                        return <span className="whitespace-pre-line">{contentToParse}</span>;
-                                                                    }
-                                                                })()}
-                                                            </div>
-                                                        </div>
+                                                                        )}
+                                                                        {parsed.prescription && (
+                                                                            <div className="border-l-[3px] border-[#020617] pl-4">
+                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Prescription</span> 
+                                                                                <div className="font-mono text-sm bg-white border border-[#020617]/10 p-3">{parsed.prescription}</div>
+                                                                            </div>
+                                                                        )}
+                                                                        {parsed.allergies && (
+                                                                            <div className="border-l-[3px] border-[#020617] pl-4">
+                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Allergies / Warnings</span> 
+                                                                                <div className="font-mono text-sm bg-white border border-[#020617]/10 p-3">{parsed.allergies}</div>
+                                                                            </div>
+                                                                        )}
+                                                                        {parsed.notes && (
+                                                                            <div className="border-l-[3px] border-[#020617] pl-4 md:col-span-2">
+                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Clinical Notes</span> 
+                                                                                <div className="text-base text-slate-700 whitespace-pre-wrap">{parsed.notes}</div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            } catch {
+                                                                return <span className="whitespace-pre-wrap font-mono text-xs">{contentToParse}</span>;
+                                                            }
+                                                        })()}
+                                                    </div>
 
-                                                        {record.blockchainHash && (
-                                                            <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider mt-4">
+                                                    {/* Cryptographic Footprint */}
+                                                    {(record.blockchainHash || record.ipfsHash) && (
+                                                        <div className="mt-12 pt-6 border-t border-[#020617]/10 flex flex-wrap gap-4">
+                                                            {record.blockchainHash && (
                                                                 <a 
                                                                     href={`https://sepolia.etherscan.io/tx/${record.blockchainHash}`} 
                                                                     target="_blank" 
                                                                     rel="noopener noreferrer"
                                                                     onClick={(e) => e.stopPropagation()}
-                                                                    className="font-mono bg-slate-100 hover:bg-cyan-50 hover:text-cyan-700 px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-cyan-200 shadow-sm flex items-center gap-1.5 transition-all relative z-10"
-                                                                    title="View transaction on Sepolia Etherscan"
+                                                                    className="group/link flex items-center gap-3 bg-white border border-[#020617] px-4 py-2 hover:bg-[#020617] hover:text-white transition-colors"
                                                                 >
-                                                                    TX: {record.blockchainHash.substring(0, 16)}...
-                                                                    <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                                                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold">ETH Signature</span>
+                                                                    <span className="font-mono text-xs opacity-50 group-hover/link:opacity-100">{record.blockchainHash.substring(0, 8)}...</span>
+                                                                    <ArrowUpRight className="w-3 h-3" />
                                                                 </a>
-                                                                {record.ipfsHash && (
-                                                                    <a 
-                                                                        href={`https://ipfs.io/ipfs/${record.ipfsHash}`} 
-                                                                        target="_blank" 
-                                                                        rel="noopener noreferrer"
-                                                                        onClick={(e) => e.stopPropagation()}
-                                                                        className="font-mono bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-emerald-200 shadow-sm flex items-center gap-1.5 transition-all relative z-10"
-                                                                        title="View encrypted payload on IPFS"
-                                                                    >
-                                                                        IPFS: {record.ipfsHash.substring(0, 16)}...
-                                                                        <svg className="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                                                                    </a>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
+                                                            )}
+                                                            {record.ipfsHash && (
+                                                                <a 
+                                                                    href={`https://ipfs.io/ipfs/${record.ipfsHash}`} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="group/link flex items-center gap-3 bg-white border border-[#020617] px-4 py-2 hover:bg-[#020617] hover:text-white transition-colors"
+                                                                >
+                                                                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold">IPFS CID</span>
+                                                                    <span className="font-mono text-xs opacity-50 group-hover/link:opacity-100">{record.ipfsHash.substring(0, 8)}...</span>
+                                                                    <ArrowUpRight className="w-3 h-3" />
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             );
                         })}
-                </div>
-
                 {/* Empty State */}
                 {filteredRecords.length === 0 && (
-                    <div
-                        className="text-center py-12"
-                    >
-                        <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                        <p className="text-muted-foreground">
+                    <div className="text-center py-24 border-t border-[#020617]/20">
+                        <FileText className="w-12 h-12 text-[#020617]/20 mx-auto mb-6" />
+                        <h3 className="font-heading text-3xl text-[#020617] mb-2">No Records Found</h3>
+                        <p className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">
                             {searchQuery || filterType
-                                ? 'No records found matching your criteria'
-                                : 'No medical records yet'}
+                                ? 'Adjust your index filters to view results.'
+                                : 'The clinical archive is empty.'}
                         </p>
                     </div>
                 )}

@@ -3,7 +3,7 @@ import Layout from "@/components/layout";
 import { QRScan } from "@/components/qr-scan";
 import { HealthRecord } from "@/components/health-card";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, LogOut, ShieldCheck, Hexagon, Search } from "lucide-react";
+import { Loader2, ArrowLeft, LogOut, ShieldCheck, Hexagon, Search, Pill } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { useMutation, useQuery } from "@tanstack/react-query";

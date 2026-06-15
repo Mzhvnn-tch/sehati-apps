@@ -48,7 +48,7 @@ export default function Landing() {
     cleanup();
   }, [disconnect]);
 
-  const velvetEasing = [0.22, 1, 0.36, 1];
+  const velvetEasing: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
   return (
     <div className="min-h-screen bg-[#fafafa] selection:bg-[#020617] selection:text-white font-sans text-[#020617]">

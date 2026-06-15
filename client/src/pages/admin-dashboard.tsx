@@ -126,7 +126,7 @@ export default function AdminDashboard() {
 
     const handleDisconnect = async () => {
         try {
-            await disconnect();
+            await appDisconnect();
             navigate("/");
             toast({ title: "Disconnected", description: "Successfully logged out." });
         } catch (e: any) {
