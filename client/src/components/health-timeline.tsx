@@ -142,14 +142,14 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
                                                         <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Decrypted Payload</span>
                                                     </div>
 
-                                                    <div className="font-sans text-sm leading-relaxed text-[#020617] space-y-6">
+                                                    <div className="font-sans text-[#020617]">
                                                         {(() => {
                                                             // @ts-ignore
                                                             const contentToParse = record.decryptedContent;
                                                             if (!contentToParse) {
                                                                 return (
-                                                                    <div className="flex items-center gap-3 p-4 border border-dashed border-[#020617]/30 bg-slate-50">
-                                                                        <Lock className="w-4 h-4" /> 
+                                                                    <div className="flex items-center gap-3 p-6 border border-dashed border-[#020617]/30 bg-slate-50 shadow-[4px_4px_0px_0px_rgba(2,6,23,0.1)]">
+                                                                        <Lock className="w-5 h-5" /> 
                                                                         <span className="font-mono text-xs uppercase tracking-widest font-bold">Encrypted Content (Awaiting Keystore Unlock)</span>
                                                                     </div>
                                                                 );
@@ -157,35 +157,92 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
                                                             try {
                                                                 const parsed = JSON.parse(contentToParse);
                                                                 return (
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                                    <div className="flex flex-col gap-10">
+                                                                        {/* Primary Diagnosis Focus */}
                                                                         {parsed.diagnosis && (
-                                                                            <div className="border-l-[3px] border-[#020617] pl-4">
-                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Diagnosis</span> 
-                                                                                <div className="text-lg">{parsed.diagnosis}</div>
+                                                                            <div>
+                                                                                <div className="inline-block bg-[#020617] text-white font-mono text-[10px] uppercase tracking-[0.3em] font-bold px-3 py-1 mb-4">
+                                                                                    Primary Diagnosis
+                                                                                </div>
+                                                                                <div className="font-heading text-4xl md:text-5xl leading-tight text-[#020617] tracking-tight border-l-4 border-[#020617] pl-6">
+                                                                                    {parsed.diagnosis}
+                                                                                </div>
                                                                             </div>
                                                                         )}
-                                                                        {parsed.prescription && (
-                                                                            <div className="border-l-[3px] border-[#020617] pl-4">
-                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Prescription</span> 
-                                                                                <div className="font-mono text-sm bg-white border border-[#020617]/10 p-3">{parsed.prescription}</div>
+
+                                                                        {/* Vitals Telemetry */}
+                                                                        {parsed.vitals && (parsed.vitals.bloodPressure || parsed.vitals.heartRate || parsed.vitals.temperature || parsed.vitals.weight) && (
+                                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-y-2 border-[#020617] py-8">
+                                                                                {parsed.vitals.bloodPressure && (
+                                                                                    <div className="border-l-2 border-[#020617]/20 pl-4">
+                                                                                        <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500 block mb-2">Blood Pressure</span>
+                                                                                        <span className="font-heading text-3xl text-[#020617] tracking-tight">{parsed.vitals.bloodPressure}</span>
+                                                                                    </div>
+                                                                                )}
+                                                                                {parsed.vitals.heartRate && (
+                                                                                    <div className="border-l-2 border-[#020617]/20 pl-4">
+                                                                                        <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500 block mb-2">Heart Rate</span>
+                                                                                        <span className="font-heading text-3xl text-[#020617] tracking-tight">{parsed.vitals.heartRate} <span className="text-sm font-sans text-slate-400">bpm</span></span>
+                                                                                    </div>
+                                                                                )}
+                                                                                {parsed.vitals.temperature && (
+                                                                                    <div className="border-l-2 border-[#020617]/20 pl-4">
+                                                                                        <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500 block mb-2">Temperature</span>
+                                                                                        <span className="font-heading text-3xl text-[#020617] tracking-tight">{parsed.vitals.temperature} <span className="text-sm font-sans text-slate-400">°C</span></span>
+                                                                                    </div>
+                                                                                )}
+                                                                                {parsed.vitals.weight && (
+                                                                                    <div className="border-l-2 border-[#020617]/20 pl-4">
+                                                                                        <span className="font-mono text-[10px] uppercase tracking-widest text-slate-500 block mb-2">Weight</span>
+                                                                                        <span className="font-heading text-3xl text-[#020617] tracking-tight">{parsed.vitals.weight} <span className="text-sm font-sans text-slate-400">kg</span></span>
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         )}
-                                                                        {parsed.allergies && (
-                                                                            <div className="border-l-[3px] border-[#020617] pl-4">
-                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Allergies / Warnings</span> 
-                                                                                <div className="font-mono text-sm bg-white border border-[#020617]/10 p-3">{parsed.allergies}</div>
-                                                                            </div>
-                                                                        )}
+
+                                                                        {/* Clinical Details Grid */}
+                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
+                                                                            {parsed.prescription && (
+                                                                                <div className="border border-[#020617] bg-white p-6 shadow-[4px_4px_0px_0px_rgba(2,6,23,1)]">
+                                                                                    <div className="flex items-center gap-2 mb-4 border-b border-[#020617]/10 pb-4">
+                                                                                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Prescription Protocol</span>
+                                                                                    </div>
+                                                                                    <div className="font-mono text-sm leading-relaxed text-[#020617] whitespace-pre-wrap uppercase">
+                                                                                        {parsed.prescription}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {parsed.allergies && (
+                                                                                <div className="border border-red-900 bg-red-50 p-6 shadow-[4px_4px_0px_0px_rgba(127,29,29,1)]">
+                                                                                    <div className="flex items-center gap-2 mb-4 border-b border-red-900/10 pb-4 text-red-900">
+                                                                                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold">Contraindications / Allergies</span>
+                                                                                    </div>
+                                                                                    <div className="font-mono text-sm leading-relaxed text-red-900 whitespace-pre-wrap uppercase font-bold">
+                                                                                        {parsed.allergies}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {/* Clinical Notes */}
                                                                         {parsed.notes && (
-                                                                            <div className="border-l-[3px] border-[#020617] pl-4 md:col-span-2">
-                                                                                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 block mb-2">Clinical Notes</span> 
-                                                                                <div className="text-base text-slate-700 whitespace-pre-wrap">{parsed.notes}</div>
+                                                                            <div className="bg-white border border-[#020617] p-8 shadow-[4px_4px_0px_0px_rgba(2,6,23,1)]">
+                                                                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-6">Physician Notes</span>
+                                                                                <div className="text-lg text-slate-700 leading-relaxed whitespace-pre-wrap font-serif">
+                                                                                    "{parsed.notes}"
+                                                                                </div>
                                                                             </div>
                                                                         )}
                                                                     </div>
                                                                 );
                                                             } catch {
-                                                                return <span className="whitespace-pre-wrap font-mono text-xs">{contentToParse}</span>;
+                                                                return (
+                                                                    <div className="bg-[#020617] text-green-400 p-6 font-mono text-xs overflow-x-auto shadow-[4px_4px_0px_0px_rgba(2,6,23,1)]">
+                                                                        <span className="block mb-2 text-slate-500 uppercase tracking-widest text-[10px]">Raw Payload:</span>
+                                                                        {contentToParse}
+                                                                    </div>
+                                                                );
                                                             }
                                                         })()}
                                                     </div>
