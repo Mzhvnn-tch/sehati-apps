@@ -215,6 +215,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
   const [manualTokenInput, setManualTokenInput] = useState("");
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [decryptProgress, setDecryptProgress] = useState(0);
+  const [isClosingSession, setIsClosingSession] = useState(false);
 
   // Form State
   const [activeTab, setActiveTab] = useState<"doctor" | "triage">("doctor");
@@ -270,12 +271,16 @@ function DoctorDashboardContent({ user }: { user: User }) {
       try {
           const tx = await createRecordOnChain(signer, currentPatient.walletAddress, ipfsCid, contentHash, vars.recordType, effectiveToken);
           txHash = tx.hash;
-          await tx.wait(); // Wait for confirmation
+          // We intentionally do NOT await tx.wait() to prevent RPC rate-limit (429 Too Many Requests) and CORS errors 
+          // from the free public RPC endpoint when polling for the transaction receipt.
       } catch (e: any) {
           console.error("Blockchain error:", e);
           const errMsg = e.reason || e.message || "Unknown error";
           if (errMsg.includes("AccessControl")) {
               throw new Error("Not authorized! Ask Admin to approve your Doctor account.");
+          }
+          if (errMsg.toLowerCase().includes("insufficient funds") || e.code === "INSUFFICIENT_FUNDS") {
+              throw new Error("Insufficient Testnet ETH to publish record. Please fund your wallet or ask Admin.");
           }
           throw new Error("Blockchain transaction failed: " + errMsg);
       }
@@ -356,9 +361,17 @@ function DoctorDashboardContent({ user }: { user: User }) {
   }
 
   const closeSession = () => {
-    setPatientAccessed(false); setCurrentPatient(null); setPatientRecords([]); setCapturedToken(null); setIsDecrypting(false);
-    localStorage.removeItem("doctor_active_patient");
-    localStorage.removeItem("doctor_captured_token");
+    setIsClosingSession(true);
+    let ticks = 0;
+    const interval = setInterval(() => {
+        ticks++;
+        if (ticks >= 5) { // 5 * 400ms = 2000ms
+            clearInterval(interval);
+            setPatientAccessed(false); setCurrentPatient(null); setPatientRecords([]); setCapturedToken(null); setIsDecrypting(false); setIsClosingSession(false);
+            localStorage.removeItem("doctor_active_patient");
+            localStorage.removeItem("doctor_captured_token");
+        }
+    }, 400);
   };
 
   useEffect(() => {
@@ -581,6 +594,46 @@ function DoctorDashboardContent({ user }: { user: User }) {
                  )}
                </AnimatePresence>
 
+               {/* OVERLAY CLOSING SESSION */}
+               <AnimatePresence>
+                 {isClosingSession && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}
+                        className="absolute inset-0 z-50 bg-[#020617] flex flex-col items-center justify-center text-white overflow-hidden"
+                    >
+                        {/* Background Grid Pattern */}
+                        <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: `linear-gradient(to right, #334155 1px, transparent 1px), linear-gradient(to bottom, #334155 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
+                        
+                        <div className="relative z-10 flex flex-col items-center">
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.5 }}
+                                className="w-24 h-24 mb-8 bg-slate-800 rounded-full flex items-center justify-center border-4 border-slate-700"
+                            >
+                                <Lock className="w-10 h-10 text-white" />
+                            </motion.div>
+
+                            <h2 className="font-heading text-4xl font-medium uppercase tracking-tight mb-4">Sealing Vault</h2>
+                            
+                            <motion.div 
+                                initial={{ width: "100%" }} 
+                                animate={{ width: 0 }} 
+                                transition={{ duration: 1.5, ease: "linear" }}
+                                className="h-1 bg-white mb-8" 
+                            />
+
+                            <motion.div 
+                                className="font-mono text-[10px] md:text-xs uppercase tracking-[0.3em] text-slate-400 font-bold flex items-center gap-3 border border-slate-800 bg-black/50 px-6 py-3"
+                            >
+                                <span className="w-2 h-2 bg-red-500 animate-pulse" />
+                                TERMINATING SECURE CONNECTION...
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                 )}
+               </AnimatePresence>
+
                {/* PREMIUM PATIENT HEADER */}
                <div className="bg-white border-b-2 border-[#020617] px-8 py-6 shrink-0 relative z-20 flex justify-between items-center shadow-[0_4px_0_0_rgba(2,6,23,0.05)]">
                   <div className="flex items-center gap-6">
@@ -633,8 +686,8 @@ function DoctorDashboardContent({ user }: { user: User }) {
                                     <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Record Category</Label>
                                     <select value={recordType} onChange={e => setRecordType(e.target.value)} className="w-full bg-[#fafafa] border border-slate-300 rounded-none p-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-[#020617] focus:border-[#020617] uppercase text-[#020617] font-bold">
                                         <option value="diagnosis">Primary Diagnosis</option>
-                                        <option value="referral">Specialist Referral</option>
-                                        <option value="surgery">Surgical Notes</option>
+                                        <option value="prescription">Prescription / Referral</option>
+                                        <option value="procedure">Surgical / Procedure Notes</option>
                                     </select>
                                 </div>
                                 <div className="space-y-2">
@@ -711,8 +764,8 @@ function DoctorDashboardContent({ user }: { user: User }) {
                           <div className="absolute inset-0 border-4 border-[#020617] border-t-transparent animate-spin" />
                           <div className="absolute inset-0 flex items-center justify-center font-heading text-3xl text-[#020617]">{progress}%</div>
                         </div>
-                        <h4 className="font-heading text-3xl font-medium text-[#020617] uppercase tracking-tight mb-3">Processing Cryptography</h4>
-                        <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 font-bold">{animState === 'encrypting' ? 'Securing Data Integrity...' : animState === 'uploading' ? 'Publishing Clinical Record...' : 'Finalizing Verification...'}</p>
+                        <h4 className="font-heading text-3xl font-medium text-[#020617] uppercase tracking-tight mb-3">Saving Clinical Record</h4>
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 font-bold">{animState === 'encrypting' ? 'Securing Data Integrity...' : animState === 'uploading' ? 'Publishing Clinical Record...' : 'Saving to Patient History...'}</p>
                       </div>
                     )}
                   </div>

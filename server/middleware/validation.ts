@@ -44,12 +44,11 @@ export const medicalRecordSchema = z.object({
   recordType: z.enum(['lab_result', 'diagnosis', 'prescription', 'vaccination', 'imaging', 'procedure', 'VITALS'], {
     errorMap: () => ({ message: 'Invalid record type' })
   }),
-  title: z.string()
-    .min(5, 'Title must be at least 5 characters')
-    .max(200, 'Title must be less than 200 characters'),
-  content: z.string()
-    .min(5, 'Content must be at least 5 characters') // Lowered min length for small JSON payloads
-    .max(10000, 'Content must be less than 10000 characters'),
+  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
+  content: z.string().min(1, 'Content is required').max(100000, 'Content too long'),
+  token: z.string().optional(),
+  blockchainHash: z.string().optional(),
+  ipfsHash: z.string().optional(),
 });
 
 export const accessGrantSchema = z.object({
@@ -78,14 +77,8 @@ export const validate = <T extends z.ZodType>(schema: T) => {
       const result = schema.safeParse(req.body);
 
       if (!result.success) {
-        const errors = result.error.errors.map(err => ({
-          field: err.path.join('.'),
-          message: err.message,
-        }));
-
         return res.status(400).json({
-          error: 'Validation failed',
-          details: errors
+          error: 'Validation failed: ' + JSON.stringify(result.error.errors)
         });
       }
 

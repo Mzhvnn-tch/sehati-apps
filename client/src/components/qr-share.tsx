@@ -264,13 +264,8 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
                     <div className="flex justify-between items-center mb-6">
                       <span className={`font-mono text-[10px] uppercase tracking-[0.2em] font-bold flex items-center gap-3 ${isWalletMismatch ? "text-red-600" : "text-slate-700"}`}>
                         <div className={`w-2 h-2 rounded-full ${isWalletMismatch ? "bg-red-500" : "bg-slate-500 animate-pulse"}`}></div>
-                        On-Chain Verification
+                        Patient Identity Verification
                       </span>
-                      {gasEstimate && !isWalletMismatch && (
-                        <span className="font-mono text-[10px] tracking-widest font-bold text-slate-400 bg-white px-2 py-1 rounded-md shadow-sm border border-slate-100">
-                          ~{parseFloat(gasEstimate.cost).toFixed(6)} ETH
-                        </span>
-                      )}
                     </div>
 
                     {isWalletMismatch ? (

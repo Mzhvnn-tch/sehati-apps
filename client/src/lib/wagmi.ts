@@ -9,7 +9,7 @@ import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-
 
 const clientId = import.meta.env.VITE_WEB3AUTH_CLIENT_ID;
 
-const SEPOLIA_RPC = "https://1rpc.io/sepolia";
+const SEPOLIA_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 
 export const sepolia = defineChain({
     id: 11155111,
