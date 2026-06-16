@@ -226,6 +226,12 @@ function DoctorDashboardContent({ user }: { user: User }) {
   const [content, setContent] = useState("");
   const [allergies, setAllergies] = useState("");
   const [prescription, setPrescription] = useState("");
+  
+  // Structured Prescription Fields
+  const [rxMedication, setRxMedication] = useState("");
+  const [rxDosage, setRxDosage] = useState("");
+  const [rxFrequency, setRxFrequency] = useState("");
+  const [rxDuration, setRxDuration] = useState("");
 
   // Triage Fields
   const [vitals, setVitals] = useState({
@@ -304,6 +310,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
         setAnimState("idle"); setProgress(0);
         // Reset Forms
         setTitle(""); setContent(""); setAllergies(""); setPrescription("");
+        setRxMedication(""); setRxDosage(""); setRxFrequency(""); setRxDuration("");
         setVitals({ heartRate: "", bloodPressure: "", weight: "", temperature: "", sleep: "", bloodType: "" });
 
         if (data.record.blockchainHash) {
@@ -432,11 +439,24 @@ function DoctorDashboardContent({ user }: { user: User }) {
   // Submit Logic
   const handleSubmit = () => {
     // [REF] Unified Record Construction
+    let finalPrescription = prescription || "None";
+    
+    // If it's a prescription record, bundle the structured data
+    if (recordType === "prescription") {
+      finalPrescription = JSON.stringify({
+        medication: rxMedication,
+        dosage: rxDosage,
+        frequency: rxFrequency,
+        duration: rxDuration,
+        notes: prescription
+      });
+    }
+
     // Merge Vitals and Clinical data into one payload
     const unifiedPayload = {
       title: title || "Clinical Visit",
       diagnosis: content,
-      prescription: prescription || "None",
+      prescription: finalPrescription,
       allergies: allergies || "None",
       vitals: vitals // Include vitals object directly
     };
@@ -742,14 +762,51 @@ function DoctorDashboardContent({ user }: { user: User }) {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Treatment Plan / Rx</Label>
-                                    <Textarea value={prescription} onChange={e => setPrescription(e.target.value)} placeholder="Medication, dosage..." className="min-h-[60px] bg-[#fafafa] border border-slate-300 rounded-none font-mono text-xs focus-visible:ring-1 focus-visible:ring-[#020617] text-[#020617] p-3" />
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Treatment Plan / Notes</Label>
+                                    <Textarea value={prescription} onChange={e => setPrescription(e.target.value)} placeholder="Additional clinical notes..." className="min-h-[60px] bg-[#fafafa] border border-slate-300 rounded-none font-mono text-xs focus-visible:ring-1 focus-visible:ring-[#020617] text-[#020617] p-3" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Allergies / Alerts</Label>
                                     <Textarea value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="e.g. PENICILLIN" className="min-h-[60px] bg-slate-100 border border-slate-300 rounded-none font-mono text-xs focus-visible:ring-1 focus-visible:ring-slate-500 text-slate-800 uppercase font-bold p-3" />
                                 </div>
                             </div>
+
+                            {/* STRUCTURED PRESCRIPTION FORM (Only visible if recordType is prescription) */}
+                            <AnimatePresence>
+                                {recordType === 'prescription' && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                                        animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
+                                        exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                                        className="p-6 bg-slate-100 border-2 border-[#020617] space-y-4 mt-6"
+                                    >
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-4 h-4 bg-[#020617] text-white flex items-center justify-center font-mono text-[8px] font-bold">Rx</div>
+                                            <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#020617]">Structured Prescription Details</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Medication Name</Label>
+                                                <Input value={rxMedication} onChange={e => setRxMedication(e.target.value)} placeholder="e.g. Amoxicillin" className="bg-white border border-slate-300 rounded-none h-10 font-serif text-sm focus-visible:ring-1 focus-visible:ring-[#020617]" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Dosage</Label>
+                                                <Input value={rxDosage} onChange={e => setRxDosage(e.target.value)} placeholder="e.g. 500mg" className="bg-white border border-slate-300 rounded-none h-10 font-mono text-xs focus-visible:ring-1 focus-visible:ring-[#020617]" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Frequency (Usage)</Label>
+                                                <Input value={rxFrequency} onChange={e => setRxFrequency(e.target.value)} placeholder="e.g. 3x a day, after meals" className="bg-white border border-slate-300 rounded-none h-10 font-mono text-xs focus-visible:ring-1 focus-visible:ring-[#020617]" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Duration</Label>
+                                                <Input value={rxDuration} onChange={e => setRxDuration(e.target.value)} placeholder="e.g. 5 Days" className="bg-white border border-slate-300 rounded-none h-10 font-mono text-xs focus-visible:ring-1 focus-visible:ring-[#020617]" />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
                         <hr className="border-t-2 border-dashed border-slate-200 my-8" />
