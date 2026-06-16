@@ -318,9 +318,38 @@ function DoctorDashboardContent({ user }: { user: User }) {
     }
   });
 
-  const handleScanSuccess = (data: { patient: User; records: any[]; token: string }) => {
+  const decryptRecordsForDoctor = async (records: any[], patientAddress: string) => {
+    let privKeyStr = localStorage.getItem(`doctor_session_key_${patientAddress}`);
+    if (!privKeyStr) {
+      privKeyStr = localStorage.getItem(`sehati_priv_${patientAddress}`);
+    }
+    if (!privKeyStr) {
+      return records.map(r => ({ ...r, decryptedContent: null }));
+    }
+    try {
+      const { importKey, decryptData } = await import("@/lib/encryption");
+      const privateKey = await importKey(privKeyStr, "private");
+      const decrypted = await Promise.all(records.map(async (record) => {
+        try {
+          const content = await decryptData(record.encryptedContent, privateKey);
+          return { ...record, decryptedContent: content };
+        } catch (e) {
+          return { ...record, decryptedContent: null };
+        }
+      }));
+      return decrypted;
+    } catch (e) {
+      return records.map(r => ({ ...r, decryptedContent: null }));
+    }
+  };
+
+  const handleScanSuccess = async (data: { patient: User; records: any[]; token: string }) => {
     setCurrentPatient(data.patient);
-    setPatientRecords(data.records);
+    
+    // Decrypt history for the doctor using the demo local storage keys
+    const decrypted = await decryptRecordsForDoctor(data.records, data.patient.walletAddress);
+    setPatientRecords(decrypted as any);
+    
     setCapturedToken(data.token);
     setIsDecrypting(true);
     setPatientAccessed(true);
@@ -342,16 +371,25 @@ function DoctorDashboardContent({ user }: { user: User }) {
 
     // Parse token if it's a URL or contains parameters
     let tokenToValidate = manualTokenInput.trim();
+    let patientKey = null;
+
     if (tokenToValidate.includes("token=")) {
       const parts = tokenToValidate.split("?");
       const queryPart = parts.length > 1 ? parts[1] : tokenToValidate;
       const urlParams = new URLSearchParams(queryPart);
       tokenToValidate = urlParams.get("token") || tokenToValidate;
+      patientKey = urlParams.get("key");
     }
 
     try {
       const { validateQRToken } = await import("@/lib/api");
       const data = await validateQRToken(tokenToValidate, user.id);
+
+      // Save the securely transmitted session key
+      if (patientKey) {
+        localStorage.setItem(`doctor_session_key_${data.patient.walletAddress}`, patientKey);
+      }
+
       handleScanSuccess({ patient: data.patient, records: data.records, token: tokenToValidate });
       toast({ title: "Access Granted", description: `Connected to ${data.patient.name}` });
       setManualTokenInput(""); // Clear input on success
@@ -382,7 +420,10 @@ function DoctorDashboardContent({ user }: { user: User }) {
         const p = JSON.parse(savedPatient);
         setCurrentPatient(p); setCapturedToken(savedToken); setPatientAccessed(true);
         import("@/lib/api").then(({ validateQRToken }) => {
-          validateQRToken(savedToken, user.id).then(d => setPatientRecords(d.records)).catch(() => { });
+          validateQRToken(savedToken, user.id).then(async d => {
+            const decrypted = await decryptRecordsForDoctor(d.records, p.walletAddress);
+            setPatientRecords(decrypted as any);
+          }).catch(() => { });
         });
       } catch (e) { console.error(e); }
     }
@@ -778,7 +819,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
                       </div>
                       <div className="grid gap-6">
                          {patientRecords.map(r => (
-                           <MedicalHistoryBlock key={r.id} record={r} />
+                           <MedicalHistoryBlock key={r.id} record={r} compact={true} />
                          ))}
                          {patientRecords.length === 0 && (
                             <div className="border border-dashed border-[#020617] bg-white p-12 text-center">

@@ -36,7 +36,9 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
   const generateMutation = useMutation({
     mutationFn: () => generateQRAccess(patientId, 60),
     onSuccess: (data) => {
-      setQrData(data.qrData);
+      const privKey = localStorage.getItem(`sehati_priv_${walletAddress}`) || "";
+      const urlWithKey = privKey ? `${data.qrData}&key=${encodeURIComponent(privKey)}` : data.qrData;
+      setQrData(urlWithKey);
       setGrantId(data.grant.id);
       setTimeLeft(3600); // 60 minutes in seconds
       setIsOnChain(false); // Reset on-chain status for new token
