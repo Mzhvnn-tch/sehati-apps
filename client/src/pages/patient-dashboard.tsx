@@ -501,10 +501,10 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
         <main className="flex-1 overflow-y-auto bg-[#fafafa] relative">
            <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`, backgroundSize: '100px 100px' }} />
            
-           <div className="max-w-5xl mx-auto p-12 md:p-24 relative z-10">
+           <div className="w-full px-4 md:px-8 py-8 md:py-12 relative z-10">
               {activeTab === "My Records" ? (
                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex justify-between items-end border-b border-[#020617] pb-12 mb-16">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[#020617] pb-12 mb-16">
                       <div>
                         <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-4">Encrypted Repository</span>
                         <h1 className="font-heading text-5xl md:text-7xl font-medium tracking-tighter text-[#020617]">Clinical Archive.</h1>

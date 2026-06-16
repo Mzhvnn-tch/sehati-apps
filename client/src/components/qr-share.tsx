@@ -1,7 +1,7 @@
 import QRCode from "react-qr-code";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Timer, RefreshCw, Loader2, Copy, Check, ShieldCheck, AlertCircle } from "lucide-react";
+import { Timer, RefreshCw, Loader2, Copy, Check, ShieldCheck, AlertCircle, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -190,144 +190,174 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
         </DialogTrigger>
       </div>
 
-      <DialogContent className="sm:max-w-md bg-white rounded-2xl shadow-xl border-primary/10">
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl font-bold text-gray-900">Share Medical Access</DialogTitle>
-          <DialogDescription className="text-center text-sm text-muted-foreground">
-            Scan this code to grant temporary read access to your records.
-          </DialogDescription>
-        </DialogHeader>
-
-        {generateMutation.isPending ? (
-          <div className="py-12 flex flex-col items-center justify-center">
-            <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-            <p className="text-sm text-muted-foreground">Generating secure access token...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center mt-2">
-            <div className="relative group mb-6 w-full max-w-[200px]">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-cyan-400 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-              <div className="relative bg-white p-4 rounded-xl border border-gray-100 w-full flex justify-center">
-                <QRCode
-                  value={qrData}
-                  size={160}
-                  viewBox={`0 0 256 256`}
-                  className={`w-full h-auto ${!isOnChain ? 'opacity-50 blur-[2px]' : ''} transition-all duration-500`}
-                  fgColor="#0F172A"
-                />
-
-                {!isOnChain && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-[1px] rounded-xl">
-                    <div className="bg-white p-3 rounded-lg shadow-lg text-center border border-gray-100">
-                      <p className="text-xs font-bold text-gray-900 mb-2">Registration Required</p>
-                      <p className="text-[10px] text-gray-500 max-w-[120px] mx-auto leading-tight">
-                        Token must be registered on blockchain to be valid.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Overlay Logo */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className={`w-10 h-10 bg-white rounded-full p-1 shadow-lg flex items-center justify-center ${isOnChain ? 'opacity-100' : 'opacity-0'}`}>
-                    <div className="w-full h-full rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="font-bold text-primary text-xs">S</span>
-                    </div>
-                  </div>
-                </div>
+      <DialogContent className="sm:max-w-3xl bg-white border border-slate-200 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] p-0 overflow-hidden rounded-3xl flex flex-col md:flex-row w-full">
+        {/* Left Side: QR Display (Medical Scanner HUD) */}
+        <div className="w-full md:w-[45%] bg-[#020617] p-10 flex flex-col items-center justify-center relative overflow-hidden">
+            {/* Ambient glows */}
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800/40 via-[#020617] to-[#020617] pointer-events-none"></div>
+            <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #94a3b8 1px, transparent 1px), linear-gradient(to bottom, #94a3b8 1px, transparent 1px)`, backgroundSize: '30px 30px' }} />
+            
+            <div className="mb-10 w-full text-center relative z-10">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                 <span className="font-mono text-[10px] text-slate-300 uppercase tracking-[0.3em] font-bold">Secure Gateway</span>
               </div>
+              <DialogTitle className="font-heading text-4xl tracking-tighter text-white mb-1">Access Matrix</DialogTitle>
             </div>
 
-            {/* Blockchain Registration Section */}
-            {!isOnChain && (
-              <div className={`w-full mb-6 border rounded-lg p-3 ${isWalletMismatch ? "bg-red-50 border-red-100" : "bg-blue-50 border-blue-100"}`}>
-                <div className="flex justify-between items-center mb-2">
-                  <span className={`text-xs font-semibold flex items-center gap-1 ${isWalletMismatch ? "text-red-900" : "text-blue-900"}`}>
-                    <ShieldCheck className="w-3 h-3" /> Blockchain Register
-                  </span>
-                  {gasEstimate && !isWalletMismatch && (
-                    <span className="text-[10px] font-mono text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
-                      Gas: ~{parseFloat(gasEstimate.cost).toFixed(6)} ETH
-                    </span>
-                  )}
-                </div>
-
-                {isWalletMismatch ? (
-                  <div className="text-xs text-red-600 font-medium text-center py-1">
-                    ⚠️ Wallet Mismatch
-                    <br />
-                    <span className="font-normal text-[10px]">
-                      App: {userWalletDisplay}...
-                      <br />
-                      Wallet: {metaWalletDisplay}...
-                    </span>
-                    <br />
-                    Please switch account in MetaMask.
+            {generateMutation.isPending ? (
+               <div className="h-[180px] flex flex-col items-center justify-center relative z-10 space-y-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 border-2 border-slate-500/30 rounded-full animate-ping"></div>
+                    <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
                   </div>
-                ) : isConnected ? (
-                  <Button
-                    size="sm"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs"
-                    onClick={registerOnChain}
-                    disabled={isRegistering}
-                  >
-                    {isRegistering ? (
-                      <><Loader2 className="w-3 h-3 animate-spin mr-1" /> Registering...</>
-                    ) : (
-                      "Sign & Activate Token"
+                  <span className="font-mono text-[10px] text-slate-400 tracking-[0.2em] uppercase">Generating Protocol...</span>
+               </div>
+            ) : (
+               <div className="relative p-2 z-10 group">
+                    {/* Futuristic Viewfinder Corners */}
+                    <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-slate-500"></div>
+                    <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-slate-500"></div>
+                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-slate-500"></div>
+                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-slate-500"></div>
+                    
+                    <div className="bg-white p-4 shadow-[0_0_30px_rgba(148,163,184,0.1)] transition-all duration-500 group-hover:shadow-[0_0_50px_rgba(148,163,184,0.2)] rounded-sm">
+                      <QRCode
+                        value={qrData}
+                        size={160}
+                        className={`w-full h-auto ${!isOnChain ? 'opacity-20' : ''} transition-all duration-500`}
+                        fgColor="#020617"
+                      />
+                    </div>
+                    {!isOnChain && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#020617]/80 backdrop-blur-sm z-10 border border-slate-500/20">
+                            <Lock className="w-6 h-6 text-slate-400 mb-3 opacity-50" />
+                            <span className="font-mono text-[10px] uppercase font-bold tracking-[0.2em] text-slate-300 text-center px-2">Signature<br/>Required</span>
+                        </div>
                     )}
-                  </Button>
-                ) : (
-                  <p className="text-xs text-red-500 text-center">Connect wallet to activate</p>
+               </div>
+            )}
+            
+            {/* Tech details */}
+            <div className="mt-12 flex justify-between w-full text-[9px] font-mono text-slate-500 uppercase tracking-[0.2em] relative z-10">
+               <span>SYS: ONLINE</span>
+               <span>{isOnChain ? 'NODE: SYNCED' : 'NODE: PENDING'}</span>
+            </div>
+        </div>
+
+        {/* Right Side: Medical Hardware Interface */}
+        <div className="w-full md:w-[55%] p-10 flex flex-col justify-center bg-white relative">
+           {/* Hardware aesthetic detail */}
+           <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-bl-[100px] pointer-events-none"></div>
+
+           {generateMutation.isPending ? (
+              <div className="flex-1 flex items-center justify-center min-h-[200px]">
+                 <div className="flex items-center gap-3">
+                   <div className="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></div>
+                   <p className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400">Establishing Handshake...</p>
+                 </div>
+              </div>
+           ) : (
+              <div className="space-y-8 relative z-10">
+                {/* Blockchain Registration Section */}
+                {!isOnChain && (
+                  <div className={`p-6 rounded-2xl border ${isWalletMismatch ? "border-red-200 bg-red-50/50" : "border-slate-100 bg-slate-50/50"}`}>
+                    <div className="flex justify-between items-center mb-6">
+                      <span className={`font-mono text-[10px] uppercase tracking-[0.2em] font-bold flex items-center gap-3 ${isWalletMismatch ? "text-red-600" : "text-slate-700"}`}>
+                        <div className={`w-2 h-2 rounded-full ${isWalletMismatch ? "bg-red-500" : "bg-slate-500 animate-pulse"}`}></div>
+                        On-Chain Verification
+                      </span>
+                      {gasEstimate && !isWalletMismatch && (
+                        <span className="font-mono text-[10px] tracking-widest font-bold text-slate-400 bg-white px-2 py-1 rounded-md shadow-sm border border-slate-100">
+                          ~{parseFloat(gasEstimate.cost).toFixed(6)} ETH
+                        </span>
+                      )}
+                    </div>
+
+                    {isWalletMismatch ? (
+                      <div className="text-[10px] font-mono text-red-500 font-bold uppercase tracking-widest mt-2 bg-red-100/50 p-3 rounded-lg">
+                        Mismatch: App({userWalletDisplay}) vs Wallet({metaWalletDisplay})
+                      </div>
+                    ) : isConnected ? (
+                      <button
+                        className="w-full bg-[#020617] rounded-xl hover:bg-slate-800 text-white font-mono text-[10px] uppercase tracking-[0.2em] font-bold h-12 transition-all flex items-center justify-center disabled:opacity-50 shadow-lg shadow-slate-900/20"
+                        onClick={registerOnChain}
+                        disabled={isRegistering}
+                      >
+                        {isRegistering ? (
+                          <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Encrypting...</>
+                        ) : (
+                          "Sign & Activate Protocol"
+                        )}
+                      </button>
+                    ) : (
+                      <p className="font-mono text-[10px] text-red-400 uppercase tracking-widest font-bold mt-2">Wallet connection required</p>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            {isOnChain && timeLeft > 0 ? (
-              <div className="flex w-full items-center justify-center gap-2 mb-4 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-100 animate-in fade-in slide-in-from-bottom-2">
-                <Check className="w-4 h-4" />
-                <span>Active for {formatTime(timeLeft)}</span>
-              </div>
-            ) : timeLeft > 0 ? null : (
-              <div className="flex w-full items-center justify-center gap-2 mb-4 px-4 py-2 bg-red-50 text-red-700 rounded-full text-sm font-medium border border-red-100">
-                <span>Expired</span>
-              </div>
-            )}
+                {isOnChain && timeLeft > 0 ? (
+                  <div className="relative w-full p-6 bg-[#020617] rounded-2xl border border-slate-800 overflow-hidden shadow-[0_10px_30px_rgba(2,6,23,0.15)] text-white">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800/50 to-transparent pointer-events-none"></div>
+                    
+                    <div className="flex justify-between items-start relative z-10">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-300">Connection Active</span>
+                        </div>
+                        <span className="font-mono text-[8px] bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700 uppercase tracking-[0.2em]">Verified On-Chain</span>
+                      </div>
+                      
+                      <div className="text-right">
+                         <span className="block text-[8px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Time Remaining</span>
+                         <span className="font-heading text-4xl tracking-tighter text-white leading-none">{formatTime(timeLeft)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : timeLeft > 0 ? null : (
+                  <div className="flex w-full items-center justify-between p-5 bg-red-50/50 rounded-2xl border border-red-100 text-red-900 font-mono text-[10px] uppercase tracking-widest font-bold">
+                    <div className="flex items-center gap-3">
+                       <AlertCircle className="w-5 h-5 text-red-500" />
+                       <span>Session Expired</span>
+                    </div>
+                  </div>
+                )}
 
-            <div className="w-full space-y-3">
-              <div className="space-y-2">
-                <p className="text-xs text-gray-500 text-center">Can't scan? Copy the token instead:</p>
-                <div className="flex gap-2">
-                  <Input
-                    value={getToken()}
-                    readOnly
-                    className="font-mono text-xs bg-gray-50 select-all"
-                    onClick={(e) => (e.target as HTMLInputElement).select()}
-                    disabled={!isOnChain}
-                  />
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={copyToken}
-                    className="shrink-0"
-                    disabled={!isOnChain}
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                       <p className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400">Session ID / Hex</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={!isOnChain ? "****************************************************************" : getToken()}
+                        readOnly
+                        className={`font-mono text-xs bg-slate-50 rounded-xl border border-slate-200 focus-visible:ring-slate-500 focus-visible:border-slate-500 h-12 shadow-inner ${!isOnChain ? "text-slate-400 tracking-[0.2em]" : "text-slate-600"}`}
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                        disabled={!isOnChain}
+                      />
+                      <button
+                        onClick={copyToken}
+                        className="w-12 h-12 shrink-0 bg-white border border-slate-200 rounded-xl text-slate-600 flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-50 shadow-sm hover:text-slate-900"
+                        disabled={!isOnChain}
+                      >
+                        {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    className="w-full border border-slate-200 bg-white rounded-xl text-slate-600 hover:bg-slate-50 font-mono text-[10px] uppercase tracking-[0.2em] font-bold h-12 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                    onClick={regenerate}
+                    disabled={generateMutation.isPending || isRegistering}
                   >
-                    {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  </Button>
+                    <RefreshCw className={`w-4 h-4 ${generateMutation.isPending ? 'animate-spin' : ''}`} />
+                    Initialize New Session
+                  </button>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="w-full gap-2 border-dashed"
-                onClick={regenerate}
-                disabled={generateMutation.isPending || isRegistering}
-              >
-                <RefreshCw className="w-4 h-4" />
-                Generate New Token
-              </Button>
-            </div>
-          </div>
-        )}
+           )}
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MedicalHistoryBlock } from "@/components/medical-history-block";
 import { useState, useEffect } from "react";
-import { Search, UserCheck, FilePlus, X, Blocks, ExternalLink, CheckCircle2, Loader2, Stethoscope, ArrowLeft, LogIn, UserCog, ScanLine, Activity, ShieldCheck, Microscope, LogOut } from "lucide-react";
+import { Search, UserCheck, FilePlus, X, Blocks, ExternalLink, CheckCircle2, Loader2, Stethoscope, ArrowLeft, LogIn, UserCog, ScanLine, Activity, ShieldCheck, Microscope, LogOut, Lock, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { useMutation } from "@tanstack/react-query";
@@ -87,29 +87,56 @@ export default function DoctorDashboard() {
     );
   }
 
-  // 2. Connect Wallet View (Diamond Theme)
+  // 2. Connect Wallet View (Brutalist Luxury)
   if (!user && !showRegistration) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-100/40 via-white to-white" />
+      <div className="min-h-screen flex bg-[#fafafa] text-[#020617] font-sans selection:bg-[#020617] selection:text-white">
+        
+        {/* Left Column - Stark Dark */}
+        <div className="hidden lg:flex w-1/2 bg-[#020617] text-white p-12 md:p-20 flex-col justify-between relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`, backgroundSize: '100px 100px' }} />
+          <div className="relative z-10">
+             <div className="w-12 h-12 bg-white flex items-center justify-center mb-12">
+               <Stethoscope className="w-6 h-6 text-[#020617]" />
+             </div>
+             <h1 className="font-heading text-6xl lg:text-[5rem] font-medium tracking-tighter leading-[1] mb-8">
+               Clinical <br/><span className="text-slate-500">Console.</span>
+             </h1>
+             <p className="text-2xl text-slate-400 font-light max-w-md leading-relaxed">
+               Authorized medical providers only. Access decentralized health infrastructure and patient telemetry.
+             </p>
+          </div>
+          <div className="relative z-10 text-[10px] font-mono tracking-[0.3em] uppercase font-bold text-slate-600">
+             Strictly Confidential & Encrypted
+          </div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="diamond-card max-w-md w-full p-10 rounded-3xl relative z-10 text-center"
-        >
-          <div className="w-20 h-20 rounded-3xl bg-cyan-50 flex items-center justify-center mx-auto mb-6 text-cyan-600 border border-cyan-100 shadow-sm">
-            <Stethoscope className="w-10 h-10" />
-          </div>
-          <h1 className="text-3xl font-serif font-bold text-slate-900 mb-2">Doctor Console</h1>
-          <p className="text-slate-500 mb-8 font-medium">Licensed Access Only</p>
-          <div className="flex justify-center mb-8 scale-110">
-            <WalletConnect onRequireRegistration={() => setShowRegistration(true)} />
-          </div>
-          <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600" onClick={() => setLocation("/")}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+        {/* Right Column - Stark Light */}
+        <div className="w-full lg:w-1/2 p-12 md:p-20 flex flex-col justify-center relative shadow-[-30px_0_100px_rgba(0,0,0,0.1)] z-10 bg-[#fafafa]">
+          
+          <Button variant="ghost" className="absolute top-12 right-12 text-[#020617] hover:bg-transparent hover:opacity-50 uppercase tracking-[0.2em] font-bold text-[10px] rounded-none" onClick={() => setLocation("/")}>
+            <ArrowLeft className="w-4 h-4 mr-3" /> Exit
           </Button>
-        </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-md w-full mx-auto"
+          >
+             <div className="mb-12 border-b border-[#020617]/10 pb-12">
+               <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-6">Authentication Required</span>
+               <h2 className="font-heading text-4xl font-medium tracking-tight mb-4 text-[#020617]">Provider Login</h2>
+               <p className="text-slate-500 text-lg font-light leading-relaxed">Log in safely to access patient records and clinical telemetry.</p>
+             </div>
+             
+             <div className="flex flex-col gap-8">
+               <div className="scale-105 origin-left">
+                  <WalletConnect onRequireRegistration={() => setShowRegistration(true)} />
+               </div>
+             </div>
+          </motion.div>
+        </div>
       </div>
     );
   }
@@ -177,6 +204,7 @@ export default function DoctorDashboard() {
 // ----------------------------------------------------------------------
 function DoctorDashboardContent({ user }: { user: User }) {
   const { toast } = useToast();
+  const { disconnect: authDisconnect } = useAuth();
   const signer = useEthersSigner();
 
   // Session State
@@ -185,6 +213,8 @@ function DoctorDashboardContent({ user }: { user: User }) {
   const [patientRecords, setPatientRecords] = useState<(MedicalRecord & { decryptedContent: string })[]>([]);
   const [capturedToken, setCapturedToken] = useState<string | null>(null);
   const [manualTokenInput, setManualTokenInput] = useState("");
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [decryptProgress, setDecryptProgress] = useState(0);
 
   // Form State
   const [activeTab, setActiveTab] = useState<"doctor" | "triage">("doctor");
@@ -287,9 +317,19 @@ function DoctorDashboardContent({ user }: { user: User }) {
     setCurrentPatient(data.patient);
     setPatientRecords(data.records);
     setCapturedToken(data.token);
+    setIsDecrypting(true);
     setPatientAccessed(true);
     localStorage.setItem("doctor_active_patient", JSON.stringify(data.patient));
     localStorage.setItem("doctor_captured_token", data.token);
+
+    let ticks = 0;
+    const interval = setInterval(() => {
+        ticks++;
+        if (ticks >= 6) { // 6 * 400ms = 2400ms
+            clearInterval(interval);
+            setTimeout(() => setIsDecrypting(false), 200);
+        }
+    }, 400);
   };
 
   const handleManualTokenSubmit = async () => {
@@ -316,7 +356,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
   }
 
   const closeSession = () => {
-    setPatientAccessed(false); setCurrentPatient(null); setPatientRecords([]); setCapturedToken(null);
+    setPatientAccessed(false); setCurrentPatient(null); setPatientRecords([]); setCapturedToken(null); setIsDecrypting(false);
     localStorage.removeItem("doctor_active_patient");
     localStorage.removeItem("doctor_captured_token");
   };
@@ -355,252 +395,350 @@ function DoctorDashboardContent({ user }: { user: User }) {
   }
 
   return (
-    <Layout type="doctor">
-      {/* SUCCESS MODAL (Diamond) */}
+    <div className="w-full h-screen bg-[#fafafa] text-[#020617] font-sans flex flex-col overflow-hidden selection:bg-[#020617] selection:text-white">
+      {/* SUCCESS MODAL (Brutalist) */}
       <AnimatePresence>
         {
           lastCreatedRecord && (
-            <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="diamond-card max-w-md w-full p-8 rounded-3xl shadow-xl">
-                <div className="text-center mb-6">
-                  <CheckCircle2 className="w-16 h-16 text-cyan-500 mx-auto mb-4" />
-                  <h3 className="text-2xl font-serif font-bold text-slate-800">Record Immutable</h3>
-                  <p className="text-slate-500">Successfully written to Ethereum Sepolia.</p>
+            <div className="fixed inset-0 bg-[#020617]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white border-4 border-[#020617] max-w-md w-full p-8 shadow-[16px_16px_0px_0px_rgba(203,213,225,1)]">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-[#020617] text-white flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="font-heading text-3xl font-medium text-[#020617] uppercase tracking-tight mb-2">Record Immutable</h3>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 font-bold">Successfully written to Ethereum Sepolia.</p>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100 font-mono text-xs">
-                  <div className="flex justify-between mb-1"><span className="text-slate-400">TX</span> <span className="text-cyan-600 truncate max-w-[150px]">{lastCreatedRecord.txHash}</span></div>
+                <div className="bg-[#fafafa] border-2 border-[#020617] p-4 mb-8 font-mono text-xs">
+                  <div className="flex justify-between items-center"><span className="text-slate-400 font-bold tracking-widest">TX HASH</span> <span className="text-[#020617] truncate max-w-[150px] font-bold">{lastCreatedRecord.txHash}</span></div>
                 </div>
-                <Button onClick={() => setLastCreatedRecord(null)} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold h-12 rounded-xl">Dismiss</Button>
+                <Button onClick={() => setLastCreatedRecord(null)} className="w-full bg-[#020617] hover:bg-[#020617]/90 text-white font-mono uppercase tracking-[0.2em] font-bold h-14 rounded-none">Acknowledge</Button>
               </motion.div>
             </div>
           )
         }
-      </AnimatePresence >
+      </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-slate-900 tracking-tight">Clinical Station</h1>
-          <p className="text-slate-500 font-medium">Dr. {user.name} <span className="mx-2 text-slate-300">|</span> ID: {user.walletAddress.slice(0, 6)}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="px-3 py-1 rounded-full bg-green-50 border border-green-100 text-green-600 text-xs font-bold flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> ONLINE
+      {/* TOP NAVIGATION TAPE (Matches Patient Dashboard) */}
+      <header className="h-16 border-b border-[#020617] flex items-center justify-between px-8 shrink-0 bg-[#fafafa] relative z-20">
+        <div className="flex items-center gap-4">
+          <div className="w-8 h-8 bg-[#020617] text-white flex items-center justify-center">
+            <Activity className="w-4 h-4" />
           </div>
-          <Button variant="outline" className="text-xs h-8 ml-2" onClick={() => setManualTokenInput(manualTokenInput ? "" : " ")}>
-            {manualTokenInput ? "Cancel Input" : "Manual Input"}
-          </Button>
-          <WalletConnect />
+          <span className="font-heading text-xl tracking-tighter">AURAMED</span>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[600px]">
-        {/* LEFT: Tablet/Scanner View */}
-        <div className="lg:col-span-8 space-y-6">
-          {!patientAccessed ? (
-            <div className="h-[500px] diamond-card rounded-3xl flex flex-col items-center justify-center p-12 text-center border-dashed border-2 border-slate-200">
-
-              {manualTokenInput !== "" ? (
-                <div className="w-full max-w-sm space-y-4 animate-in fade-in zoom-in-95">
-                  <h3 className="text-xl font-bold text-slate-800">Manual Access</h3>
-                  <p className="text-slate-400 text-sm">Paste the temporary access token generated by the patient.</p>
-                  <Textarea
-                    placeholder="Paste token here..."
-                    className="min-h-[100px] bg-slate-50 font-mono text-xs"
-                    value={manualTokenInput}
-                    onChange={e => setManualTokenInput(e.target.value)}
-                  />
-                  <Button onClick={handleManualTokenSubmit} className="w-full" disabled={!manualTokenInput.trim()}>Access Patient Data</Button>
-                  <Button variant="ghost" className="w-full text-slate-400" onClick={() => setManualTokenInput("")}>Back to Scanner</Button>
-                </div>
-              ) : (
-                <>
-                  <div className="w-64 h-64 bg-slate-50 rounded-3xl flex items-center justify-center mb-6 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-                    <QRScan onScanSuccess={handleScanSuccess} doctorId={user.id} />
-                    {/* Stylized Frame */}
-                    <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-cyan-400 rounded-tl-xl" />
-                    <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-cyan-400 rounded-tr-xl" />
-                    <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-cyan-400 rounded-bl-xl" />
-                    <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-cyan-400 rounded-br-xl" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800">Waiting for Patient Token...</h3>
-                  <p className="text-slate-400 max-w-xs mx-auto mt-2">Scan the dynamic QR code generated by the patient's secure app.</p>
-                  <Button variant="link" className="text-slate-400 mt-4 text-xs" onClick={() => setManualTokenInput(" ")}>Can't scan? Enter manually</Button>
-                </>
-              )}
-
-            </div>
-          ) : (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              {/* Patient Holographic Card */}
-              <div className="diamond-card rounded-3xl p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-6 opacity-5">
-                  <Activity className="w-40 h-40 text-cyan-600" />
-                </div>
-                <div className="flex items-start gap-6 relative z-10">
-                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-100 to-blue-50 border border-cyan-100 shadow-inner flex items-center justify-center text-3xl font-bold text-cyan-700">
-                    {currentPatient?.name.charAt(0)}
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-serif font-bold text-slate-900">{currentPatient?.name}</h2>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {currentPatient?.age && <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-bold">AGE: {currentPatient?.age}</span>}
-                      {currentPatient?.bloodType && <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-xs font-bold">BLOOD: {currentPatient?.bloodType}</span>}
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-slate-500">
-                      <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-cyan-500" /> Verified Identity</div>
-                      <div className="flex items-center gap-2"><Activity className="w-4 h-4 text-pink-500" /> No Critical Alerts</div>
-                    </div>
-                  </div>
-                  <Button variant="ghost" className="text-red-400 hover:bg-red-50" onClick={closeSession}>End Session</Button>
-                </div>
-              </div>
-
-              {/* Records Grid */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center px-2">
-                  <h3 className="font-bold text-slate-700">Medical History</h3>
-                  <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">{patientRecords.length} Records</span>
-                </div>
-                <div className="grid gap-3 max-h-[400px] overflow-y-auto custom-scrollbar">
-                  {patientRecords.map(r => (
-                    <MedicalHistoryBlock key={r.id} record={r} />
-                  ))}
-                  {patientRecords.length === 0 && <p className="text-center text-slate-400 py-8 italic">No previous history available.</p>}
-                </div>
-              </div>
-            </div>
-          )}
+        <div className="flex items-center gap-12 font-mono text-[10px] uppercase tracking-[0.2em] font-bold">
+          <button className="border-b border-[#020617] pb-1">Clinical Station</button>
+          <button className="opacity-50 hover:opacity-100">Patient Lookup</button>
+          <button className="opacity-50 hover:opacity-100">Appointments</button>
         </div>
+        <div className="flex items-center gap-6">
+          <button onClick={authDisconnect} className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold hover:text-slate-400">Sign Out</button>
+        </div>
+      </header>
 
-        {/* RIGHT: Input Form */}
-        <div className="lg:col-span-4">
-          <div className="sticky top-24">
-            <div className="diamond-card rounded-3xl p-6 bg-white/80 backdrop-blur-xl">
-              {animState === 'idle' ? (
-                <div className="space-y-5">
-                  <div className="border-b border-slate-100 pb-4 mb-4 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <FilePlus className="w-5 h-5 text-purple-500" /> New Entry
-                    </h3>
-                  </div>
-
-                  {/* Mode Toggles */}
-                  <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
-                    <button
-                      onClick={() => setActiveTab('doctor')}
-                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'doctor' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                      Clinical
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('triage')}
-                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'triage' ? 'bg-white text-cyan-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                      Nurse Triage
-                    </button>
-                  </div>
-
-                  {activeTab === 'doctor' ? (
-                    // DOCTOR FORM
-                    <div className="space-y-4 animate-in slide-in-from-right-2">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-400 uppercase">Record Type</Label>
-                        <select value={recordType} onChange={e => setRecordType(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-100 text-slate-700">
-                          <option value="diagnosis">Diagnosis</option>
-                          <option value="referral">Referral</option>
-                          <option value="surgery">Surgery</option>
-                        </select>
+      {/* MAIN CONTENT GRID */}
+      <main className="flex-1 flex overflow-hidden bg-[#fafafa]">
+         {!patientAccessed ? (
+            // ==========================================
+            // STANDBY MODE: QR SCAN & DOCTOR DETAILS
+            // ==========================================
+            <>
+                {/* LEFT COLUMN: PROVIDER DETAILS */}
+                <motion.div className="hidden lg:flex w-[30%] shrink-0 border-r border-[#020617] flex-col relative bg-[#fafafa] z-20">
+                  <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`, backgroundSize: '50px 50px' }} />
+                  
+                  <div className="p-12 pb-0 relative z-10 flex-1">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-8">Provider Details</span>
+                    <h1 className="font-heading text-4xl xl:text-5xl font-medium tracking-tighter leading-[0.9] mb-8">
+                      Dr. {user.name.split(' ')[0]}<br/>
+                      <span className="text-slate-400">Station.</span>
+                    </h1>
+                    
+                    <div className="space-y-6 mt-12">
+                      <div className="border-l-2 border-[#020617] pl-4">
+                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500 mb-1">Institution</p>
+                        <p className="font-mono text-sm font-bold uppercase">Sehati Medical Center</p>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-400 uppercase">Title</Label>
-                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Annual Checkup" className="bg-slate-50 border-slate-200 text-slate-700" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-400 uppercase">Clinical Notes & Diagnosis</Label>
-                        <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Observation details..." className="min-h-[100px] bg-slate-50 border-slate-200 text-slate-700" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-400 uppercase">Prescription (Optional)</Label>
-                        <Textarea value={prescription} onChange={e => setPrescription(e.target.value)} placeholder="Medication..." className="min-h-[60px] bg-slate-50 border-slate-200 text-slate-700" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-400 uppercase">Allergies (Optional)</Label>
-                        <Input value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="e.g. Penicillin" className="bg-slate-50 border-slate-200 text-slate-700" />
+                      <div className="border-l-2 border-[#020617] pl-4">
+                        <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500 mb-1">On-Chain ID</p>
+                        <p className="font-mono text-xs font-bold">{user.walletAddress.slice(0, 10)}...</p>
                       </div>
                     </div>
-                  ) : (
-                    // NURSE TRIAGE FORM
-                    <div className="space-y-4 animate-in slide-in-from-left-2">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-400 uppercase">Heart Rate</Label>
-                          <div className="relative"><Input value={vitals.heartRate} onChange={e => setVitals({ ...vitals, heartRate: e.target.value })} placeholder="72" className="bg-slate-50" /><span className="absolute right-3 top-2.5 text-xs text-slate-400">bpm</span></div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-400 uppercase">Blood Pres.</Label>
-                          <div className="relative"><Input value={vitals.bloodPressure} onChange={e => setVitals({ ...vitals, bloodPressure: e.target.value })} placeholder="120/80" className="bg-slate-50" /><span className="absolute right-3 top-2.5 text-xs text-slate-400">mmHg</span></div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-400 uppercase">Weight</Label>
-                          <div className="relative"><Input value={vitals.weight} onChange={e => setVitals({ ...vitals, weight: e.target.value })} placeholder="kg" className="bg-slate-50" /><span className="absolute right-3 top-2.5 text-xs text-slate-400">kg</span></div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-400 uppercase">Temp.</Label>
-                          <div className="relative"><Input value={vitals.temperature} onChange={e => setVitals({ ...vitals, temperature: e.target.value })} placeholder="36.5" className="bg-slate-50" /><span className="absolute right-3 top-2.5 text-xs text-slate-400">°C</span></div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-400 uppercase">Sleep</Label>
-                          <div className="relative"><Input value={vitals.sleep} onChange={e => setVitals({ ...vitals, sleep: e.target.value })} placeholder="8" className="bg-slate-50" /><span className="absolute right-3 top-2.5 text-xs text-slate-400">hrs</span></div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-400 uppercase">Blood Type</Label>
-                          <Input value={vitals.bloodType} onChange={e => setVitals({ ...vitals, bloodType: e.target.value })} placeholder="O+" className="bg-slate-50" />
-                        </div>
-                      </div>
-                      <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 text-xs text-blue-700">
-                        <Activity className="w-4 h-4 inline mr-1" /> This will be saved as a secure <strong>VITALS</strong> record.
-                      </div>
-                    </div>
-                  )}
+                  </div>
 
-                  <MagneticButton
-                    className="w-full bg-slate-900 text-white font-bold h-12 shadow-lg shadow-slate-200 hover:bg-slate-800 disabled:opacity-50 mt-4"
-                    onClick={handleSubmit}
-                    // require BOTH Clinical Data (Title, Diagnosis) AND Vitals (HR, BP, Weight, Temp)
-                    disabled={
-                      !patientAccessed ||
-                      !title ||
-                      !content ||
-                      !vitals.heartRate ||
-                      !vitals.bloodPressure ||
-                      !vitals.weight ||
-                      !vitals.temperature
-                    }
+                  <div className="mt-auto border-t border-[#020617] p-8 relative z-10 shrink-0 bg-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block">Manual Override</span>
+                      <Button variant="outline" className="text-[10px] font-mono tracking-widest uppercase font-bold h-8 rounded-none border-2 border-[#020617] hover:bg-[#020617] hover:text-white transition-colors" onClick={() => setManualTokenInput(manualTokenInput ? "" : " ")}>
+                        {manualTokenInput ? "Cancel" : "Input"}
+                      </Button>
+                    </div>
+                    {manualTokenInput !== "" && (
+                       <div className="flex gap-2">
+                         <Input 
+                           value={manualTokenInput} 
+                           onChange={e => setManualTokenInput(e.target.value)} 
+                           onKeyDown={e => {
+                             if (e.key === 'Enter' && manualTokenInput.trim()) {
+                               handleManualTokenSubmit();
+                             }
+                           }}
+                           placeholder="Enter Token..." 
+                           className="border-2 border-[#020617] rounded-none h-10 font-mono text-xs focus-visible:ring-0" 
+                         />
+                         <Button onClick={handleManualTokenSubmit} disabled={!manualTokenInput.trim()} className="bg-[#020617] hover:bg-black text-white rounded-none h-10 px-4"><Search className="w-4 h-4" /></Button>
+                       </div>
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* RIGHT COLUMN: SCANNER */}
+                <motion.div className="flex-1 flex flex-col bg-white relative overflow-hidden z-10">
+                  <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)`, backgroundSize: '100px 100px' }} />
+                  <motion.div 
+                     initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                     className="h-full flex flex-col items-center justify-center p-8 text-center"
                   >
-                    Sign & Submit Unified Record
-                  </MagneticButton>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="relative w-32 h-32 mb-6">
-                    <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
-                    <div className="absolute inset-0 rounded-full border-4 border-cyan-500 border-t-transparent animate-spin" />
-                    <div className="absolute inset-0 flex items-center justify-center font-bold text-xl text-slate-700">{progress}%</div>
+                     <div className="w-[360px] h-[360px] xl:w-[480px] xl:h-[480px] bg-white border-4 border-[#020617] shadow-[16px_16px_0px_0px_rgba(203,213,225,1)] flex items-center justify-center mb-12 p-2 relative z-10">
+                       <QRScan onScanSuccess={handleScanSuccess} doctorId={user.id} />
+                     </div>
+                     <h3 className="font-heading text-4xl xl:text-5xl font-medium text-[#020617] uppercase tracking-tight mb-4 relative z-10">Awaiting Target</h3>
+                     <p className="font-mono text-xs tracking-widest text-slate-500 max-w-md mx-auto uppercase font-bold relative z-10">Scan dynamic QR token generated by the patient's encrypted vault.</p>
+                  </motion.div>
+                </motion.div>
+            </>
+         ) : (
+            // ==========================================
+            // ACTIVE SESSION MODE: PREMIUM CLINICAL EHR
+            // ==========================================
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col w-full h-full bg-[#fafafa] relative">
+               
+               {/* OVERLAY DECRYPTING */}
+               <AnimatePresence>
+                 {isDecrypting && (
+                    <motion.div 
+                        initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }} transition={{ duration: 0.8, ease: "easeInOut" }}
+                        className="absolute inset-0 z-50 bg-[#020617] flex flex-col items-center justify-center text-white overflow-hidden"
+                    >
+                        {/* Background Grid Pattern */}
+                        <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: `linear-gradient(to right, #334155 1px, transparent 1px), linear-gradient(to bottom, #334155 1px, transparent 1px)`, backgroundSize: '40px 40px' }} />
+                        
+                        {/* Scanning Line */}
+                        <motion.div 
+                            initial={{ top: "-10%" }} 
+                            animate={{ top: "110%" }} 
+                            transition={{ duration: 2, ease: "linear", repeat: Infinity }}
+                            className="absolute left-0 right-0 h-[2px] bg-white opacity-50 shadow-[0_0_20px_5px_rgba(255,255,255,0.5)] pointer-events-none" 
+                        />
+
+                        {/* Main Branding */}
+                        <div className="relative z-10 flex flex-col items-center">
+                            <motion.div
+                                initial={{ letterSpacing: "1em", opacity: 0 }}
+                                animate={{ letterSpacing: "0.2em", opacity: 1 }}
+                                transition={{ duration: 1.5, ease: "easeOut" }}
+                                className="font-heading text-5xl md:text-7xl xl:text-8xl font-bold uppercase mb-4"
+                            >
+                                AURAMED
+                            </motion.div>
+                            
+                            <motion.div 
+                                initial={{ width: 0 }} 
+                                animate={{ width: "100%" }} 
+                                transition={{ duration: 1.2, ease: "easeInOut", delay: 0.2 }}
+                                className="h-1 bg-white mb-6" 
+                            />
+
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.8, duration: 0.5 }}
+                                className="font-mono text-xs md:text-sm uppercase tracking-[0.4em] text-slate-400 font-bold mb-16"
+                            >
+                                CLINICAL OS v9.2.4
+                            </motion.div>
+
+                            {/* Decoding Text Animation */}
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1 }}
+                                className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-white/80 flex items-center gap-4 border border-slate-800 bg-black/50 px-6 py-3"
+                            >
+                                <span className="w-2 h-2 bg-white animate-pulse" />
+                                <motion.span
+                                    key="decrypt-log"
+                                    initial={{ opacity: 0, x: -5 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.2, repeat: Infinity, repeatType: "reverse", repeatDelay: 0.1 }}
+                                >
+                                    ESTABLISHING SECURE HANDSHAKE...
+                                </motion.span>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                 )}
+               </AnimatePresence>
+
+               {/* PREMIUM PATIENT HEADER */}
+               <div className="bg-white border-b-2 border-[#020617] px-8 py-6 shrink-0 relative z-20 flex justify-between items-center shadow-[0_4px_0_0_rgba(2,6,23,0.05)]">
+                  <div className="flex items-center gap-6">
+                     <div className="w-16 h-16 bg-[#020617] flex items-center justify-center text-white">
+                        <UserCheck className="w-8 h-8" />
+                     </div>
+                     <div>
+                        <h2 className="text-3xl font-heading font-medium text-[#020617] uppercase tracking-tight leading-none">{currentPatient?.name}</h2>
+                     </div>
                   </div>
-                  <h4 className="font-bold text-slate-800 mb-2">Processing Secure Record</h4>
-                  <p className="text-sm text-slate-400">{animState === 'encrypting' ? 'Encrypting with Patient Key...' : animState === 'uploading' ? 'Hashing to IPFS...' : 'Minting on Ethereum Sepolia...'}</p>
-                </div>
-              )
-              }
-            </div >
-          </div >
-        </div >
-      </div >
-    </Layout >
+                  
+                  <div className="flex items-center gap-8">
+                     <div className="flex gap-6">
+                         <div className="text-right">
+                             <span className="block font-mono text-[9px] uppercase tracking-widest text-slate-400 mb-0.5">Age</span>
+                             <span className="font-mono text-lg font-bold text-[#020617]">{currentPatient?.age || '--'}</span>
+                         </div>
+                         <div className="text-right">
+                             <span className="block font-mono text-[9px] uppercase tracking-widest text-slate-400 mb-0.5">Blood Type</span>
+                             <span className="font-mono text-lg font-bold text-[#020617]">{currentPatient?.bloodType || '--'}</span>
+                         </div>
+                     </div>
+                     <div className="h-10 w-px bg-slate-200"></div>
+                     <Button variant="outline" className="border-2 border-[#020617] bg-transparent text-[#020617] hover:bg-[#020617] hover:text-white font-mono uppercase tracking-[0.2em] text-[10px] font-bold rounded-none h-12 transition-all" onClick={closeSession}>
+                       <LogOut className="w-4 h-4 mr-2" /> End Consultation
+                     </Button>
+                  </div>
+               </div>
+
+               {/* MAIN ENTRY & HISTORY SPLIT */}
+               <div className="flex-1 flex overflow-hidden">
+                  
+                  {/* LEFT: CLINICAL DATA ENTRY (60%) */}
+                  <div className="w-3/5 h-full overflow-y-auto p-8 border-r-2 border-[#020617] bg-white relative">
+                     {animState === 'idle' ? (
+                     <div className="max-w-2xl mx-auto space-y-8 pb-12">
+                        <div className="mb-6 border-b-2 border-[#020617] pb-4">
+                           <h3 className="font-heading text-2xl text-[#020617] uppercase tracking-tight">Clinical Telemetry Entry</h3>
+                           <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-1">Append new records to patient history</p>
+                        </div>
+
+                        {/* Narrative Section */}
+                        <div className="space-y-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-6 h-6 bg-[#020617] text-white flex items-center justify-center"><FilePlus className="w-3 h-3" /></div>
+                                <span className="font-mono text-[12px] font-bold uppercase tracking-widest text-[#020617]">Clinical Narrative</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Record Category</Label>
+                                    <select value={recordType} onChange={e => setRecordType(e.target.value)} className="w-full bg-[#fafafa] border border-slate-300 rounded-none p-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-[#020617] focus:border-[#020617] uppercase text-[#020617] font-bold">
+                                        <option value="diagnosis">Primary Diagnosis</option>
+                                        <option value="referral">Specialist Referral</option>
+                                        <option value="surgery">Surgical Notes</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Diagnosis / Title</Label>
+                                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. UPPER RESPIRATORY INFECTION" className="bg-[#fafafa] border border-slate-300 rounded-none h-[42px] font-serif text-sm focus-visible:ring-1 focus-visible:ring-[#020617] text-[#020617]" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Clinical Observations</Label>
+                                <Textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Enter detailed objective and subjective findings..." className="min-h-[100px] bg-[#fafafa] border border-slate-300 rounded-none font-serif text-sm focus-visible:ring-1 focus-visible:ring-[#020617] text-[#020617] p-4" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Treatment Plan / Rx</Label>
+                                    <Textarea value={prescription} onChange={e => setPrescription(e.target.value)} placeholder="Medication, dosage..." className="min-h-[60px] bg-[#fafafa] border border-slate-300 rounded-none font-mono text-xs focus-visible:ring-1 focus-visible:ring-[#020617] text-[#020617] p-3" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Allergies / Alerts</Label>
+                                    <Textarea value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="e.g. PENICILLIN" className="min-h-[60px] bg-slate-100 border border-slate-300 rounded-none font-mono text-xs focus-visible:ring-1 focus-visible:ring-slate-500 text-slate-800 uppercase font-bold p-3" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr className="border-t-2 border-dashed border-slate-200 my-8" />
+
+                        {/* Vitals Section */}
+                        <div className="space-y-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-6 h-6 bg-[#020617] text-white flex items-center justify-center"><Activity className="w-3 h-3" /></div>
+                                <span className="font-mono text-[12px] font-bold uppercase tracking-widest text-[#020617]">Vital Signs</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Heart Rate</Label>
+                                    <div className="relative"><Input value={vitals.heartRate} onChange={e => setVitals({ ...vitals, heartRate: e.target.value })} placeholder="72" className="bg-[#fafafa] border border-slate-300 rounded-none h-12 font-mono text-lg font-bold text-[#020617] pr-10 focus-visible:ring-1 focus-visible:ring-[#020617]" /><span className="absolute right-3 top-3.5 font-mono text-[9px] tracking-widest text-slate-400 font-bold uppercase">bpm</span></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Blood Press.</Label>
+                                    <div className="relative"><Input value={vitals.bloodPressure} onChange={e => setVitals({ ...vitals, bloodPressure: e.target.value })} placeholder="120/80" className="bg-[#fafafa] border border-slate-300 rounded-none h-12 font-mono text-lg font-bold text-[#020617] pr-12 focus-visible:ring-1 focus-visible:ring-[#020617]" /><span className="absolute right-3 top-3.5 font-mono text-[9px] tracking-widest text-slate-400 font-bold uppercase">mmHg</span></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Weight</Label>
+                                    <div className="relative"><Input value={vitals.weight} onChange={e => setVitals({ ...vitals, weight: e.target.value })} placeholder="80" className="bg-[#fafafa] border border-slate-300 rounded-none h-12 font-mono text-lg font-bold text-[#020617] pr-8 focus-visible:ring-1 focus-visible:ring-[#020617]" /><span className="absolute right-3 top-3.5 font-mono text-[9px] tracking-widest text-slate-400 font-bold uppercase">kg</span></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Temp.</Label>
+                                    <div className="relative"><Input value={vitals.temperature} onChange={e => setVitals({ ...vitals, temperature: e.target.value })} placeholder="36.5" className="bg-[#fafafa] border border-slate-300 rounded-none h-12 font-mono text-lg font-bold text-[#020617] pr-8 focus-visible:ring-1 focus-visible:ring-[#020617]" /><span className="absolute right-3 top-3.5 font-mono text-[9px] tracking-widest text-slate-400 font-bold uppercase">°C</span></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Sleep</Label>
+                                    <div className="relative"><Input value={vitals.sleep} onChange={e => setVitals({ ...vitals, sleep: e.target.value })} placeholder="8" className="bg-[#fafafa] border border-slate-300 rounded-none h-12 font-mono text-lg font-bold text-[#020617] pr-8 focus-visible:ring-1 focus-visible:ring-[#020617]" /><span className="absolute right-3 top-3.5 font-mono text-[9px] tracking-widest text-slate-400 font-bold uppercase">hrs</span></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-slate-500">Blood Type</Label>
+                                    <div><Input value={vitals.bloodType} onChange={e => setVitals({ ...vitals, bloodType: e.target.value })} placeholder="O+" className="bg-[#fafafa] border border-slate-300 rounded-none h-12 font-mono text-lg font-bold text-[#020617] focus-visible:ring-1 focus-visible:ring-[#020617] uppercase" /></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Button
+                          className="w-full bg-[#020617] hover:bg-black text-white font-mono text-[10px] uppercase tracking-[0.2em] font-bold h-16 rounded-none disabled:opacity-50 transition-all border-2 border-[#020617] mt-8 shadow-[8px_8px_0px_0px_rgba(2,6,23,0.15)]"
+                          onClick={handleSubmit}
+                          disabled={!title || !content || !vitals.heartRate || !vitals.bloodPressure || !vitals.weight || !vitals.temperature}
+                        >
+                          <span className="flex items-center justify-center gap-3 w-full">
+                             <Lock className="w-4 h-4" /> Finalize Medical Record
+                          </span>
+                        </Button>
+                     </div>
+                     ) : (
+                      <div className="flex flex-col items-center justify-center py-32 text-center h-full">
+                        <div className="relative w-32 h-32 mb-10 mx-auto">
+                          <div className="absolute inset-0 border-4 border-[#020617]/10" />
+                          <div className="absolute inset-0 border-4 border-[#020617] border-t-transparent animate-spin" />
+                          <div className="absolute inset-0 flex items-center justify-center font-heading text-3xl text-[#020617]">{progress}%</div>
+                        </div>
+                        <h4 className="font-heading text-3xl font-medium text-[#020617] uppercase tracking-tight mb-3">Processing Cryptography</h4>
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 font-bold">{animState === 'encrypting' ? 'Securing Data Integrity...' : animState === 'uploading' ? 'Publishing Clinical Record...' : 'Finalizing Verification...'}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* RIGHT: HISTORY ARCHIVE (40%) */}
+                  <div className="w-2/5 h-full overflow-y-auto bg-[#fafafa] p-8">
+                      <div className="flex justify-between items-center mb-6 border-b-2 border-[#020617] pb-3">
+                         <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-[#020617]">History Archive</span>
+                         <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-white bg-[#020617] px-2 py-0.5">{patientRecords.length} Records</span>
+                      </div>
+                      <div className="grid gap-6">
+                         {patientRecords.map(r => (
+                           <MedicalHistoryBlock key={r.id} record={r} />
+                         ))}
+                         {patientRecords.length === 0 && (
+                            <div className="border border-dashed border-[#020617] bg-white p-12 text-center">
+                                <Activity className="w-8 h-8 text-slate-300 mx-auto mb-4" />
+                                <span className="font-mono text-[10px] uppercase tracking-widest font-bold text-slate-500">No previous records</span>
+                            </div>
+                         )}
+                      </div>
+                  </div>
+               </div>
+            </motion.div>
+         )}
+      </main>
+    </div>
   );
 }

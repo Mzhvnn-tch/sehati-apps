@@ -2,7 +2,10 @@ import { CheckCircle2, Clock, ShieldAlert, Key, FileUp } from "lucide-react";
 import type { AuditLog as AuditLogType } from "@shared/schema";
 
 export function AuditLog({ logs }: { logs: AuditLogType[] }) {
-  if (logs.length === 0) {
+  // Filter out noisy events like repetitive logins
+  const filteredLogs = logs.filter(log => log.action !== "LoginSuccess");
+
+  if (filteredLogs.length === 0) {
     return (
       <div className="border-2 border-[#020617] bg-white p-12 text-center shadow-[8px_8px_0px_0px_rgba(2,6,23,1)]">
         <span className="font-mono text-xs uppercase tracking-[0.3em] font-bold text-[#020617]">Vault is Empty</span>
@@ -23,7 +26,7 @@ export function AuditLog({ logs }: { logs: AuditLogType[] }) {
 
       {/* Table Body */}
       <div className="divide-y-2 divide-[#020617]">
-        {logs.map((log) => {
+        {filteredLogs.map((log) => {
           return (
             <div key={log.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-6 hover:bg-slate-50 transition-colors group">
               {/* Action */}
@@ -44,11 +47,18 @@ export function AuditLog({ logs }: { logs: AuditLogType[] }) {
               </div>
 
               {/* Details */}
-              <div className="col-span-4 flex flex-col justify-center">
-                <span className="font-mono text-xs text-[#020617]">
-                  {log.entityType === "record" && `MEDICAL RECORD OPERATION`}
-                  {log.entityType === "access" && `ACCESS CONTROL EVENT`}
-                  {log.entityType === "user" && `USER PROFILE UPDATE`}
+              <div className="col-span-4 flex flex-col justify-center gap-1">
+                <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  {log.entityType === "record" && `MEDICAL RECORD OP`}
+                  {log.entityType === "access" && `ACCESS CONTROL`}
+                  {log.entityType === "user" && `USER PROFILE`}
+                </span>
+                <span className="font-serif text-sm text-[#020617] leading-tight font-medium">
+                  {log.action === "AccessGranted" && "Gave a doctor permission to view your medical records."}
+                  {log.action === "RecordViewed" && "Someone viewed your medical records."}
+                  {log.action === "DoctorApproved" && "A new doctor was verified and added to the system."}
+                  {log.action === "RecordCreated" && "New medical records were safely saved."}
+                  {!["AccessGranted", "RecordViewed", "DoctorApproved", "RecordCreated"].includes(log.action) && "System security action performed."}
                 </span>
               </div>
 

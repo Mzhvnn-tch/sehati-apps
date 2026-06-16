@@ -95,52 +95,32 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
   };
 
   return (
-    <div className="diamond-card rounded-3xl overflow-hidden relative aspect-[4/3] w-full max-w-md mx-auto flex flex-col items-center justify-center border border-slate-200 shadow-xl bg-slate-50">
+    <div className="relative w-full h-full flex flex-col items-center justify-center bg-white overflow-hidden">
       <AnimatePresence mode="wait">
         {scanStatus === "idle" && (
           <motion.div
             key="idle"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 flex flex-col items-center justify-center p-6 space-y-5 bg-white/60 backdrop-blur-md"
+            className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-white"
           >
-            <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center border border-slate-100 shadow-sm">
-              <Camera className="w-8 h-8 text-slate-300" />
+            <div className="w-16 h-16 bg-[#020617] flex items-center justify-center mb-4">
+              <Camera className="w-8 h-8 text-white" />
             </div>
-            <p className="text-slate-500 text-sm text-center font-medium max-w-xs">
-              Align patient QR code within the frame to authorize access.
+            <p className="text-[#020617] text-[10px] text-center font-mono uppercase tracking-widest font-bold max-w-[200px] mb-4">
+              Align patient QR token to authorize.
             </p>
 
             {cameraError && (
-              <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-500 text-xs text-center max-w-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
+              <div className="bg-red-50 border-2 border-red-900 p-2 mb-4 text-red-900 text-[10px] font-mono uppercase tracking-widest font-bold text-center w-full flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 {cameraError}
               </div>
             )}
 
-            <Button onClick={startScanning} className="bg-cyan-600 text-white hover:bg-cyan-700 shadow-lg shadow-cyan-200">
+            <Button onClick={startScanning} className="bg-[#020617] hover:bg-black text-white font-mono uppercase tracking-[0.2em] font-bold text-[10px] rounded-none h-10 w-full">
               <Camera className="w-4 h-4 mr-2" />
               Activate Scanner
             </Button>
-
-            <div className="w-full max-w-xs space-y-3 pt-6 border-t border-slate-200/50">
-              <p className="text-slate-300 text-[10px] text-center uppercase tracking-widest font-bold">Or Enter Token</p>
-              <div className="relative group">
-                <Input
-                  value={manualToken} onChange={(e) => setManualToken(e.target.value)}
-                  placeholder="Paste token..."
-                  className="bg-white border-slate-200 text-slate-800 pr-10 focus:ring-cyan-100 text-xs h-9"
-                  onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
-                />
-                <Button
-                  size="sm" variant="ghost"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50"
-                  onClick={handleManualSubmit}
-                  disabled={!manualToken.trim()}
-                >
-                  <Search className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
           </motion.div>
         )}
 
@@ -159,26 +139,21 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
 
             <div className="absolute inset-0 pointer-events-none">
               <motion.div
-                className="absolute left-0 right-0 h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.8)] z-20"
+                className="absolute left-0 right-0 h-0.5 bg-red-500 z-20"
                 animate={{ top: ["10%", "90%", "10%"] }}
                 transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
               />
 
-              <div className="absolute inset-0 border-[20px] border-white/90 z-10 backdrop-blur-[1px]">
-                {/* This creates a 'frame' effect by obscuring the edges */}
-                <div className="absolute inset-0 border-2 border-white/50 m-[-20px]" />
-              </div>
-
               {/* Corner Markers */}
-              <div className="absolute top-8 left-8 w-12 h-12 border-t-4 border-l-4 border-cyan-400 rounded-tl-xl z-30 drop-shadow-lg" />
-              <div className="absolute top-8 right-8 w-12 h-12 border-t-4 border-r-4 border-cyan-400 rounded-tr-xl z-30 drop-shadow-lg" />
-              <div className="absolute bottom-8 left-8 w-12 h-12 border-b-4 border-l-4 border-cyan-400 rounded-bl-xl z-30 drop-shadow-lg" />
-              <div className="absolute bottom-8 right-8 w-12 h-12 border-b-4 border-r-4 border-cyan-400 rounded-br-xl z-30 drop-shadow-lg" />
+              <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-white z-30" />
+              <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-white z-30" />
+              <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-white z-30" />
+              <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-white z-30" />
             </div>
 
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-auto z-40">
-              <Button onClick={stopScanning} variant="secondary" size="sm" className="bg-white/90 text-slate-800 hover:bg-white border-white/50 shadow-lg">
-                <XCircle className="w-4 h-4 mr-2 text-red-500" /> Cancel
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-auto z-40 px-4">
+              <Button onClick={stopScanning} variant="secondary" className="w-full bg-white hover:bg-slate-200 text-[#020617] font-mono text-[10px] tracking-widest uppercase font-bold rounded-none h-10 border-none">
+                <XCircle className="w-4 h-4 mr-2 text-red-600" /> Abort Scan
               </Button>
             </div>
           </motion.div>
@@ -188,14 +163,13 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
           <motion.div
             key="validating"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center z-50 text-center p-6"
+            className="absolute inset-0 bg-[#020617] flex flex-col items-center justify-center z-50 text-center p-4"
           >
-            <div className="w-20 h-20 rounded-full bg-cyan-50 flex items-center justify-center mb-4 relative">
-              <div className="absolute inset-0 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin" />
-              <ScanLine className="w-8 h-8 text-cyan-600" />
+            <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin flex items-center justify-center mb-4">
+               <ScanLine className="w-6 h-6 text-white absolute animate-pulse" />
             </div>
-            <h3 className="text-slate-800 text-lg font-bold mb-1">Authenticating</h3>
-            <p className="text-slate-400 text-sm">Verifying cryptographic signature...</p>
+            <h3 className="text-white text-sm font-heading uppercase tracking-widest font-bold mb-1">Authenticating</h3>
+            <p className="text-slate-400 text-[10px] font-mono tracking-widest uppercase font-bold">Verifying Signature...</p>
           </motion.div>
         )}
 
@@ -203,13 +177,13 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
           <motion.div
             key="success"
             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="absolute inset-0 bg-emerald-500 flex flex-col items-center justify-center text-white z-50 p-6"
+            className="absolute inset-0 bg-white flex flex-col items-center justify-center text-[#020617] z-50 p-4 border-4 border-[#020617]"
           >
-            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mb-6 animate-[bounce_1s_infinite]">
-              <CheckCircle2 className="w-12 h-12 text-white" />
+            <div className="w-16 h-16 bg-[#020617] flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold tracking-tight">Access Granted</h3>
-            <p className="text-white/90 text-sm mt-2">Decrypting patient data securely...</p>
+            <h3 className="text-lg font-heading uppercase tracking-widest font-bold">Access Granted</h3>
+            <p className="text-slate-500 text-[10px] mt-2 font-mono uppercase tracking-widest font-bold text-center">Decrypting Vault...</p>
           </motion.div>
         )}
 
@@ -217,13 +191,13 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
           <motion.div
             key="error"
             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="absolute inset-0 bg-red-500 flex flex-col items-center justify-center text-white z-50 p-6"
+            className="absolute inset-0 bg-red-900 flex flex-col items-center justify-center text-white z-50 p-4"
           >
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4">
-              <XCircle className="w-10 h-10 text-white" />
+            <div className="w-16 h-16 bg-white flex items-center justify-center mb-4">
+              <XCircle className="w-8 h-8 text-red-900" />
             </div>
-            <h3 className="text-xl font-bold">Invalid Token</h3>
-            <p className="text-white/90 text-sm mt-2 max-w-xs text-center">Unable to verify signature. Please try scanning again.</p>
+            <h3 className="text-sm font-heading uppercase tracking-widest font-bold">Invalid Token</h3>
+            <p className="text-red-200 text-[10px] mt-2 font-mono uppercase tracking-widest font-bold text-center">Signature Verification Failed</p>
           </motion.div>
         )}
       </AnimatePresence>

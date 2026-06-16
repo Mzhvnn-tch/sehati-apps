@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Search, Filter, ChevronDown, Lock, ShieldAlert, Pill, FileText, ArrowUpRight } from "lucide-react";
+import { Calendar, Search, Filter, ChevronDown, Lock, ShieldAlert, Pill, FileText, ArrowUpRight, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { MedicalRecord } from "@shared/schema";
 import { format } from "date-fns";
@@ -138,10 +138,6 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
                                                     <div className="absolute bottom-0 left-0 w-2 h-2 bg-[#020617]" />
                                                     <div className="absolute bottom-0 right-0 w-2 h-2 bg-[#020617]" />
 
-                                                    <div className="mb-8 border-b border-[#020617]/10 pb-4">
-                                                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Decrypted Payload</span>
-                                                    </div>
-
                                                     <div className="font-sans text-[#020617]">
                                                         {(() => {
                                                             // @ts-ignore
@@ -160,15 +156,31 @@ export function HealthTimeline({ records, onRecordClick }: HealthTimelineProps) 
                                                                     <div className="flex flex-col gap-10">
                                                                         {/* Primary Diagnosis Focus */}
                                                                         {parsed.diagnosis && (
-                                                                            <div>
-                                                                                <div className="inline-block bg-[#020617] text-white font-mono text-[10px] uppercase tracking-[0.3em] font-bold px-3 py-1 mb-4">
+                                                                            <div className="w-full bg-[#020617] p-8 md:p-12 shadow-[8px_8px_0px_0px_rgba(203,213,225,1)]">
+                                                                                <div className="inline-block border border-white/20 text-white font-mono text-[10px] uppercase tracking-[0.3em] font-bold px-3 py-1 mb-6">
                                                                                     Primary Diagnosis
                                                                                 </div>
-                                                                                <div className="font-heading text-4xl md:text-5xl leading-tight text-[#020617] tracking-tight border-l-4 border-[#020617] pl-6">
+                                                                                <div className="font-heading text-4xl md:text-5xl lg:text-6xl leading-tight text-white tracking-tight border-l-4 border-white pl-6">
                                                                                     {parsed.diagnosis}
                                                                                 </div>
                                                                             </div>
                                                                         )}
+
+                                                                        {/* Advanced Medical Fields */}
+                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 border-t-2 border-[#020617] pt-8 mt-2">
+                                                                            <div className="flex flex-col">
+                                                                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 mb-2 block border-b border-[#020617]/10 pb-2">Symptoms</span>
+                                                                                <span className="font-serif text-sm text-[#020617]">{parsed.symptoms || "No symptoms recorded"}</span>
+                                                                            </div>
+                                                                            <div className="flex flex-col md:border-l border-[#020617]/10 md:pl-8">
+                                                                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 mb-2 block border-b border-[#020617]/10 pb-2">Lab & Procedures</span>
+                                                                                <span className="font-serif text-sm text-[#020617]">{parsed.labActions || "No procedures recorded"}</span>
+                                                                            </div>
+                                                                            <div className="flex flex-col md:border-l border-[#020617]/10 md:pl-8">
+                                                                                <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 mb-2 block border-b border-[#020617]/10 pb-2">Follow Up Plan</span>
+                                                                                <span className="font-serif text-sm text-[#020617]">{parsed.followUp || "No follow-up recorded"}</span>
+                                                                            </div>
+                                                                        </div>
 
                                                                         {/* Vitals Telemetry */}
                                                                         {parsed.vitals && (parsed.vitals.bloodPressure || parsed.vitals.heartRate || parsed.vitals.temperature || parsed.vitals.weight) && (
