@@ -318,11 +318,13 @@ export async function registerRoutes(
         // DATA LEAK PREVENTION (IDOR FIX):
         // If the requester is NOT the owner of the profile, return ONLY public fields.
         if (req.user?.walletAddress.toLowerCase() !== walletAddress.toLowerCase()) {
+          const isPatient = user.role === "patient";
           return res.json({
             user: {
               id: user.id,
               walletAddress: user.walletAddress,
-              name: user.name,
+              // EXTREME PRIVACY: Hide patient names! Only allow doctor/pharmacist names to be public.
+              name: isPatient ? "REDACTED_PATIENT_NAME" : user.name, 
               role: user.role,
               publicKey: user.publicKey,
               isVerified: user.isVerified,

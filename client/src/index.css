@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 
 @theme inline {
-  --font-sans: 'Inter', sans-serif;
-  --font-heading: 'Space Grotesk', sans-serif;
+  --font-sans: 'Noto Sans', sans-serif;
+  --font-heading: 'Figtree', sans-serif;
   --font-serif: 'Playfair Display', serif;
-  --font-body: 'Inter', sans-serif;
+  --font-body: 'Noto Sans', sans-serif;
 
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;

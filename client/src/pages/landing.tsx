@@ -65,13 +65,9 @@ export default function Landing() {
       {/* Ultra Minimalist Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-40 px-8 md:px-12 py-6 bg-[#fafafa]/90 backdrop-blur-md border-b border-transparent transition-all duration-300">
         <div className="max-w-[1600px] mx-auto flex justify-between items-center">
-          <div 
-            className="flex flex-col items-center cursor-pointer group"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          >
-            <img src="/sehati.png" alt="AuraMed Logo" className="w-9 h-9 object-contain group-hover:opacity-80 transition-opacity duration-300" />
-            <span className="text-[10px] uppercase tracking-[0.25em] font-bold text-[#020617] mt-1.5">AuraMed</span>
-          </div>
+          <a href="#" className="flex items-center group">
+            <span className="text-[14px] uppercase tracking-[0.25em] font-bold text-[#020617] leading-none">AuraMed</span>
+          </a>
 
           <div className="hidden md:flex gap-12 text-xs uppercase tracking-[0.2em] font-bold text-slate-500">
             <Dialog>

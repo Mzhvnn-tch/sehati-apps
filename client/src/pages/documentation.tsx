@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, Code2, Database, Shield, Lock, Activity, FileJson } from "lucide-react";
+import { ArrowLeft, Code2, Database, Shield, Lock, Activity, FileJson, Network } from "lucide-react";
 
 // Stark Easing for premium feel
 const velvetEasing: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -263,6 +263,77 @@ if (localHash !== trueHash) {
         </div>
       </div>
     )
+  },
+  {
+    id: "chapter-05",
+    num: "05",
+    title: "Advanced Protocols",
+    icon: Network,
+    desc: "Addressing the complex realities of healthcare data. We extend the baseline protocol to support multi-party data sharing, emergency key recovery, and strict compliance with the right to be forgotten (GDPR).",
+    content: (
+      <div className="space-y-24">
+        <div className="grid lg:grid-cols-[1fr_2fr] gap-12 items-start">
+          <div className="lg:sticky lg:top-12">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 block mb-4">Mechanism 01</span>
+            <h3 className="font-heading text-4xl font-medium text-[#020617] mb-6">Asymmetric Sharing.</h3>
+            <p className="text-lg text-slate-600 font-light leading-relaxed">
+              Medical data cannot be siloed forever. To grant doctors access without exposing the patient's master AES key, we utilize Decentralized Key Management (e.g., Lit Protocol) and Proxy Re-Encryption (Threshold Network). The symmetric key is encrypted with the doctor's public key, allowing smart contracts to securely dictate access rights.
+            </p>
+          </div>
+          <BlueprintCode title="Data Sharing Flow" code={`// 1. Patient encrypts data with symmetric AES
+const ciphertext = AES.encrypt(data, patientSymmetricKey);
+
+// 2. Patient encrypts symmetric key with Doctor's Public Key
+const wrappedKey = Asymmetric.encrypt(patientSymmetricKey, doctorPublicKey);
+
+// 3. Smart contract records the grant
+await contract.grantAccess(doctorAddress, wrappedKey);`} />
+        </div>
+
+        <div className="grid lg:grid-cols-[1fr_2fr] gap-12 items-start pt-24 border-t border-slate-200">
+          <div className="lg:sticky lg:top-12">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 block mb-4">Mechanism 02</span>
+            <h3 className="font-heading text-4xl font-medium text-[#020617] mb-6">Emergency Recovery.</h3>
+            <p className="text-lg text-slate-600 font-light leading-relaxed">
+              Losing a seed phrase shouldn't mean losing critical medical history. By integrating Account Abstraction (ERC-4337) and Multi-Party Computation (MPC) via systems like Web3Auth, accounts feature social recovery through email, biometrics, or trusted family members—entirely decentralized.
+            </p>
+          </div>
+          <BlueprintCode title="MPC Recovery Setup" code={`// Shard generation via Web3Auth / MPC
+const keyShards = await mpc.generateShards({
+  threshold: 2,
+  shares: 3
+});
+
+// Distribution:
+// Share 1: Local Device Storage
+// Share 2: Patient's Email Auth Node
+// Share 3: Trusted Guardian (Family/Doctor)`} />
+        </div>
+
+        <div className="grid lg:grid-cols-[1fr_2fr] gap-12 items-start pt-24 border-t border-slate-200">
+          <div className="lg:sticky lg:top-12">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 block mb-4">Mechanism 03</span>
+            <h3 className="font-heading text-4xl font-medium text-[#020617] mb-6">Crypto-Shredding.</h3>
+            <p className="text-lg text-slate-600 font-light leading-relaxed">
+              To comply with the GDPR "Right to be Forgotten" while using immutable storage like IPFS or Arweave, we employ Crypto-Shredding. By definitively destroying the decryption keys, the decentralized payload becomes mathematically unrecoverable digital noise.
+            </p>
+          </div>
+          <BlueprintCode title="GDPR Compliance Flow" code={`// To delete an immutable record on IPFS:
+// We cannot delete the file from the decentralized network.
+
+async function executeCryptoShredding(recordId) {
+  // 1. Locate the specific AES key for this record
+  const keyIdentifier = await db.getKeyId(recordId);
+  
+  // 2. Permanently destroy the key from KMS/Storage
+  await keyManager.destroyKey(keyIdentifier);
+  
+  // 3. The IPFS ciphertext is now permanently inaccessible
+  return { status: "shredded", compliance: "GDPR-Article-17" };
+}`} />
+        </div>
+      </div>
+    )
   }
 ];
 
@@ -270,7 +341,7 @@ export default function Documentation() {
   const [, navigate] = useLocation();
 
   return (
-    <div className="min-h-screen bg-[#fafafa] selection:bg-[#020617] selection:text-white font-sans text-[#020617]">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#fafafa] selection:bg-[#020617] selection:text-white font-sans text-[#020617]">
       
       {/* Lightweight Architectural Grid Lines */}
       <div 
@@ -283,9 +354,8 @@ export default function Documentation() {
 
       {/* Top Navbar */}
       <nav className="w-full px-8 md:px-16 py-8 flex justify-between items-center border-b border-slate-200 relative z-50">
-        <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate("/")}>
-          <img src="/sehati.png" alt="Logo" className="w-8 h-8 object-contain" />
-          <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-[#020617]">AuraMed</span>
+        <div className="flex items-center cursor-pointer group" onClick={() => navigate("/")}>
+          <span className="text-[12px] uppercase tracking-[0.3em] font-bold text-[#020617] mt-0.5">AuraMed</span>
         </div>
 
         <button 
@@ -300,16 +370,13 @@ export default function Documentation() {
       </nav>
 
       {/* Massive Editorial Hero */}
-      <header className="px-8 md:px-16 pt-24 pb-32 border-b border-[#020617]">
+      <header className="px-8 md:px-16 pt-12 pb-32 border-b border-[#020617]">
         <div className="max-w-[1800px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, ease: velvetEasing }}
           >
-            <span className="font-mono text-xs uppercase tracking-[0.4em] font-bold text-slate-400 block mb-12">
-              Technical Monograph — Vol 2.0
-            </span>
             <h1 className="font-heading text-[12vw] leading-[0.85] tracking-tighter text-[#020617] uppercase mb-16">
               System <br/>
               <span className="text-slate-300">Architecture.</span>

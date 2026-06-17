@@ -495,10 +495,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
 
       {/* TOP NAVIGATION TAPE (Matches Patient Dashboard) */}
       <header className="h-16 border-b border-[#020617] flex items-center justify-between px-8 shrink-0 bg-[#fafafa] relative z-20">
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 bg-[#020617] text-white flex items-center justify-center">
-            <Activity className="w-4 h-4" />
-          </div>
+        <div className="flex items-center">
           <span className="font-heading text-xl tracking-tighter">AURAMED</span>
         </div>
         <div className="flex items-center gap-12 font-mono text-[10px] uppercase tracking-[0.2em] font-bold">
