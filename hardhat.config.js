@@ -1,8 +1,10 @@
-require("@nomicfoundation/hardhat-ethers");
-require("dotenv").config();
+import "@nomicfoundation/hardhat-ethers";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+const config = {
   solidity: {
     version: "0.8.20",
     settings: {
@@ -39,3 +41,5 @@ module.exports = {
     artifacts: "./artifacts",
   },
 };
+
+export default config;

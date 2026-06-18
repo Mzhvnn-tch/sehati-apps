@@ -37,8 +37,8 @@ export const medicalRecords = pgTable("medical_records", {
   recordType: text("record_type").notNull(), // "lab_result", "diagnosis", "prescription"
   title: text("title").notNull(),
   encryptedContent: text("encrypted_content").notNull(), // AES encrypted medical data
-  ipfsHash: text("ipfs_hash"), // Simulated IPFS hash
-  blockchainHash: text("blockchain_hash"), // Simulated blockchain transaction hash
+  ipfsHash: text("ipfs_hash"), // IPFS hash for decentralized storage
+  blockchainHash: text("blockchain_hash"), // Blockchain transaction hash
   isFulfilled: boolean("is_fulfilled").default(false), // For prescriptions
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

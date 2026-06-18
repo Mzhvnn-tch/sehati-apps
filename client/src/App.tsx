@@ -17,6 +17,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import Documentation from "@/pages/documentation";
 import NotFound from "@/pages/not-found";
 import PharmacistDashboard from "@/pages/pharmacist-dashboard";
+import About from "@/pages/about";
 
 // Loading component
 function PageLoader() {
@@ -45,6 +46,7 @@ function Router() {
         <Route path="/pharmacist/*" component={PharmacistDashboard} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/docs" component={Documentation} />
+        <Route path="/about" component={About} />
         <Route component={NotFound} />
       </Switch>
     </Suspense>

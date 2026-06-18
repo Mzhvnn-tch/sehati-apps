@@ -274,6 +274,68 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* Elegant Footer */}
+        <footer className="bg-[#fafafa] border-t border-slate-200 pt-24 pb-12 px-8 md:px-12 relative overflow-hidden">
+          {/* Subtle background glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-slate-300 to-transparent opacity-50" />
+          
+          <div className="max-w-[1600px] mx-auto">
+            <div className="grid md:grid-cols-12 gap-16 md:gap-8 mb-24">
+              <div className="md:col-span-6 flex flex-col justify-between">
+                <div>
+                  <h2 className="font-heading text-5xl md:text-7xl font-medium tracking-[0.2em] text-[#020617] opacity-90 mb-6">
+                    AURAMED
+                  </h2>
+                  <p className="text-slate-600 font-light text-lg max-w-sm leading-relaxed">
+                    The absolute gold standard for secure, authenticated medical data globally.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="md:col-span-6 grid grid-cols-2 md:grid-cols-3 gap-12">
+                <div>
+                  <h4 className="font-mono text-xs uppercase tracking-[0.2em] text-slate-400 mb-8">Portals</h4>
+                  <ul className="space-y-6">
+                    <li><button onClick={() => navigate("/patient")} className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Patient Access</button></li>
+                    <li><button onClick={() => navigate("/doctor")} className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Provider Access</button></li>
+                    <li><button onClick={() => navigate("/pharmacist")} className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Pharmacy Access</button></li>
+                    <li><button onClick={() => navigate("/admin")} className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">System Admin</button></li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-mono text-xs uppercase tracking-[0.2em] text-slate-400 mb-8">Resources</h4>
+                  <ul className="space-y-6">
+                    <li><button onClick={() => navigate("/docs")} className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Developer API</button></li>
+                    <li><button onClick={() => navigate("/docs")} className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Technical Architecture</button></li>
+                    <li><button className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Network Status</button></li>
+                  </ul>
+                </div>
+                <div className="col-span-2 md:col-span-1">
+                  <h4 className="font-mono text-xs uppercase tracking-[0.2em] text-slate-400 mb-8">Organization</h4>
+                  <ul className="space-y-6">
+                    <li><button onClick={() => navigate("/about")} className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">About AuraMed</button></li>
+                    <li><button className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Privacy Framework</button></li>
+                    <li><button className="text-slate-600 hover:text-[#020617] transition-colors duration-300 font-light text-sm">Contact Support</button></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+              <p className="text-slate-400 font-mono text-xs tracking-wider">
+                © {new Date().getFullYear()} AURAMED PROTOCOL. ALL RIGHTS RESERVED.
+              </p>
+              <div className="flex gap-6">
+                {['Twitter', 'Discord', 'GitHub'].map(social => (
+                  <a key={social} href="#" className="text-slate-400 hover:text-[#020617] transition-colors duration-300 font-mono text-xs tracking-wider uppercase">
+                    {social}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </footer>
+
       </main>
     </div>
   );
