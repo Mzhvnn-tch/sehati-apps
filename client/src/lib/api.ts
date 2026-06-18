@@ -150,11 +150,12 @@ export async function createMedicalRecord(data: {
 
 export async function generateQRAccess(
   patientId: string,
-  durationMinutes: number = 60
+  durationMinutes: number = 60,
+  encryptedPrivateKey?: string
 ): Promise<{ grant: AccessGrant; qrData: string }> {
   return apiCall("/access/generate", {
     method: "POST",
-    body: JSON.stringify({ patientId, durationMinutes }),
+    body: JSON.stringify({ patientId, durationMinutes, encryptedPrivateKey }),
   });
 }
 

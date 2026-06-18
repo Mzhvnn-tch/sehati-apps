@@ -590,7 +590,7 @@ export async function registerRoutes(
     validate(accessGrantSchema),
     async (req, res) => {
       try {
-        const { patientId, durationMinutes = 60 } = req.body;
+        const { patientId, durationMinutes = 60, encryptedPrivateKey } = req.body;
 
         if (req.user?.id !== patientId) {
           return res.status(403).json({ error: "You can only generate access for yourself" });
@@ -602,7 +602,7 @@ export async function registerRoutes(
         }
 
         const token = generateToken();
-        const encryptionKey = patient.publicKey;
+        const grantEncryptionKey = encryptedPrivateKey || patient.publicKey;
 
         const expiresAt = new Date();
         expiresAt.setMinutes(expiresAt.getMinutes() + durationMinutes);
@@ -610,7 +610,7 @@ export async function registerRoutes(
         const grant = await storage.createAccessGrant({
           patientId,
           token,
-          encryptionKey,
+          encryptionKey: grantEncryptionKey,
           expiresAt,
           isActive: true,
         });

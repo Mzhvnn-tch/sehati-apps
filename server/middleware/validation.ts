@@ -58,6 +58,7 @@ export const accessGrantSchema = z.object({
     .min(5, 'Duration must be at least 5 minutes')
     .max(1440, 'Duration must be less than 24 hours (1440 minutes)')
     .default(60),
+  encryptedPrivateKey: z.string().optional(),
 });
 
 export const accessValidateSchema = z.object({

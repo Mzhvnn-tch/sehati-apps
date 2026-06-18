@@ -15,7 +15,6 @@ import { createMedicalRecord, getUserByWallet } from "@/lib/api";
 import { encryptData, importKey } from "@/lib/encryption";
 import { useEthersSigner, createRecordOnChain } from "@/lib/blockchain";
 import { uploadToIPFS } from "@/lib/ipfs";
-import { ethers } from "ethers";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { clearWalletConnectStorage } from "@/lib/utils";
@@ -24,6 +23,7 @@ import { WalletConnect } from "@/components/wallet-connect";
 import { DoctorRegistration } from "@/components/doctor-registration";
 import { useAccount, useSwitchChain, useDisconnect } from "wagmi";
 import { MagneticButton } from "@/components/ui/magnetic-button";
+import { keccak256, toHex } from "viem";
 
 // ----------------------------------------------------------------------
 // 2. MAIN COMPONENT (Diamond Theme)
@@ -199,9 +199,6 @@ export default function DoctorDashboard() {
 // ----------------------------------------------------------------------
 // 3. DOCTOR CONTENT (Diamond Theme - Tablet UI)
 // ----------------------------------------------------------------------
-// ----------------------------------------------------------------------
-// 3. DOCTOR CONTENT (Diamond Theme - Tablet UI)
-// ----------------------------------------------------------------------
 function DoctorDashboardContent({ user }: { user: User }) {
   const { toast } = useToast();
   const { disconnect: authDisconnect } = useAuth();
@@ -261,7 +258,7 @@ function DoctorDashboardContent({ user }: { user: User }) {
       setProgress(30); await new Promise(r => setTimeout(r, 500));
 
       const encryptedPayload = await encryptData(vars.content, patientPublicKey);
-      const contentHash = ethers.keccak256(ethers.toUtf8Bytes(encryptedPayload));
+      const contentHash = keccak256(toHex(encryptedPayload));
 
       // 2. IPFS
       setAnimState("uploading"); setProgress(50);
@@ -325,16 +322,22 @@ function DoctorDashboardContent({ user }: { user: User }) {
     }
   });
 
-  const decryptRecordsForDoctor = async (records: any[], patientAddress: string) => {
-    let privKeyStr = localStorage.getItem(`doctor_session_key_${patientAddress}`);
-    if (!privKeyStr) {
-      privKeyStr = localStorage.getItem(`sehati_priv_${patientAddress}`);
-    }
-    if (!privKeyStr) {
-      return records.map(r => ({ ...r, decryptedContent: null }));
-    }
+  const decryptRecordsForDoctor = async (records: any[], patientAddress: string, encryptedPrivateKeyStr?: string) => {
+    let sessionKey = localStorage.getItem(`doctor_session_key_${patientAddress.toLowerCase()}`);
+    let privKeyStr = "";
+
     try {
-      const { importKey, decryptData } = await import("@/lib/encryption");
+      const { importKey, decryptData, decryptKeyFromQR } = await import("@/lib/encryption");
+      
+      if (sessionKey && encryptedPrivateKeyStr) {
+        privKeyStr = await decryptKeyFromQR(encryptedPrivateKeyStr, sessionKey);
+      } else {
+        // Fallback for older grants
+        privKeyStr = localStorage.getItem(`sehati_priv_${patientAddress.toLowerCase()}`) || "";
+      }
+
+      if (!privKeyStr) return records.map(r => ({ ...r, decryptedContent: null }));
+
       const privateKey = await importKey(privKeyStr, "private");
       const decrypted = await Promise.all(records.map(async (record) => {
         try {
@@ -350,11 +353,11 @@ function DoctorDashboardContent({ user }: { user: User }) {
     }
   };
 
-  const handleScanSuccess = async (data: { patient: User; records: any[]; token: string }) => {
+  const handleScanSuccess = async (data: { patient: User; records: any[]; token: string; key?: string; grant?: any }) => {
     setCurrentPatient(data.patient);
     
-    // Decrypt history for the doctor using the demo local storage keys
-    const decrypted = await decryptRecordsForDoctor(data.records, data.patient.walletAddress);
+    // Decrypt history for the doctor using the securely passed session key
+    const decrypted = await decryptRecordsForDoctor(data.records, data.patient.walletAddress, data.grant?.encryptionKey);
     setPatientRecords(decrypted as any);
     
     setCapturedToken(data.token);
@@ -362,6 +365,10 @@ function DoctorDashboardContent({ user }: { user: User }) {
     setPatientAccessed(true);
     localStorage.setItem("doctor_active_patient", JSON.stringify(data.patient));
     localStorage.setItem("doctor_captured_token", data.token);
+
+    if (data.key) {
+      localStorage.setItem(`doctor_session_key_${data.patient.walletAddress.toLowerCase()}`, data.key);
+    }
 
     let ticks = 0;
     const interval = setInterval(() => {
@@ -373,11 +380,12 @@ function DoctorDashboardContent({ user }: { user: User }) {
     }, 400);
   };
 
-  const handleManualTokenSubmit = async () => {
-    if (!manualTokenInput) return;
+  const handleManualTokenSubmit = async (overrideToken?: string) => {
+    const inputToUse = overrideToken || manualTokenInput;
+    if (!inputToUse) return;
 
     // Parse token if it's a URL or contains parameters
-    let tokenToValidate = manualTokenInput.trim();
+    let tokenToValidate = inputToUse.trim();
     let patientKey = null;
 
     if (tokenToValidate.includes("token=")) {
@@ -394,10 +402,10 @@ function DoctorDashboardContent({ user }: { user: User }) {
 
       // Save the securely transmitted session key
       if (patientKey) {
-        localStorage.setItem(`doctor_session_key_${data.patient.walletAddress}`, patientKey);
+        localStorage.setItem(`doctor_session_key_${data.patient.walletAddress.toLowerCase()}`, patientKey);
       }
 
-      handleScanSuccess({ patient: data.patient, records: data.records, token: tokenToValidate });
+      handleScanSuccess({ patient: data.patient, records: data.records, token: tokenToValidate, key: patientKey, grant: data.grant });
       toast({ title: "Access Granted", description: `Connected to ${data.patient.name}` });
       setManualTokenInput(""); // Clear input on success
     } catch (e) {
@@ -428,11 +436,21 @@ function DoctorDashboardContent({ user }: { user: User }) {
         setCurrentPatient(p); setCapturedToken(savedToken); setPatientAccessed(true);
         import("@/lib/api").then(({ validateQRToken }) => {
           validateQRToken(savedToken, user.id).then(async d => {
-            const decrypted = await decryptRecordsForDoctor(d.records, p.walletAddress);
+            const decrypted = await decryptRecordsForDoctor(d.records, p.walletAddress, d.grant?.encryptionKey);
             setPatientRecords(decrypted as any);
           }).catch(() => { });
         });
       } catch (e) { console.error(e); }
+    } else {
+      // Check if URL has token and auto-validate
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.has("token")) {
+        const fullUrl = window.location.href;
+        handleManualTokenSubmit(fullUrl).then(() => {
+          // Clean up URL after successful submission
+          window.history.replaceState({}, document.title, window.location.pathname);
+        });
+      }
     }
   }, [user]);
 

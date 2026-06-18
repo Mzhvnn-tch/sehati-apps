@@ -1,6 +1,9 @@
-import { ethers, Contract, JsonRpcProvider } from 'ethers';
+import { createPublicClient, createWalletClient, getContract, http, keccak256, toHex, parseAbi, parseEther, formatEther, getAddress } from 'viem';
+import { sepolia } from 'viem/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+import crypto from 'crypto';
 
-const SEHATI_REGISTRY_ABI = [
+const SEHATI_REGISTRY_ABI = parseAbi([
   "function registerAsPatient() external",
   "function registerAsDoctor() external",
   "function createAccessGrant(bytes32 _accessToken, uint256 _durationMinutes) external returns (bytes32)",
@@ -21,7 +24,7 @@ const SEHATI_REGISTRY_ABI = [
   "event AccessGrantCreated(bytes32 indexed grantId, address indexed patient, bytes32 accessToken, uint256 expiresAt, uint256 timestamp)",
   "event AccessGrantUsed(bytes32 indexed grantId, address indexed doctor, uint256 timestamp)",
   "event AccessGrantRevoked(bytes32 indexed grantId, address indexed patient, uint256 timestamp)"
-];
+]);
 
 export interface BlockchainTransaction {
   txHash: string;
@@ -41,8 +44,8 @@ export interface MetaTransactionRequest {
 }
 
 class BlockchainService {
-  private provider: JsonRpcProvider | null = null;
-  private contract: Contract | null = null;
+  private publicClient: any = null;
+  private contract: any = null;
   private chainId: number = 11155111;
   private explorerBaseUrl: string = 'https://sepolia.etherscan.io';
 
@@ -55,10 +58,17 @@ class BlockchainService {
     const contractAddress = process.env.CONTRACT_ADDRESS;
 
     try {
-      this.provider = new JsonRpcProvider(rpcUrl);
+      this.publicClient = createPublicClient({
+        chain: sepolia,
+        transport: http(rpcUrl)
+      });
 
       if (contractAddress) {
-        this.contract = new Contract(contractAddress, SEHATI_REGISTRY_ABI, this.provider);
+        this.contract = getContract({
+          address: contractAddress as `0x${string}`,
+          abi: SEHATI_REGISTRY_ABI,
+          client: this.publicClient
+        });
         console.log(`[Blockchain] Contract initialized (READ-ONLY) at: ${contractAddress}`);
       } else {
         console.warn('[Blockchain] CONTRACT_ADDRESS not set - contract interactions disabled');
@@ -69,15 +79,12 @@ class BlockchainService {
   }
 
   isConfigured(): boolean {
-    return this.provider !== null && this.contract !== null;
+    return this.publicClient !== null && this.contract !== null;
   }
 
-  // Write methods REMOVED - The frontend now handles transactions directly via user wallet.
-  // This service is now strictly for verification and reading state.
-
-  getBlockNumber(): Promise<number> {
-    if (!this.provider) throw new Error('Provider not initialized');
-    return this.provider.getBlockNumber();
+  async getBlockNumber(): Promise<number> {
+    if (!this.publicClient) throw new Error('Provider not initialized');
+    return Number(await this.publicClient.getBlockNumber());
   }
 
   getExplorerUrl(txHash: string): string {
@@ -85,12 +92,9 @@ class BlockchainService {
   }
 
   async getPatientRecords(patientAddress: string): Promise<string[]> {
-    if (!this.contract) {
-      throw new Error('Contract not configured');
-    }
-
-    const recordIds = await this.contract.getPatientRecords(patientAddress);
-    return recordIds.map((id: unknown) => String(id));
+    if (!this.contract) throw new Error('Contract not configured');
+    const recordIds = await this.contract.read.getPatientRecords([patientAddress as `0x${string}`]);
+    return (recordIds as string[]).map(id => String(id));
   }
 
   async getRecord(recordId: string): Promise<{
@@ -101,18 +105,15 @@ class BlockchainService {
     recordType: string;
     timestamp: number;
   }> {
-    if (!this.contract) {
-      throw new Error('Contract not configured');
-    }
-
-    const record = await this.contract.getRecord(recordId);
+    if (!this.contract) throw new Error('Contract not configured');
+    const record: any = await this.contract.read.getRecord([recordId as `0x${string}`]);
     return {
-      ipfsCID: record.ipfsCID,
-      contentHash: record.contentHash,
-      patient: record.patient,
-      doctor: record.doctor,
-      recordType: record.recordType,
-      timestamp: Number(record.timestamp)
+      ipfsCID: record[0],
+      contentHash: record[1],
+      patient: record[2],
+      doctor: record[3],
+      recordType: record[4],
+      timestamp: Number(record[5])
     };
   }
 
@@ -122,84 +123,48 @@ class BlockchainService {
     expiresAt: number;
     isActive: boolean;
   }> {
-    if (!this.contract) {
-      throw new Error('Contract not configured');
-    }
-
-    const grant = await this.contract.getAccessGrant(grantId);
+    if (!this.contract) throw new Error('Contract not configured');
+    const grant: any = await this.contract.read.getAccessGrant([grantId as `0x${string}`]);
     return {
-      patient: grant.patient,
-      doctor: grant.doctor,
-      expiresAt: Number(grant.expiresAt),
-      isActive: grant.isActive
+      patient: grant[0],
+      doctor: grant[1],
+      expiresAt: Number(grant[2]),
+      isActive: grant[3]
     };
   }
 
   async verifyAccessToken(patientAddress: string, accessToken: string): Promise<boolean> {
-    if (!this.contract) {
-      throw new Error('Contract not configured');
-    }
-
-    const accessTokenBytes = ethers.keccak256(ethers.toUtf8Bytes(accessToken));
-    return this.contract.verifyAccessToken(patientAddress, accessTokenBytes);
+    if (!this.contract) throw new Error('Contract not configured');
+    const accessTokenBytes = keccak256(toHex(accessToken));
+    return await this.contract.read.verifyAccessToken([patientAddress as `0x${string}`, accessTokenBytes]);
   }
 
   async isPatient(address: string): Promise<boolean> {
-    if (!this.contract) {
-      return false;
-    }
-
-    try {
-      return await this.contract.isPatient(address);
-    } catch {
-      return false;
-    }
+    if (!this.contract) return false;
+    try { return await this.contract.read.isPatient([address as `0x${string}`]); } catch { return false; }
   }
 
   async isDoctor(address: string): Promise<boolean> {
-    if (!this.contract) {
-      return false;
-    }
-
-    try {
-      return await this.contract.isDoctor(address);
-    } catch {
-      return false;
-    }
+    if (!this.contract) return false;
+    try { return await this.contract.read.isDoctor([address as `0x${string}`]); } catch { return false; }
   }
 
   async getRecordCount(): Promise<number> {
-    if (!this.contract) {
-      return 0;
-    }
-
-    try {
-      const count = await this.contract.recordCount();
-      return Number(count);
-    } catch {
-      return 0;
-    }
+    if (!this.contract) return 0;
+    try { return Number(await this.contract.read.recordCount()); } catch { return 0; }
   }
 
   async getGrantCount(): Promise<number> {
-    if (!this.contract) {
-      return 0;
-    }
-
-    try {
-      const count = await this.contract.grantCount();
-      return Number(count);
-    } catch {
-      return 0;
-    }
+    if (!this.contract) return 0;
+    try { return Number(await this.contract.read.grantCount()); } catch { return 0; }
   }
 
   hashData(data: string): string {
-    return ethers.keccak256(ethers.toUtf8Bytes(data));
+    return keccak256(toHex(data));
   }
 
   generateAccessToken(): string {
-    return ethers.hexlify(ethers.randomBytes(32));
+    return toHex(crypto.randomBytes(32));
   }
 
   getChainInfo(): { chainId: number; name: string; explorerUrl: string } {
@@ -210,37 +175,34 @@ class BlockchainService {
     };
   }
 
-
-
   async fundWallet(targetAddress: string, amountEth: string = "0.005"): Promise<boolean> {
     const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY;
-    if (!adminPrivateKey || !this.provider) {
+    if (!adminPrivateKey || !this.publicClient) {
       console.warn('[Blockchain] Faucet disabled: No ADMIN_PRIVATE_KEY or provider');
       return false;
     }
 
     try {
-      // Normalize address to proper EIP-55 checksum format
-      const checksumAddress = ethers.getAddress(targetAddress.toLowerCase());
-      const adminWallet = new ethers.Wallet(adminPrivateKey, this.provider);
+      const checksumAddress = getAddress(targetAddress.toLowerCase());
+      const account = privateKeyToAccount((adminPrivateKey.startsWith('0x') ? adminPrivateKey : `0x${adminPrivateKey}`) as `0x${string}`);
+      const walletClient = createWalletClient({ account, chain: sepolia, transport: http(process.env.SEPOLIA_RPC_URL) });
       
-      // Check target balance first
-      const balance = await this.provider.getBalance(checksumAddress);
-      const minBalance = ethers.parseEther("0.001");
+      const balance = await this.publicClient.getBalance({ address: checksumAddress as `0x${string}` });
+      const minBalance = parseEther("0.001");
       
       if (balance > minBalance) {
-        console.log(`[Blockchain] Wallet ${checksumAddress} already has sufficient funds (${ethers.formatEther(balance)} ETH). Skipping faucet.`);
+        console.log(`[Blockchain] Wallet ${checksumAddress} already has sufficient funds (${formatEther(balance)} ETH). Skipping faucet.`);
         return true;
       }
 
       console.log(`[Blockchain] Funding wallet ${checksumAddress} with ${amountEth} ETH...`);
-      const tx = await adminWallet.sendTransaction({
-        to: checksumAddress,
-        value: ethers.parseEther(amountEth)
+      const hash = await walletClient.sendTransaction({
+        to: checksumAddress as `0x${string}`,
+        value: parseEther(amountEth)
       });
       
-      await tx.wait(1);
-      console.log(`[Blockchain] Successfully funded wallet ${checksumAddress}. TX: ${tx.hash}`);
+      await this.publicClient.waitForTransactionReceipt({ hash });
+      console.log(`[Blockchain] Successfully funded wallet ${checksumAddress}. TX: ${hash}`);
       return true;
     } catch (error) {
       console.error(`[Blockchain] Failed to fund wallet ${targetAddress}:`, error);
@@ -254,30 +216,22 @@ class BlockchainService {
     data: string;
     explorerUrl: string;
   } | null> {
-    if (!this.provider) {
-      return null;
-    }
+    if (!this.publicClient) return null;
 
     try {
-      const tx = await this.provider.getTransaction(txHash);
-      if (!tx || !tx.blockNumber) {
-        return null;
-      }
+      const tx = await this.publicClient.getTransaction({ hash: txHash as `0x${string}` });
+      if (!tx || !tx.blockNumber) return null;
 
-      const block = await this.provider.getBlock(tx.blockNumber);
+      const block = await this.publicClient.getBlock({ blockNumber: tx.blockNumber });
 
       let decodedData = '';
-      if (tx.data && tx.data !== '0x') {
-        try {
-          decodedData = ethers.toUtf8String(tx.data);
-        } catch {
-          decodedData = tx.data;
-        }
+      if (tx.input && tx.input !== '0x') {
+        decodedData = tx.input;
       }
 
       return {
-        blockNumber: tx.blockNumber,
-        timestamp: block?.timestamp || 0,
+        blockNumber: Number(tx.blockNumber),
+        timestamp: Number(block?.timestamp || 0),
         data: decodedData,
         explorerUrl: this.getExplorerUrl(txHash)
       };

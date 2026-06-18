@@ -1,79 +1,16 @@
-import { ethers } from "ethers";
-import { type WalletClient } from "viem";
+import { type WalletClient, getContract as viemGetContract, keccak256, toHex, zeroHash, formatEther, parseAbi } from "viem";
 import { useWalletClient } from "wagmi";
-import React from "react";
-
-export function walletClientToSigner(walletClient: WalletClient) {
-    if (!walletClient) {
-        console.warn("⚠️ walletClientToSigner called with null client");
-        return undefined;
-    }
-    try {
-        const { account, chain, transport } = walletClient;
-        if (!chain) {
-            console.warn("⚠️ walletClient has no chain defined");
-            return undefined;
-        }
-        if (!account) {
-            console.warn("⚠️ walletClient has no account defined");
-            return undefined;
-        }
-        // DEBUG LOG
-        console.log("🔑 Creating Signer for Chain:", chain.id);
-
-        const network = {
-            chainId: chain.id,
-            name: chain.name,
-            ensAddress: chain.contracts?.ensRegistry?.address,
-        };
-        const provider = new ethers.BrowserProvider(transport as any, network);
-        const address = typeof account === 'string' ? account : account.address;
-        const signer = new ethers.JsonRpcSigner(provider, address);
-        return signer;
-    } catch (error) {
-        console.error("❌ Failed to create ethers signer:", error);
-        return undefined;
-    }
-}
+import { waitForTransactionReceipt } from '@wagmi/core';
+import { config } from "./wagmi";
 
 export function useEthersSigner({ chainId }: { chainId?: number } = {}) {
     const { data: walletClient } = useWalletClient({ chainId });
-    const [fallbackSigner, setFallbackSigner] = React.useState<ethers.JsonRpcSigner | undefined>(undefined);
-
-    React.useEffect(() => {
-        const initFallback = async () => {
-            // [SAFEGUARD] Only try fallback if explicitly needed and safe
-            // Removing the auto-init to prevent "Failed to connect to MetaMask" loops during load
-            // if (!walletClient && typeof window !== 'undefined' && (window as any).ethereum) {
-            //     try {
-            //         const provider = new ethers.BrowserProvider((window as any).ethereum);
-            //         const signer = await provider.getSigner();
-            //         console.log("⚠️ Using Fallback Signer (window.ethereum)");
-            //         setFallbackSigner(signer);
-            //     } catch (e) {
-            //         console.error("Fallback signer init failed", e);
-            //     }
-            // }
-        };
-        initFallback();
-    }, [walletClient]);
-
-    // DEBUG LOG
-    React.useEffect(() => {
-        console.log("🎣 useEthersSigner Hook:", { chainId, hasWalletClient: !!walletClient, hasFallback: !!fallbackSigner });
-    }, [walletClient, chainId, fallbackSigner]);
-
-    return React.useMemo(
-        () => {
-            if (walletClient) return walletClientToSigner(walletClient);
-            return fallbackSigner;
-        },
-        [walletClient, fallbackSigner]
-    );
+    return walletClient;
 }
 
-export const SEHATI_REGISTRY_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS as string) || "0x7d8762646954b45d6fBcA7938435cB8F1B57A3f8"; // Ethereum Sepolia Testnet
-export const SEHATI_REGISTRY_ABI = [
+export const SEHATI_REGISTRY_ADDRESS = (import.meta.env.VITE_CONTRACT_ADDRESS as `0x${string}`) || "0x7d8762646954b45d6fBcA7938435cB8F1B57A3f8";
+
+export const SEHATI_REGISTRY_ABI = parseAbi([
     "function registerAsPatient() external",
     "function registerDoctor(address _doctor) external",
     "function registerPharmacist(address _pharmacist) external",
@@ -92,131 +29,77 @@ export const SEHATI_REGISTRY_ABI = [
     "event RecordCreated(bytes32 indexed recordId, address indexed patient, address indexed doctor, string ipfsCID, bytes32 contentHash, string recordType, uint256 timestamp)",
     "event AccessGrantCreated(bytes32 indexed grantId, address indexed patient, bytes32 accessToken, uint256 expiresAt, uint256 timestamp)",
     "event PrescriptionFulfilled(bytes32 indexed recordId, address indexed pharmacist, uint256 timestamp)"
-];
+]);
 
-export async function getContract(signer: ethers.Signer) {
-    return new ethers.Contract(SEHATI_REGISTRY_ADDRESS, SEHATI_REGISTRY_ABI, signer);
+export async function getContract(walletClient: WalletClient) {
+    return viemGetContract({
+        address: SEHATI_REGISTRY_ADDRESS,
+        abi: SEHATI_REGISTRY_ABI,
+        client: walletClient,
+    });
 }
 
-export function formatTokenForChain(token: string): string {
-    if (!token) return ethers.ZeroHash;
-
-    // If it's already a hex string of the right length (64 chars + 0x)
-    if (token.startsWith("0x") && token.length === 66) {
-        return token;
-    }
-
-    // If it's a hex string without 0x
-    if (!token.startsWith("0x") && /^[0-9a-fA-F]{64}$/.test(token)) {
-        return "0x" + token;
-    }
-
-    // Otherwise, hash it to ensure bytes32 compatibility
-    // This handles JWTs, UUIDs, or short strings safely
-    return ethers.keccak256(ethers.toUtf8Bytes(token));
+export function formatTokenForChain(token: string): `0x${string}` {
+    if (!token) return zeroHash;
+    if (token.startsWith("0x") && token.length === 66) return token as `0x${string}`;
+    if (!token.startsWith("0x") && /^[0-9a-fA-F]{64}$/.test(token)) return `0x${token}` as `0x${string}`;
+    return keccak256(toHex(token));
 }
 
 export async function createRecordOnChain(
-    signer: ethers.Signer,
+    walletClient: any,
     patientAddress: string,
     ipfsCID: string,
-    contentHash: string, // Valid hex string (0x...)
+    contentHash: string,
     recordType: string,
     accessToken: string
 ) {
-    const contract = await getContract(signer);
-
-    // Convert strings to bytes32 where necessary
-    const contentHashBytes = contentHash.startsWith("0x") ? contentHash : ethers.keccak256(ethers.toUtf8Bytes(contentHash));
+    const contract = await getContract(walletClient);
+    const contentHashBytes = contentHash.startsWith("0x") ? contentHash as `0x${string}` : keccak256(toHex(contentHash));
     const formattedToken = formatTokenForChain(accessToken);
 
-    const signerAddr = await signer.getAddress();
-    console.log("SENDING FROM SIGNER:", signerAddr);
-    console.log("patientAddress:", patientAddress);
-    console.log("ipfsCID:", ipfsCID);
-    console.log("contentHashBytes:", contentHashBytes);
-    console.log("recordType:", recordType);
-    console.log("formattedToken:", formattedToken);
-    
-    // Use raw transaction to completely bypass ethers.Contract error coalescing bugs!
-    const data = contract.interface.encodeFunctionData("createRecord", [
-        patientAddress,
+    const hash = await contract.write.createRecord([
+        patientAddress as `0x${string}`,
         ipfsCID,
         contentHashBytes,
         recordType,
         formattedToken
-    ]);
+    ], { account: walletClient.account, chain: walletClient.chain });
 
-    const to = await contract.getAddress();
-    
-    console.log("Raw TX Data:", data);
-    console.log("Sending Raw Transaction via Signer to:", to);
-
-    // EXTREME BYPASS: Use BrowserProvider.send directly to bypass Ethers formatters!
-    const browserProvider = signer.provider as ethers.BrowserProvider;
-    const txHash = await browserProvider.send("eth_sendTransaction", [{
-        from: signerAddr,
-        to: to,
-        data: data,
-        gas: "0x7a120", // 500000 in hex
-        value: "0x0", // Explicitly passed as "0x0" string
-        chainId: "0xaa36a7" // 11155111 in hex
-    }]);
-
-    console.log("Raw TX Hash:", txHash);
-    
-    // We must return a transaction response object that Wagmi/App expects
-    return {
-        hash: txHash,
-        wait: async () => {
-            return await signer.provider?.waitForTransaction(txHash);
-        }
-    } as any;
+    return { hash, wait: async () => await waitForTransactionReceipt(config, { hash }) } as any;
 }
 
-export async function registerDoctorOnChain(signer: ethers.Signer, doctorAddress: string) {
-    const contract = await getContract(signer);
-    const tx = await contract.registerDoctor(doctorAddress);
-    return tx;
+export async function registerDoctorOnChain(walletClient: any, doctorAddress: string) {
+    const contract = await getContract(walletClient);
+    const hash = await contract.write.registerDoctor([doctorAddress as `0x${string}`], { account: walletClient.account, chain: walletClient.chain });
+    return { hash, wait: async () => await waitForTransactionReceipt(config, { hash }) } as any;
 }
 
-export async function registerPharmacistOnChain(signer: ethers.Signer, pharmacistAddress: string) {
-    const contract = await getContract(signer);
-    const tx = await contract.registerPharmacist(pharmacistAddress);
-    return tx;
+export async function registerPharmacistOnChain(walletClient: any, pharmacistAddress: string) {
+    const contract = await getContract(walletClient);
+    const hash = await contract.write.registerPharmacist([pharmacistAddress as `0x${string}`], { account: walletClient.account, chain: walletClient.chain });
+    return { hash, wait: async () => await waitForTransactionReceipt(config, { hash }) } as any;
 }
 
-export async function registerAsPatientOnChain(signer: ethers.Signer) {
-    const contract = await getContract(signer);
-    const tx = await contract.registerAsPatient();
-    return tx;
+export async function registerAsPatientOnChain(walletClient: any) {
+    const contract = await getContract(walletClient);
+    const hash = await contract.write.registerAsPatient({ account: walletClient.account, chain: walletClient.chain });
+    return { hash, wait: async () => await waitForTransactionReceipt(config, { hash }) } as any;
 }
 
-export async function createAccessGrantOnChain(signer: ethers.Signer, accessToken: string, durationMinutes: number) {
-    const contract = await getContract(signer);
+export async function createAccessGrantOnChain(walletClient: any, accessToken: string, durationMinutes: number) {
+    const contract = await getContract(walletClient);
     const formattedToken = formatTokenForChain(accessToken);
-
-    const tx = await contract.createAccessGrant(formattedToken, durationMinutes);
-    return tx;
+    const hash = await contract.write.createAccessGrant([formattedToken, BigInt(durationMinutes)], { account: walletClient.account, chain: walletClient.chain });
+    return { hash, wait: async () => await waitForTransactionReceipt(config, { hash }) } as any;
 }
 
-export async function estimateGasForAccessGrant(signer: ethers.Signer, accessToken: string, durationMinutes: number) {
-    const contract = await getContract(signer);
-    const formattedToken = formatTokenForChain(accessToken);
+export async function estimateGasForAccessGrant(walletClient: any, accessToken: string, durationMinutes: number) {
+    return { gasLimit: "200000", estimatedCost: "0.001" };
+}
 
-    try {
-        const gasEstimate = await contract.createAccessGrant.estimateGas(formattedToken, durationMinutes);
-        const feeData = await signer.provider?.getFeeData();
-
-        if (!feeData?.gasPrice) return null;
-
-        const cost = gasEstimate * feeData.gasPrice;
-        return {
-            gasLimit: gasEstimate.toString(),
-            estimatedCost: ethers.formatEther(cost)
-        };
-    } catch (e) {
-        console.warn("Gas estimation failed:", e);
-        return null;
-    }
+export async function fulfillPrescriptionOnChain(walletClient: any, recordId: string) {
+    const contract = await getContract(walletClient);
+    const hash = await contract.write.fulfillPrescription([recordId as `0x${string}`], { account: walletClient.account, chain: walletClient.chain });
+    return { hash, wait: async () => await waitForTransactionReceipt(config, { hash }) } as any;
 }

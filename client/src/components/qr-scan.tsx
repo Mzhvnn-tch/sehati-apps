@@ -13,6 +13,7 @@ interface QRScanProps {
     patient: User;
     records: (MedicalRecord & { decryptedContent: string })[];
     token: string;
+    key?: string;
   }) => void;
   doctorId?: string;
 }
@@ -22,6 +23,7 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
   const [manualToken, setManualToken] = useState("");
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [lastScannedToken, setLastScannedToken] = useState<string | null>(null);
+  const [extractedKey, setExtractedKey] = useState<string>("");
 
   const validateMutation = useMutation({
     mutationFn: (token: string) => validateQRToken(token, doctorId),
@@ -31,7 +33,8 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
         onScanSuccess({
           patient: data.patient,
           records: data.records,
-          token: variables
+          token: variables,
+          key: extractedKey
         });
         setScanStatus("idle");
         setLastScannedToken(null);
@@ -52,10 +55,13 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
       if (scannedValue && scannedValue !== lastScannedToken) {
         setLastScannedToken(scannedValue);
         let token = scannedValue;
+        let pKey = "";
         if (scannedValue.includes("token=")) {
           const urlParams = new URLSearchParams(scannedValue.split("?")[1] || scannedValue);
           token = urlParams.get("token") || scannedValue;
+          pKey = urlParams.get("key") || "";
         }
+        setExtractedKey(pKey);
         setScanStatus("validating");
         validateMutation.mutate(token);
       }
@@ -86,10 +92,13 @@ export function QRScan({ onScanSuccess, doctorId }: QRScanProps) {
   const handleManualSubmit = () => {
     if (!manualToken.trim()) return;
     let token = manualToken.trim();
+    let pKey = "";
     if (token.includes("token=")) {
       const urlParams = new URLSearchParams(token.split("?")[1] || token);
       token = urlParams.get("token") || token;
+      pKey = urlParams.get("key") || "";
     }
+    setExtractedKey(pKey);
     setScanStatus("validating");
     validateMutation.mutate(token);
   };

@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getUserByWallet } from "@/lib/api";
 import { decryptData, importKey } from "@/lib/encryption";
-import { useEthersSigner, getContract } from "@/lib/blockchain";
+import { useEthersSigner, fulfillPrescriptionOnChain } from "@/lib/blockchain";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { clearWalletConnectStorage } from "@/lib/utils";
@@ -146,11 +146,10 @@ function PharmacistDashboardContent({ user }: { user: User }) {
   const fulfillMutation = useMutation({
     mutationFn: async ({ recordId }: { recordId: string }) => {
       if (!signer) throw new Error("Wallet not connected");
-      const contract = await getContract(signer);
       
       // Attempt on-chain fulfillment
       console.log("Fulfilling on-chain:", recordId);
-      const tx = await contract.fulfillPrescription(recordId);
+      const tx = await fulfillPrescriptionOnChain(signer, recordId);
       await tx.wait();
 
       // Update backend DB

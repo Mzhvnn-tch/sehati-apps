@@ -273,3 +273,39 @@ export async function decryptPrivateKeyWithPIN(encryptedPayloadStr: string, pin:
         throw new Error("Invalid PIN or corrupted keystore");
     }
 }
+
+export async function encryptKeyForQR(privateKeyStr: string): Promise<{ encryptedKeyStr: string, sessionKey: string }> {
+    const sessionKeyBuffer = window.crypto.getRandomValues(new Uint8Array(32));
+    const sessionKeyStr = arrayBufferToBase64(sessionKeyBuffer);
+
+    const cryptoKey = await window.crypto.subtle.importKey(
+        "raw", sessionKeyBuffer, { name: "AES-GCM" }, false, ["encrypt"]
+    );
+
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(privateKeyStr);
+    const encrypted = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv }, cryptoKey, encoded);
+
+    const encryptedKeyStr = JSON.stringify({
+        iv: arrayBufferToBase64(iv.buffer),
+        data: arrayBufferToBase64(encrypted)
+    });
+
+    return { encryptedKeyStr, sessionKey: sessionKeyStr };
+}
+
+export async function decryptKeyFromQR(encryptedKeyStr: string, sessionKeyStr: string): Promise<string> {
+    const { iv, data } = JSON.parse(encryptedKeyStr);
+    const sessionKeyBuffer = str2ab(window.atob(sessionKeyStr));
+    const cryptoKey = await window.crypto.subtle.importKey(
+        "raw", sessionKeyBuffer, { name: "AES-GCM" }, false, ["decrypt"]
+    );
+    
+    const decrypted = await window.crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: str2ab(window.atob(iv)) },
+        cryptoKey,
+        str2ab(window.atob(data))
+    );
+    
+    return new TextDecoder().decode(decrypted);
+}

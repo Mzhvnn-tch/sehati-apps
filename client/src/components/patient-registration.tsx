@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { generateNonce } from "@/lib/api";
 import { generateKeyPair, encryptPrivateKeyWithPIN } from "@/lib/encryption";
-import { BrowserProvider } from "ethers";
 import { LogOut } from "lucide-react";
 // @ts-ignore
 import { useAccount, useSwitchChain } from "wagmi"; // Added useSwitchChain
@@ -103,7 +102,7 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
           console.log("🔑 Generated Public Key:", publicKeyStr); // DEBUG LOG
           console.log("🔑 Public Key Length:", publicKeyStr.length); // DEBUG LOG
 
-          localStorage.setItem(`sehati_priv_${walletAddress}`, privateKeyStr);
+          localStorage.setItem(`sehati_priv_${walletAddress.toLowerCase()}`, privateKeyStr);
 
           // Step 1.5: Register on Blockchain (CRITICAL FIX)
           toast({
@@ -159,7 +158,7 @@ export function PatientRegistration({ walletAddress, onSuccess, onDisconnect, is
           });
 
           // Add timeout for signature request
-          const signaturePromise = signer.signMessage(message);
+          const signaturePromise = signer.signMessage({ message });
           const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error("Signature request timed out.")), 60000)
           );

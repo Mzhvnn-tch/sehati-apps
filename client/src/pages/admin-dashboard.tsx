@@ -8,7 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle, ShieldAlert, ShieldCheck, Wallet, LogOut, AlertTriangle, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocation } from "wouter";
-import { ethers } from "ethers";
 import { WalletConnect } from "@/components/wallet-connect";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
@@ -29,7 +28,7 @@ export default function AdminDashboard() {
         setIsLoggingIn(true);
         try {
             const message = `Welcome to AuraMed Health Identity System!\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address: ${address}\nTimestamp: ${new Date().toISOString()}`;
-            const signature = await signer.signMessage(message);
+            const signature = await signer.signMessage({ message });
             const result = await loginWithSignature(address, signature, message);
             if (result.success) {
                 toast({ title: "Admin Access Granted", description: "Welcome back." });

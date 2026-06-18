@@ -42,9 +42,8 @@ export function WalletConnect({ className, initialRole, autoOpen, onRequireRegis
 
   // Handle wallet connection and login flow
   useEffect(() => {
-    if (isConnected && address && !user && !isSigning && !showVerifyDialog) {
-      // Show verify identity dialog instead of auto-signing
-      setShowVerifyDialog(true);
+    if (isConnected && address && !user && !isSigning) {
+      handleLogin();
     }
   }, [isConnected, address]);
 
@@ -189,25 +188,7 @@ export function WalletConnect({ className, initialRole, autoOpen, onRequireRegis
         </div>
       )}
 
-      <Dialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
-        <DialogContent className="sm:max-w-md bg-[#fafafa] border-none shadow-[0_30px_100px_rgba(0,0,0,0.2)] rounded-none p-10">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="flex items-center gap-3 font-heading text-2xl tracking-tight text-[#020617]">
-              <ShieldCheck className="w-6 h-6 text-[#020617]" />
-              Signature Required
-            </DialogTitle>
-            <DialogDescription className="text-slate-500 leading-relaxed mt-4">
-              To complete the login securely, you need to sign a cryptographic message using your Web3Auth wallet. This proves you are the true owner of this account.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end pt-6 border-t border-[#020617]/10 mt-2">
-            <Button onClick={handleLogin} disabled={isSigning} className="h-12 w-full bg-[#020617] hover:bg-transparent hover:text-[#020617] border border-[#020617] text-white rounded-none uppercase tracking-[0.2em] text-[10px] font-bold transition-all duration-500">
-              {isSigning ? <Loader2 className="w-4 h-4 animate-spin mr-3" /> : <ShieldCheck className="w-4 h-4 mr-3" />}
-              {isSigning ? "AWAITING SIGNATURE" : "SIGN & VERIFY"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }

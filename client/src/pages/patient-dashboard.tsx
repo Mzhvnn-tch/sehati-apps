@@ -160,15 +160,7 @@ export default function PatientDashboard() {
                  <WalletConnect onRequireRegistration={() => setShowRegistration(true)} />
                </div>
                
-               <div className="p-8 border border-[#020617]/10 bg-white mt-4">
-                 <div className="flex items-start gap-5">
-                   <Lock className="w-5 h-5 text-slate-400 shrink-0 mt-1" />
-                   <div>
-                     <h4 className="font-bold text-xs uppercase tracking-[0.2em] text-[#020617] mb-2">Absolute Privacy</h4>
-                     <p className="text-slate-500 text-sm leading-relaxed">Your medical information never leaves your device without your explicit permission.</p>
-                   </div>
-                 </div>
-               </div>
+
             </div>
           </motion.div>
         </div>
@@ -239,7 +231,7 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
   useEffect(() => {
     const decryptAll = async () => {
       if (!records.length) return;
-      const privKeyStr = localStorage.getItem(`sehati_priv_${user.walletAddress}`);
+      const privKeyStr = localStorage.getItem(`sehati_priv_${user.walletAddress.toLowerCase()}`);
       if (!privKeyStr) {
         setDecryptedRecords(records.map(r => ({ ...r, decryptedContent: null })));
         if (user.encryptedPrivateKey && !showRecovery) {
@@ -275,7 +267,7 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
     try {
         const { decryptPrivateKeyWithPIN } = await import("@/lib/encryption");
         const privateKeyStr = await decryptPrivateKeyWithPIN(user.encryptedPrivateKey, recoveryPin);
-        localStorage.setItem(`sehati_priv_${user.walletAddress}`, privateKeyStr);
+        localStorage.setItem(`sehati_priv_${user.walletAddress.toLowerCase()}`, privateKeyStr);
         toast({ title: "Recovery Success", description: "Your Keystore has been unlocked." });
         setShowRecovery(false);
         setDecryptTrigger(p => p + 1); // Retrigger decryption
@@ -441,10 +433,6 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
                       </div>
                       <h3 className="font-heading text-2xl mb-2">{rec.hospital}</h3>
                       <p className="text-sm text-slate-600 mb-6 font-medium">{rec.doctor}</p>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 ${rec.status === 'On-chain' ? 'bg-[#020617]' : 'bg-slate-400'}`} />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{rec.status}</span>
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -585,7 +573,7 @@ function PatientDashboardContent({ user, records, recordsLoading, auditData }: {
                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex justify-between items-end border-b border-[#020617] pb-12 mb-16">
                       <div>
-                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-4">On-Chain Activity</span>
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500 block mb-4">Security Log</span>
                         <h1 className="font-heading text-5xl md:text-7xl font-medium tracking-tighter text-[#020617]">Audit Log.</h1>
                       </div>
                     </div>

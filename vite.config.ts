@@ -28,13 +28,15 @@ export default defineConfig({
     // Performance optimizations
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id) {
           // Vendor splitting for better caching
-          'vendor-react': ['react', 'react-dom', 'react-hook-form'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-tabs', '@radix-ui/react-toast'],
-          'vendor-charts': ['recharts'],
-          'vendor-web3': ['wagmi', 'viem', 'ethers'],
-          'vendor-motion': ['framer-motion'],
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-hook-form')) return 'vendor-react';
+          if (id.includes('@radix-ui')) return 'vendor-ui';
+          if (id.includes('recharts')) return 'vendor-charts';
+          if (id.includes('framer-motion')) return 'vendor-motion';
+          if (id.includes('wagmi') || id.includes('viem') || id.includes('@web3auth')) {
+            return 'vendor-web3';
+          }
         },
       },
     },
@@ -48,7 +50,7 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'react', 'react-dom', 'react-dom/client', 
-      'wagmi', 'viem', 'ethers', 
+      'wagmi', 'viem', 
       '@web3auth/modal', '@web3auth/base', 
       'lucide-react', 'framer-motion', 'recharts'
     ]

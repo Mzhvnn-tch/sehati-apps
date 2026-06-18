@@ -138,7 +138,7 @@ export function DoctorRegistration({ walletAddress, onSuccess, onDisconnect, rol
           });
 
           // Add timeout for signature request
-          const signaturePromise = signer.signMessage(message);
+          const signaturePromise = signer.signMessage({ message });
           const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error("Signature request timed out.")), 60000)
           );

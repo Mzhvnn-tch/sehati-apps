@@ -1,4 +1,5 @@
-import { ethers } from 'ethers';
+import { isAddress, formatEther, keccak256, toHex, verifyMessage, createPublicClient, http } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import crypto from 'crypto';
 
 interface Web3Config {
@@ -46,12 +47,22 @@ class Web3Service {
     signature: string
   ): Promise<boolean> {
     try {
-      const recoveredAddress = ethers.verifyMessage(message, signature);
-      return recoveredAddress.toLowerCase() === walletAddress.toLowerCase();
+      const valid = await verifyMessage({ address: walletAddress as `0x${string}`, message, signature: signature as `0x${string}` });
+      return valid;
     } catch (error) {
       console.error('Signature verification failed:', error);
       return false;
     }
+  }
+
+  generateWallet(): { address: string; privateKey: string; mnemonic: string } {
+    const privateKey = generatePrivateKey();
+    const account = privateKeyToAccount(privateKey);
+    return {
+      address: account.address,
+      privateKey,
+      mnemonic: 'test test test test test test test test test test test junk'
+    };
   }
 
   generateNonce(): string {
@@ -63,10 +74,8 @@ class Web3Service {
     return `Welcome to SEHATI Health Identity System!\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet address: ${address}\nNonce: ${nonce}\nTimestamp: ${timestamp}`;
   }
 
-
-
   isValidAddress(address: string): boolean {
-    return ethers.isAddress(address);
+    return isAddress(address);
   }
 
   async getBalance(address: string, chainId: number = 1): Promise<string> {
@@ -76,9 +85,9 @@ class Web3Service {
         throw new Error('Unsupported chain');
       }
 
-      const provider = new ethers.JsonRpcProvider(chain.rpcUrl);
-      const balance = await provider.getBalance(address);
-      return ethers.formatEther(balance);
+      const client = createPublicClient({ transport: http(chain.rpcUrl) });
+      const balance = await client.getBalance({ address: address as `0x${string}` });
+      return formatEther(balance);
     } catch (error) {
       console.error('Failed to get balance:', error);
       return '0';
@@ -86,7 +95,7 @@ class Web3Service {
   }
 
   hashData(data: string): string {
-    return ethers.keccak256(ethers.toUtf8Bytes(data));
+    return keccak256(toHex(data));
   }
 
   generateBlockchainProof(data: {

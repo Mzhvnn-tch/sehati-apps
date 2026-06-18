@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import { generateQRAccess } from "@/lib/api";
+import { encryptKeyForQR } from "@/lib/encryption";
 import { useToast } from "@/hooks/use-toast";
 import { useEthersSigner, createAccessGrantOnChain, estimateGasForAccessGrant } from "@/lib/blockchain";
 import { useAccount } from "wagmi";
@@ -34,10 +35,19 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
   const metaWalletDisplay = address ? address.substring(0, 6) : "";
 
   const generateMutation = useMutation({
-    mutationFn: () => generateQRAccess(patientId, 60),
-    onSuccess: (data) => {
-      const privKey = localStorage.getItem(`sehati_priv_${walletAddress}`) || "";
-      const urlWithKey = privKey ? `${data.qrData}&key=${encodeURIComponent(privKey)}` : data.qrData;
+    mutationFn: async () => {
+      const privKey = localStorage.getItem(`sehati_priv_${walletAddress.toLowerCase()}`) || "";
+      if (!privKey) throw new Error("Private key not found. Please log in again.");
+      
+      const { encryptedKeyStr, sessionKey } = await encryptKeyForQR(privKey);
+      const data = await generateQRAccess(patientId, 60, encryptedKeyStr);
+      return { data, sessionKey };
+    },
+    onSuccess: ({ data, sessionKey }) => {
+      const baseUrl = window.location.origin + "/doctor-dashboard";
+      const tokenOnly = data.qrData.split("token=")[1];
+      const urlWithKey = `${baseUrl}?token=${tokenOnly}&key=${encodeURIComponent(sessionKey)}`;
+      
       setQrData(urlWithKey);
       setGrantId(data.grant.id);
       setTimeLeft(3600); // 60 minutes in seconds
@@ -161,12 +171,12 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
     }
   };
 
-  // Auto-estimate gas when QR is ready and wallet connected
+  // Auto-register on-chain when QR is ready
   useEffect(() => {
-    if (qrData && isConnected && !isOnChain && !gasEstimate) {
-      checkGas();
+    if (qrData && isConnected && !isOnChain && !isRegistering && signer) {
+      registerOnChain();
     }
-  }, [qrData, isConnected, isOnChain]);
+  }, [qrData, isConnected, isOnChain, signer]);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -226,16 +236,10 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
                       <QRCode
                         value={qrData}
                         size={160}
-                        className={`w-full h-auto ${!isOnChain ? 'opacity-20' : ''} transition-all duration-500`}
+                        className={`w-full h-auto transition-all duration-500`}
                         fgColor="#020617"
                       />
                     </div>
-                    {!isOnChain && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#020617]/80 backdrop-blur-sm z-10 border border-slate-500/20">
-                            <Lock className="w-6 h-6 text-slate-400 mb-3 opacity-50" />
-                            <span className="font-mono text-[10px] uppercase font-bold tracking-[0.2em] text-slate-300 text-center px-2">Signature<br/>Required</span>
-                        </div>
-                    )}
                </div>
             )}
             
@@ -260,39 +264,15 @@ export function QRShare({ patientId, walletAddress }: { patientId: string, walle
               </div>
            ) : (
               <div className="space-y-8 relative z-10">
-                {/* Blockchain Registration Section */}
-                {!isOnChain && (
-                  <div className={`p-6 rounded-2xl border ${isWalletMismatch ? "border-red-200 bg-red-50/50" : "border-slate-100 bg-slate-50/50"}`}>
-                    <div className="flex justify-between items-center mb-6">
-                      <span className={`font-mono text-[10px] uppercase tracking-[0.2em] font-bold flex items-center gap-3 ${isWalletMismatch ? "text-red-600" : "text-slate-700"}`}>
-                        <div className={`w-2 h-2 rounded-full ${isWalletMismatch ? "bg-red-500" : "bg-slate-500 animate-pulse"}`}></div>
-                        Patient Identity Verification
-                      </span>
-                    </div>
-
-                    {isWalletMismatch ? (
-                      <div className="text-[10px] font-mono text-red-500 font-bold uppercase tracking-widest mt-2 bg-red-100/50 p-3 rounded-lg">
-                        Mismatch: App({userWalletDisplay}) vs Wallet({metaWalletDisplay})
-                      </div>
-                    ) : isConnected ? (
-                      <button
-                        className="w-full bg-[#020617] rounded-xl hover:bg-slate-800 text-white font-mono text-[10px] uppercase tracking-[0.2em] font-bold h-12 transition-all flex items-center justify-center disabled:opacity-50 shadow-lg shadow-slate-900/20"
-                        onClick={registerOnChain}
-                        disabled={isRegistering}
-                      >
-                        {isRegistering ? (
-                          <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Encrypting...</>
-                        ) : (
-                          "Sign & Activate Protocol"
-                        )}
-                      </button>
-                    ) : (
-                      <p className="font-mono text-[10px] text-red-400 uppercase tracking-widest font-bold mt-2">Wallet connection required</p>
-                    )}
+                {/* Blockchain Syncing Indicator */}
+                {!isOnChain && isRegistering && (
+                  <div className="text-[10px] font-mono text-amber-500 font-bold uppercase tracking-widest mt-2 bg-amber-500/10 p-3 rounded-lg flex items-center">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Syncing Grant to Blockchain in Background...
                   </div>
                 )}
 
-                {isOnChain && timeLeft > 0 ? (
+                {timeLeft > 0 ? (
                   <div className="relative w-full p-6 bg-[#020617] rounded-2xl border border-slate-800 overflow-hidden shadow-[0_10px_30px_rgba(2,6,23,0.15)] text-white">
                     <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
                     <div className="absolute top-0 right-0 w-32 h-32 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800/50 to-transparent pointer-events-none"></div>
